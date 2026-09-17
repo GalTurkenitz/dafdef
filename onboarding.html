@@ -32,17 +32,13 @@
   <!-- פס התקדמות עליון (1/5…) — שלב 5 -->
   <header data-progress></header>
 
-  <div class="screen__body stack-6">
-    <!-- שאלה כ-h1 + תשובות ככרטיסים ברוחב מלא — שלב 5 -->
-    <section data-step></section>
+  <div class="screen__body" style="padding-top: var(--sp-6);">
+    <section data-step role="radiogroup"></section>
   </div>
 
   <footer data-actions></footer>
 </main>
 
-<script type="module">
-  import { initTheme } from './js/ui/theme.js';
-  initTheme();
-</script>
+<script type="module" src="js/ui/onboarding.js"></script>
 </body>
 </html>

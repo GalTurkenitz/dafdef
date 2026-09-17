@@ -730,3 +730,120 @@ p  { margin: 0; }
 
 .book > svg { flex: none; color: var(--text-soft); }
 [dir="rtl"] .book > svg { transform: scaleX(-1); }
+
+/* ============================================================
+   שאלון, תוצאה ובחירת אפליקציות (המפרט, סעיפים 7.1, 7.2)
+   ============================================================ */
+
+/* פס התקדמות עליון */
+.progress {
+  height: 4px;
+  border-radius: var(--r-chip);
+  background: var(--track);
+  overflow: hidden;
+}
+.progress i {
+  display: block;
+  block-size: 100%;
+  background: var(--primary);
+  border-radius: var(--r-chip);
+  transition: inline-size var(--t-base) var(--ease);
+}
+
+/* ---------- מסך התוצאה ---------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-2);
+  min-height: 55svh;
+}
+
+.result__num {
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+
+.result__why {
+  max-width: 28ch;
+  margin-top: var(--sp-4);
+}
+
+/* ---------- רשת האפליקציות ---------- */
+.appgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4) var(--sp-2);
+}
+
+.appcell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  border-radius: var(--r-card);
+  transition: transform var(--t-fast) var(--ease);
+}
+.appcell:active { transform: scale(.96); }
+
+.appcell__name { font-size: var(--fs-small); }
+
+.appcell__mark {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  opacity: 0;
+  transform: scale(.7);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.appcell[aria-pressed="true"] .appcell__mark { opacity: 1; transform: scale(1); }
+.appcell[aria-pressed="false"] .appicon { opacity: .45; }
+
+/* ---------- אייקון אפליקציה מדומה ---------- */
+.appicon {
+  display: grid;
+  place-items: center;
+  inline-size: var(--s, 56px);
+  block-size: var(--s, 56px);
+  border-radius: 24%;
+  color: #fff;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.appicon svg { width: 60%; height: 60%; }
+
+.appicon--instagram { background: linear-gradient(135deg, #F9CE34, #EE2A7B 55%, #6228D7); }
+.appicon--tiktok    { background: #101014; }
+.appicon--youtube   { background: #E7332B; }
+.appicon--facebook  { background: #1877F2; }
+.appicon--x         { background: #101014; }
+.appicon--game      { background: #6C4BD6; }
+
+/* מנעול קטן על אפליקציה נעולה (מסך הבית) */
+.appcell__lock {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  border-radius: var(--r-chip);
+  background: var(--lock);
+  color: #fff;
+}
