@@ -963,3 +963,106 @@ p  { margin: 0; }
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-3));
   margin-top: var(--sp-6);
 }
+
+/* ============================================================
+   דשבורד והגדרות (המפרט, סעיפים 7.6, 7.7)
+   ============================================================ */
+
+.section__title {
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  color: var(--text-soft);
+  margin-bottom: var(--sp-2);
+}
+
+/* ---------- שורת מספרים ---------- */
+.stats-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-2);
+  text-align: center;
+}
+
+.stat { display: flex; flex-direction: column; gap: var(--sp-1); }
+
+.stat__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.stat__num--accent { color: var(--accent); }
+.stat__num svg { width: 22px; height: 22px; }
+
+/* ---------- גרף 7 ימים ---------- */
+.chart { width: 100%; height: auto; }
+
+.chart__base { stroke: var(--border); stroke-width: 1; }
+
+.bar--earned { fill: var(--primary); }
+.bar--spent  { fill: var(--accent); opacity: .75; }
+
+.bar__label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  fill: var(--text-soft);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+.legend span { display: flex; align-items: center; gap: var(--sp-1); }
+
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.dot--earned { background: var(--primary); }
+.dot--spent  { background: var(--accent); opacity: .75; }
+
+/* ---------- ספר בהתקדמות ---------- */
+.book-progress {
+  display: block;
+  text-decoration: none;
+  color: var(--text);
+}
+.book-progress .progress { height: 5px; }
+
+/* ---------- בורר מפולח ---------- */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--primary-soft);
+  border-radius: var(--r-btn);
+}
+
+.seg__item {
+  min-height: var(--tap-min);
+  border: 0;
+  border-radius: calc(var(--r-btn) - 4px);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.seg__item[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+}

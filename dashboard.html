@@ -50,14 +50,6 @@
 
 <div data-navbar></div>
 
-<script type="module">
-  import { initTheme } from './js/ui/theme.js';
-  import { renderNavbar } from './js/ui/nav.js';
-  import { createRing } from './js/ui/ring.js';
-
-  initTheme();
-  renderNavbar('dashboard');
-  document.querySelector('[data-ring-mount]').append(createRing({ minutes: 0, size: 'lg' }));
-</script>
+<script type="module" src="js/ui/dashboard.js"></script>
 </body>
 </html>

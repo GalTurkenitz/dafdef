@@ -12,7 +12,7 @@
 import { createPaginator } from './paginator.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
-         getCachedWork, cacheWork, earnPages, openDay } from '../logic/store.js';
+         getCachedWork, cacheWork, earnPages, openDay, touchBook } from '../logic/store.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
@@ -186,6 +186,14 @@ function afterTurn() {
   beginPage(pager.wordsOnPage());
   reading = setReadingState({ workId: work.id, location: pager.offsetOfPage() });
   els.position.textContent = `עמוד ${pager.page + 1} מתוך ${pager.pageCount}`;
+
+  touchBook(work.id, {
+    title: work.title,
+    author: work.author,
+    page: pager.page + 1,
+    pages: pager.pageCount,
+    percent: pager.pageCount > 1 ? (pager.page + 1) / pager.pageCount : 1,
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -499,6 +507,7 @@ async function openEpub(file) {
     beginPage(await epubWordsOnPage(loc));
     reading = setReadingState({ workId: work.id, location: loc.start.cfi });
     els.position.textContent = epubPosition(loc);
+    touchBook(work.id, { title: work.title, author: work.author, percent: loc.start.percentage || 0 });
     if (loc.atEnd) finishWork();
   });
 

@@ -252,6 +252,13 @@ export function openDay(now = Date.now()) {
 
   if (marker === day) return { rolled: false, streakBroke: false, bankReset: false };
 
+  // ריצה ראשונה: אין יום קודם לסגור. רק מסמנים, בלי לאפס כלום —
+  // אחרת פתיחה ראשונה של האפליקציה הייתה מוחקת בנק קיים.
+  if (!marker) {
+    write('lastOpenDay', day);
+    return { rolled: false, streakBroke: false, bankReset: false };
+  }
+
   const settings = getSettings();
 
   // רצף נשבר אם לא נקרא אתמול
@@ -266,7 +273,7 @@ export function openDay(now = Date.now()) {
   setBank(bankLogic.resetDaily(getBank(), settings.resetMode, now));
 
   write('lastOpenDay', day);
-  return { rolled: marker !== null, streakBroke: broke, bankReset };
+  return { rolled: true, streakBroke: broke, bankReset };
 }
 
 /**
@@ -302,6 +309,47 @@ export function devJumpDay(days = 1) {
   setBank({ ...bank, lastUpdate: bank.lastUpdate - shiftMs });
 
   return openDay();
+}
+
+/* ------------------------------------------------------------------ *
+ * books — ספרים שהתחלת (המפרט, סעיף 7.6)
+ *
+ * המפתח הזה לא מופיע ברשימת סעיף 4, אבל הדשבורד מחויב להציג
+ * "ספרים שהתחלת עם התקדמות", ואי אפשר בלי לזכור אותם.
+ * ------------------------------------------------------------------ */
+
+export function getBooks() {
+  const raw = read('books');
+  return raw && typeof raw === 'object' ? raw : {};
+}
+
+/**
+ * מעדכן את ההתקדמות בספר. שומר את המקסימום שהגעת אליו,
+ * כדי שדפדוף אחורה לא "יוריד" את ההתקדמות.
+ */
+export function touchBook(id, { title, author, percent = 0, page = 0, pages = 0 } = {}) {
+  if (!id) return getBooks();
+
+  const books = getBooks();
+  const prev = books[id] || {};
+
+  books[id] = {
+    id,
+    title: title || prev.title || '',
+    author: author || prev.author || '',
+    percent: Math.min(1, Math.max(prev.percent || 0, percent)),
+    page: Math.max(prev.page || 0, page),
+    pages: pages || prev.pages || 0,
+    updatedAt: Date.now(),
+  };
+
+  write('books', books);
+  return books;
+}
+
+/** הספרים שהתחלת, מהאחרון שנקרא (המפרט, סעיף 7.6) */
+export function getStartedBooks() {
+  return Object.values(getBooks()).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 /* ------------------------------------------------------------------ *
