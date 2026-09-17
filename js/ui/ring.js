@@ -25,12 +25,12 @@ function el(name, attrs) {
 /**
  * @param {object} opts
  * @param {number} [opts.minutes=0]    דקות בבנק
- * @param {number} [opts.capacity=60]  כמה דקות נחשבות טבעת מלאה
+ * @param {number} [opts.capacity=120]  כמה דקות נחשבות טבעת מלאה (שעתיים)
  * @param {'lg'|'md'|'sm'} [opts.size='lg']
  * @param {string} [opts.label="דקות בבנק"]
  * @returns {HTMLElement} אלמנט עם המתודות update(minutes) ו-flick()
  */
-export function createRing({ minutes = 0, capacity = 60, size = 'lg', label = 'דקות בבנק' } = {}) {
+export function createRing({ minutes = 0, capacity = 120, size = 'lg', label = 'דקות בבנק' } = {}) {
   const cfg = SIZES[size] || SIZES.lg;
   const r = (cfg.size - cfg.stroke) / 2;
   const c = 2 * Math.PI * r;

@@ -30,9 +30,11 @@ settings.html     הגדרות
 styleguide.html   עמוד פיתוח — מערכת העיצוב. נמחק לפני סיום.
 
 css/tokens.css    כל הצבעים, המידות והטיפוגרפיה
-css/app.css       רכיבי בסיס
+css/app.css       רכיבי בסיס + הקורא
 js/config.js      קבועים (שם המוצר הוא placeholder)
-js/logic/*        לוגיקה עסקית — מודולים טהורים, בלי DOM, כדי שיעברו כמו שהם ל-iOS
+js/logic/verify.js  אימות קריאה — טהור, בלי DOM
+js/logic/store.js   העטיפה היחידה של localStorage
+js/ui/paginator.js  חלוקה לעמודים + ספירת מילים לעמוד
 js/ui/*           קוד מסכים ורכיבים
 content/          קטלוג בן-יהודה ויצירות מקומיות
 scripts/          סקריפט משיכת התוכן (Node)
@@ -41,13 +43,20 @@ scripts/          סקריפט משיכת התוכן (Node)
 ## סדר הבנייה (מפרט, סעיף 10)
 
 1. ✅ שלד + tokens.css + רכיבי בסיס (כפתור, כרטיס, טבעת)
-2. ⬜ הקורא + verify.js
+2. ✅ הקורא + verify.js
 3. ⬜ סקריפט בן-יהודה + קטלוג + מסך ספרייה
 4. ⬜ formula.js + bank.js + streak.js + store.js
 5. ⬜ שאלון + תוצאה + בחירת אפליקציות
 6. ⬜ בית + נעילה + אפליקציה מדומה עם טיימר
 7. ⬜ דשבורד + הגדרות
 8. ⬜ ליטוש ומעבר על כל סעיף 9
+
+## בדיקות
+
+```bash
+node scripts/test-verify.mjs      # לוגיקת האימות
+node scripts/fetch-dev-works.mjs  # רענון יצירות הפיתוח
+```
 
 ## מחוץ לסקופ
 

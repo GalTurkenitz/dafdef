@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#FAF6EF">
 <title>קורא · דפדף</title>
 
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
@@ -26,20 +28,49 @@
 
 <body>
 <!-- הקורא הוא מסך מלא בלי ניווט תחתון: העמוד תופס את כל השטח -->
-<main class="screen screen-in">
-  <!-- פס עליון דק: עמודים שנקראו היום + "+X דק' לעמוד" — שלב 2 -->
-  <header data-reader-status></header>
+<main class="reader">
 
-  <!-- אזור העמוד (epub.js, תצוגת עמודים) — שלב 2 -->
-  <div class="screen__body" data-reader-view></div>
+  <!-- פס עליון דק — תמיד גלוי (המפרט, סעיף 7.5) -->
+  <div class="reader__strip">
+    <span data-pages-today>0 עמודים היום</span>
+    <span data-page-value>+15 דק׳ לעמוד</span>
+  </div>
 
-  <!-- סרגלים בהקשה במרכז: שם היצירה/חזרה למעלה, גודל טקסט/מצב/מיקום למטה — שלב 2 -->
-  <div data-reader-bars hidden></div>
+  <!-- אזור העמוד -->
+  <div class="reader__stage" data-stage>
+    <div class="reader__content" data-content></div>
+    <div class="earned" data-earned></div>
+  </div>
+
+  <!-- סרגלים — נפתחים בהקשה במרכז -->
+  <div class="reader__bars" data-bars>
+
+    <div class="reader__bar reader__bar--top">
+      <button class="icon-btn" data-back aria-label="חזרה"></button>
+      <span class="reader__title" data-title></span>
+      <button class="icon-btn" data-import aria-label="ייבוא קובץ EPUB"></button>
+      <input type="file" accept=".epub,application/epub+zip" hidden data-file>
+    </div>
+
+    <div class="reader__bar reader__bar--bottom">
+      <div class="row-between">
+        <div class="reader__group">
+          <button class="icon-btn" data-font="-" aria-label="הקטנת טקסט"></button>
+          <span class="t-small" data-font-size>17</span>
+          <button class="icon-btn" data-font="+" aria-label="הגדלת טקסט"></button>
+        </div>
+        <div class="reader__group">
+          <button class="swatch swatch--light" data-mode="light" aria-label="בהיר"></button>
+          <button class="swatch swatch--sepia" data-mode="sepia" aria-label="ספיה"></button>
+          <button class="swatch swatch--dark"  data-mode="dark"  aria-label="כהה"></button>
+        </div>
+      </div>
+      <div class="reader__pos" data-position></div>
+    </div>
+
+  </div>
 </main>
 
-<script type="module">
-  import { initTheme } from './js/ui/theme.js';
-  initTheme();
-</script>
+<script type="module" src="js/ui/reader.js"></script>
 </body>
 </html>

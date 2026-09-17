@@ -376,3 +376,232 @@ p  { margin: 0; }
   to   { opacity: 1; transform: translateY(0); }
 }
 .screen-in { animation: screen-in var(--t-base) var(--ease); }
+
+/* ============================================================
+   הקורא (המפרט, סעיף 7.5)
+   ============================================================ */
+
+.reader {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  max-width: var(--phone-max);
+  margin-inline: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+/* פס עליון דק — תמיד גלוי */
+.reader__strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: max(var(--sp-2), env(safe-area-inset-top)) var(--screen-pad) var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* אזור העמוד */
+.reader__stage {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  padding-inline: var(--screen-pad);
+  min-height: 0;
+}
+
+.reader__content {
+  font-family: var(--font-read);
+  font-size: var(--reader-fs, 17px);
+  line-height: var(--lh-read);
+  color: var(--text);
+  column-fill: auto;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: none;
+  will-change: transform;
+  transition: transform var(--t-fast) var(--ease);
+}
+
+/* כל המרווחים בקורא הם כפולה שלמה של גובה השורה.
+   בלי זה שבירת העמודים נופלת באמצע שורה והשורה התחתונה נחתכת. */
+.reader__content p { margin: 0 0 1.8em; }
+.reader__content h3 {
+  font-family: var(--font-read);
+  font-size: 1em;
+  font-weight: 500;
+  line-height: 1.8;
+  margin: 0 0 1.8em;
+  text-align: center;
+  letter-spacing: .05em;
+  color: var(--text-soft);
+}
+
+/* שירה — שורה אחר שורה, בלי מרווח ובלי יישור לשני הצדדים */
+.reader__content p.verse { margin: 0; text-align: start; }
+.reader__content br { line-height: inherit; }
+
+/* סרגלים — נפתחים בהקשה במרכז */
+.reader__bars {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.reader__bars.is-open { opacity: 1; }
+.reader__bars.is-open > * { pointer-events: auto; }
+
+.reader__bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.reader__bar--top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: max(var(--sp-2), env(safe-area-inset-top)) var(--sp-3) var(--sp-2);
+  border-inline: 0;
+  border-top: 0;
+  border-radius: 0 0 var(--r-card) var(--r-card);
+}
+
+.reader__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  font-family: var(--font-ui);
+}
+
+.reader__bar--bottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  border-inline: 0;
+  border-bottom: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  font-family: var(--font-ui);
+}
+
+.reader__group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* בורר מצב תצוגה */
+.swatch {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: var(--r-chip);
+  border: 2px solid var(--border);
+  padding: 0;
+}
+.swatch[aria-pressed="true"] { border-color: var(--primary); }
+.swatch--light  { background: #FAF6EF; }
+.swatch--sepia  { background: #F4ECD8; }
+.swatch--dark   { background: #14181D; }
+
+.reader__pos {
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* אנימציית "+X דק׳" כשעמוד נספר */
+.earned {
+  position: absolute;
+  top: 0;
+  inset-inline-start: var(--screen-pad);
+  z-index: 15;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  opacity: 0;
+}
+
+@keyframes earned-rise {
+  0%   { opacity: 0; transform: translateY(6px) scale(.96); }
+  25%  { opacity: 1; transform: translateY(0) scale(1); }
+  75%  { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(1); }
+}
+.earned.is-on { animation: earned-rise 1600ms var(--ease); }
+
+/* מצב טעינה / ריק */
+.reader__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--screen-pad);
+  text-align: center;
+}
+
+/* ---------- מסך סיום יצירה ---------- */
+.finish {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--screen-pad);
+  text-align: center;
+  font-family: var(--font-ui);
+}
+
+.finish__stats {
+  display: flex;
+  gap: var(--sp-6);
+  margin: var(--sp-2) 0 var(--sp-4);
+}
+.finish__stat { display: flex; flex-direction: column; gap: var(--sp-1); }
+.finish__stat b {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.confetti i {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 12px;
+  border-radius: 1px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  to { transform: translateY(105svh) rotate(540deg); opacity: .2; }
+}

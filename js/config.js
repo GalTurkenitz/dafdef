@@ -11,3 +11,9 @@ export const STORE_PREFIX = 'dafdef:';
 
 /** מצבי תצוגה. ספיה זמין בקורא בלבד (המפרט, סעיף 3). */
 export const THEMES = ['light', 'dark', 'sepia'];
+
+/**
+ * גרסת התוכן. מעלים אותה כשקבצי content/works משתנים,
+ * כדי שמטמון היצירות בדפדפן לא יישאר עם גרסה ישנה.
+ */
+export const CONTENT_REV = 2;
