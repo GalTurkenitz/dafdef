@@ -1,7 +1,11 @@
 /**
  * settings.js — הגדרות (המפרט, סעיף 7.7).
- * יחס עמוד-דקות · מצב איפוס · אפליקציות חסומות · מצב תצוגה ·
+ * השאלון · מצב איפוס · אפליקציות חסומות · מצב תצוגה ·
  * גודל טקסט · אפס הכל.
+ *
+ * ** יחס עמוד-דקות לא מופיע כאן ולא ניתן לעריכה. **
+ * הוא נגזר מהשאלון בלבד — אם המשתמש רוצה יחס אחר הוא עונה שוב.
+ * זה מה ששומר על המנגנון אמיתי. היחס מוצג בדשבורד ובראש השאלון.
  *
  * כולל גם את כפתור הפיתוח "קפוץ יום" (המפרט, סעיף 9.3), שנשאר נסתר
  * עד שלוחצים חמש פעמים על הכותרת.
@@ -11,8 +15,8 @@ import { initTheme, setTheme, getTheme } from './theme.js';
 import { renderNavbar } from './nav.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
-import { getSettings, setSettings, getBlockedApps, clearAll, devJumpDay, openDay } from '../logic/store.js';
-import { MIN_PAGE_VALUE, MAX_PAGE_VALUE } from '../logic/formula.js';
+import { getSettings, setSettings, getBlockedApps, getProfile,
+         clearAll, devJumpDay, openDay } from '../logic/store.js';
 
 const list = document.querySelector('[data-settings-list]');
 
@@ -23,6 +27,17 @@ let settings = getSettings();
 let devUnlocked = false;
 
 /* ------------------------------------------------------------------ */
+
+const GOAL_WORDS = { reduce: 'לצמצם דרסטית', balance: 'לאזן', read: 'לקרוא יותר' };
+const STRICT_WORDS = { soft: 'רך', medium: 'בינוני', brutal: 'אכזרי' };
+
+/** תמצית התשובות — בלי היחס עצמו, שלא ניתן לשינוי כאן */
+function answersSummary() {
+  const p = getProfile();
+  if (!p) return 'עוד לא ענית';
+  return [GOAL_WORDS[p.goal], STRICT_WORDS[p.strictness]].filter(Boolean).join(' · ')
+      || 'שינוי התשובות מחשב את היחס מחדש';
+}
 
 const row = (title, body, note) => `
   <div class="card stack-2">
@@ -38,12 +53,13 @@ function render() {
   list.innerHTML = `
     <div class="stack">
 
-      ${row('יחס עמוד-דקות', {
-        head: `<span class="chip" data-value-out>${settings.pageValueMinutes} דק׳</span>`,
-        main: `<input class="slider" type="range" min="${MIN_PAGE_VALUE}" max="${MAX_PAGE_VALUE}"
-                      step="0.5" value="${settings.pageValueMinutes}"
-                      data-page-value aria-label="יחס עמוד-דקות">`,
-      }, 'הטווח מוגבל כדי שהמנגנון יישאר אמיתי')}
+      <a class="card card--choice" href="onboarding.html?edit=1">
+        <span class="stack-2" style="gap:2px; text-align:start;">
+          <span>השאלון שלי</span>
+          <span class="t-small">${answersSummary()}</span>
+        </span>
+        ${icon('arrow', 20)}
+      </a>
 
       ${row('מה קורה לדקות בחצות', {
         main: `<div class="seg" role="radiogroup" aria-label="מצב איפוס">
@@ -68,7 +84,7 @@ function render() {
                       value="${settings.fontSize}" data-font aria-label="גודל טקסט">`,
       })}
 
-      <a class="card card--choice" href="onboarding.html">
+      <a class="card card--choice" href="onboarding.html?step=apps">
         <span class="stack-2" style="gap:2px; text-align:start;">
           <span>אפליקציות חסומות</span>
           <span class="t-small">${apps.length ? apps.map((a) => a.name).join(' · ') : 'לא נבחרו'}</span>
@@ -87,16 +103,6 @@ function render() {
 /* ------------------------------------------------------------------ */
 
 function bind() {
-  // יחס עמוד-דקות
-  const value = list.querySelector('[data-page-value]');
-  const valueOut = list.querySelector('[data-value-out]');
-  value.addEventListener('input', () => {
-    valueOut.textContent = `${value.value} דק׳`;
-  });
-  value.addEventListener('change', () => {
-    settings = setSettings({ pageValueMinutes: Number(value.value) });
-  });
-
   // גודל טקסט
   const font = list.querySelector('[data-font]');
   const fontOut = list.querySelector('[data-font-out]');

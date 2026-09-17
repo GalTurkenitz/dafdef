@@ -1,15 +1,23 @@
 /**
  * onboarding.js — שאלון, מסך תוצאה ובחירת אפליקציות (המפרט, סעיפים 7.1, 7.2).
  *
- * מסלול לינארי: 5 שאלות ⇐ תוצאה ⇐ בחירת אפליקציות ⇐ מסך הבית.
- * בחירה בשאלה מקדמת אוטומטית אחרי 250ms.
+ * מסלול ראשון: 5 שאלות ⇐ תוצאה ⇐ בחירת אפליקציות ⇐ מסך הבית.
+ * עריכה מההגדרות: אותו שאלון עם התשובות הקיימות מסומנות, ובסוף חזרה להגדרות.
+ *
+ * יחס עמוד-דקות נקבע כאן ורק כאן (המפרט, סעיף 7.7) — אין שום מסך
+ * שבו המשתמש מזין אותו ידנית.
+ *
+ * פרמטרים בכתובת:
+ *   ?edit=1      עריכת השאלון מתוך ההגדרות
+ *   ?step=apps   קפיצה ישירה לבחירת האפליקציות
  */
 
 import { initTheme } from './theme.js';
 import { icon } from './icons.js';
 import { APPS, appIcon, defaultApps } from './apps.js';
 import { computePageValue, explainPageValue } from '../logic/formula.js';
-import { setProfile, setSettings, setBlockedApps, getBlockedApps } from '../logic/store.js';
+import { setProfile, getProfile, setSettings, getSettings,
+         setBlockedApps, getBlockedApps, daysSinceStart } from '../logic/store.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -73,25 +81,46 @@ const QUESTIONS = [
   },
 ];
 
+const STEP_RESULT = QUESTIONS.length;
+const STEP_APPS = QUESTIONS.length + 1;
+
 /* ------------------------------------------------------------------ *
  * מצב
  * ------------------------------------------------------------------ */
 
-const answers = {};
+const params = new URLSearchParams(location.search);
+const existing = getProfile();
+const isEdit = params.get('edit') === '1' && !!existing;
+
+/** בעריכה מתחילים מהתשובות הקיימות, כדי שלא יצטרך לענות שוב על הכל */
+const answers = isEdit
+  ? Object.fromEntries(QUESTIONS.map((q) => [q.key, existing[q.key]]).filter(([, v]) => v))
+  : {};
+
 let selectedApps = new Set(getBlockedApps().map((a) => a.id));
-let step = 0;                 // 0..4 שאלות, 5 תוצאה, 6 אפליקציות
+let step = params.get('step') === 'apps' ? STEP_APPS : 0;
 
 /* ------------------------------------------------------------------ *
  * שלד
  * ------------------------------------------------------------------ */
 
 function renderProgress() {
-  if (step >= QUESTIONS.length) { els.progress.innerHTML = ''; return; }
+  if (step >= STEP_RESULT) { els.progress.innerHTML = ''; return; }
 
   const n = step + 1;
+
+  // בעריכה מציגים את היחס הנוכחי בראש השאלון (המפרט, סעיף 7.7)
+  const banner = isEdit
+    ? `<div class="ratio-banner">
+         <span class="t-small">כרגע אצלך</span>
+         <b>כל עמוד = ${getSettings().pageValueMinutes} דקות</b>
+       </div>`
+    : '';
+
   els.progress.innerHTML = `
+    ${banner}
     <div class="row-between" style="margin-bottom: var(--sp-2);">
-      <button class="icon-btn" data-back aria-label="חזרה" ${step === 0 ? 'hidden' : ''}></button>
+      <button class="icon-btn" data-back aria-label="${step === 0 ? 'ביטול' : 'חזרה'}"></button>
       <span class="t-small">${n} מתוך ${QUESTIONS.length}</span>
     </div>
     <div class="progress" role="progressbar" aria-valuenow="${n}" aria-valuemin="1" aria-valuemax="${QUESTIONS.length}">
@@ -99,10 +128,12 @@ function renderProgress() {
     </div>`;
 
   const back = els.progress.querySelector('[data-back]');
-  if (back) {
-    back.innerHTML = icon('arrow', 22);
-    back.addEventListener('click', () => { step -= 1; render(); });
-  }
+  back.innerHTML = icon(step === 0 ? 'x' : 'arrow', 22);
+  back.hidden = step === 0 && !isEdit;
+  back.addEventListener('click', () => {
+    if (step === 0) location.href = 'settings.html';
+    else { step -= 1; render(); }
+  });
 }
 
 function renderQuestion() {
@@ -126,7 +157,6 @@ function renderQuestion() {
     btn.addEventListener('click', () => {
       answers[q.key] = btn.dataset.value;
 
-      // חיווי מיידי, ואז מעבר אוטומטי (המפרט: 250ms)
       els.step.querySelectorAll('[data-value]').forEach((b) => {
         const on = b === btn;
         b.setAttribute('aria-checked', String(on));
@@ -137,7 +167,12 @@ function renderQuestion() {
     });
   });
 
-  els.actions.innerHTML = '';
+  // בעריכה אפשר לדלג קדימה בלי לשנות תשובה
+  els.actions.innerHTML = isEdit && answers[q.key]
+    ? '<button class="btn btn--ghost btn--block" data-skip>הבא</button>'
+    : '';
+  els.actions.querySelector('[data-skip]')
+    ?.addEventListener('click', () => { step += 1; render(); });
 }
 
 /* ------------------------------------------------------------------ *
@@ -145,10 +180,13 @@ function renderQuestion() {
  * ------------------------------------------------------------------ */
 
 function renderResult() {
-  const profile = { ...answers, createdAt: Date.now() };
-  const value = computePageValue({ ...profile, daysSinceStart: 0 });
-
+  // שומרים את תאריך ההרשמה המקורי — הוא מזין את מקדם החסד בנוסחה
+  const profile = { ...answers, createdAt: existing?.createdAt || Date.now() };
   setProfile(profile);
+
+  const days = daysSinceStart();
+  const value = computePageValue({ ...profile, daysSinceStart: days });
+
   setSettings({
     pageValueMinutes: value,
     resetMode: answers.resetChoice === 'keep' ? 'keep' : 'midnight',
@@ -159,12 +197,16 @@ function renderResult() {
       <p class="t-sub">אצלך</p>
       <p class="result__num">${value}</p>
       <h1>דקות לכל עמוד</h1>
-      <p class="t-sub result__why">${explainPageValue({ ...profile, daysSinceStart: 0 })}</p>
+      <p class="t-sub result__why">${explainPageValue({ ...profile, daysSinceStart: days })}</p>
     </div>`;
 
-  els.actions.innerHTML =
-    '<button class="btn btn--primary btn--block" data-next>בחירת האפליקציות לחסימה</button>';
-  els.actions.querySelector('[data-next]').addEventListener('click', () => { step += 1; render(); });
+  els.actions.innerHTML = isEdit
+    ? `<a class="btn btn--primary btn--block" href="settings.html">שמירה</a>
+       <button class="btn btn--ghost btn--block" data-next>שינוי האפליקציות החסומות</button>`
+    : '<button class="btn btn--primary btn--block" data-next>בחירת האפליקציות לחסימה</button>';
+
+  els.actions.querySelector('[data-next]')
+    ?.addEventListener('click', () => { step = STEP_APPS; render(); });
 }
 
 /* ------------------------------------------------------------------ *
@@ -219,11 +261,15 @@ function renderApps() {
 
 function updateAppsFooter() {
   const n = selectedApps.size;
+  const cameFromSettings = isEdit || params.get('step') === 'apps';
+
   els.actions.innerHTML = `
     <p class="t-small" style="text-align:center; margin-bottom: var(--sp-2);">
       ${n === 0 ? 'עוד לא בחרת' : n === 1 ? 'אפליקציה אחת נבחרה' : `${n} אפליקציות נבחרו`}
     </p>
-    <button class="btn btn--primary btn--block" data-done ${n === 0 ? 'disabled' : ''}>סיימתי</button>`;
+    <button class="btn btn--primary btn--block" data-done ${n === 0 ? 'disabled' : ''}>
+      ${cameFromSettings ? 'שמירה' : 'סיימתי'}
+    </button>`;
 
   const done = els.actions.querySelector('[data-done]');
   if (!done || n === 0) return;
@@ -234,23 +280,18 @@ function updateAppsFooter() {
 
     setBlockedApps(chosen.length ? chosen : defaultApps());
     setSettings({ onboardingDone: true });
-    location.href = 'index.html';
-  });
-
-  // הצגת האייקונים בפוטר גם אחרי בחירה — נשאר פשוט, בלי לשכפל את הרשת
-  els.step.querySelectorAll('[data-app]').forEach((cell) => {
-    cell.setAttribute('aria-pressed', String(selectedApps.has(cell.dataset.app)));
+    location.href = cameFromSettings ? 'settings.html' : 'index.html';
   });
 }
 
 /* ------------------------------------------------------------------ */
 
 function render() {
-  step = Math.max(0, Math.min(QUESTIONS.length + 1, step));
+  step = Math.max(0, Math.min(STEP_APPS, step));
   renderProgress();
 
-  if (step < QUESTIONS.length) renderQuestion();
-  else if (step === QUESTIONS.length) renderResult();
+  if (step < STEP_RESULT) renderQuestion();
+  else if (step === STEP_RESULT) renderResult();
   else renderApps();
 
   window.scrollTo({ top: 0 });

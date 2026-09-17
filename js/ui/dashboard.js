@@ -8,7 +8,8 @@ import { initTheme } from './theme.js';
 import { renderNavbar } from './nav.js';
 import { createRing } from './ring.js';
 import { icon } from './icons.js';
-import { getBank, getReadingState, getStreak, getWeek, getStartedBooks, openDay } from '../logic/store.js';
+import { getBank, getReadingState, getStreak, getWeek, getStartedBooks,
+         getSettings, openDay } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
 
 const $ = (s) => document.querySelector(s);
@@ -148,6 +149,14 @@ function renderAll() {
   const b = getBank();
   els.ring.innerHTML = '';
   els.ring.append(createRing({ minutes: bank.displayMinutes(b), size: 'lg' }));
+
+  // היחס האישי מוצג כאן, לקריאה בלבד. הוא נקבע בשאלון (המפרט, סעיף 7.7).
+  const ratio = document.createElement('a');
+  ratio.className = 'ratio-chip';
+  ratio.href = 'onboarding.html?edit=1';
+  ratio.innerHTML = `<span>כל עמוד = <b>${getSettings().pageValueMinutes}</b> דקות</span>
+                     <span class="t-small">מהשאלון</span>`;
+  els.ring.append(ratio);
 
   renderToday();
   renderChart();

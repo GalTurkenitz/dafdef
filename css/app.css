@@ -1094,3 +1094,31 @@ p  { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2s; }
 }
+
+/* ---------- היחס האישי — תצוגה בלבד (המפרט, סעיף 7.7) ---------- */
+.ratio-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--text);
+  text-decoration: none;
+  font-size: var(--fs-sub);
+}
+.ratio-chip b { font-variant-numeric: tabular-nums; }
+
+/* באנר היחס בראש השאלון בזמן עריכה */
+.ratio-banner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--primary-soft);
+}
+.ratio-banner b { font-size: var(--fs-sub); font-variant-numeric: tabular-nums; }
