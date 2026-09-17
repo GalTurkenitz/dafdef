@@ -45,7 +45,7 @@ const els = {
   content:     $('[data-content]'),
   bars:        $('[data-bars]'),
   title:       $('[data-title]'),
-  back:        $('[data-back]'),
+  home:        $('[data-home]'),
   importBtn:   $('[data-import]'),
   settingsBtn: $('[data-open-settings]'),
   file:        $('[data-file]'),
@@ -53,7 +53,6 @@ const els = {
   percent:     $('[data-percent]'),
   fontSize:    $('[data-font-size]'),
   pagesToday:  $('[data-pages-today]'),
-  pageValue:   $('[data-page-value]'),
   earned:      $('[data-earned]'),
   sheet:       $('[data-sheet]'),
 };
@@ -95,8 +94,6 @@ function renderStrip() {
   const pages = reading.pagesToday || 0;
   els.pagesToday.innerHTML =
     `${icon('book', 14)}<span>${pages === 1 ? 'עמוד אחד היום' : `${pages} עמודים היום`}</span>`;
-  els.pageValue.innerHTML =
-    `${icon('flame', 14)}<span>${settings.pageValueMinutes} דק׳ לעמוד</span>`;
 }
 
 function showEarned(minutes) {
@@ -622,15 +619,12 @@ function showEmpty(message) {
  * ------------------------------------------------------------------ */
 
 function bindChrome() {
-  els.back.innerHTML = icon('arrow', 22);
-  els.back.classList.add('icon-flip');
+  els.home.innerHTML = icon('home', 20);
   els.importBtn.innerHTML = icon('book', 22);
-  els.settingsBtn.innerHTML = icon('settings', 22);
+  els.settingsBtn.innerHTML = icon('settings', 20);
 
-  els.back.addEventListener('click', () => {
-    if (history.length > 1 && document.referrer.includes(location.host)) history.back();
-    else location.href = 'index.html';
-  });
+  // חזרה ישירה לדף הבית, לא להיסטוריית הדפדפן
+  els.home.addEventListener('click', () => { location.href = 'index.html'; });
 
   // כפתורי דפדוף קבועים — ב-RTL "הבא" מצביע שמאלה
   document.querySelectorAll('[data-turn]').forEach((btn) => {

@@ -29,10 +29,13 @@
 <body>
 <main class="reader">
 
-  <!-- פס עליון: שני שבבים בצבע המותג -->
+  <!-- פס עליון קבוע: מונה העמודים, ומולו חזרה והגדרות -->
   <div class="reader__strip">
     <span class="rchip" data-pages-today></span>
-    <span class="rchip" data-page-value></span>
+    <div class="reader__tools">
+      <button class="toolbtn" data-home aria-label="חזרה לדף הבית"></button>
+      <button class="toolbtn" data-open-settings aria-label="הגדרות תצוגה"></button>
+    </div>
   </div>
 
   <!-- אזור העמוד -->
@@ -54,10 +57,8 @@
   <!-- סרגל עליון — נפתח בהקשה במרכז -->
   <div class="reader__bars" data-bars>
     <div class="reader__bar reader__bar--top">
-      <button class="icon-btn" data-back aria-label="חזרה"></button>
       <span class="reader__title" data-title></span>
       <button class="icon-btn" data-import aria-label="ייבוא קובץ EPUB"></button>
-      <button class="icon-btn" data-open-settings aria-label="הגדרות תצוגה"></button>
       <input type="file" accept=".epub,application/epub+zip" hidden data-file>
     </div>
   </div>

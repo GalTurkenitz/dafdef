@@ -1392,3 +1392,28 @@ p  { margin: 0; }
 .sheet__action:active { background: var(--primary-soft); }
 .sheet__action b { font-size: var(--fs-body); font-weight: 500; }
 .sheet__action small { font-size: var(--fs-small); color: var(--text-soft); line-height: 1.4; }
+
+/* כפתורי הסרגל הקבוע בקורא — חזרה לבית והגדרות */
+.reader__tools { display: flex; align-items: center; gap: var(--sp-1); }
+
+.toolbtn {
+  display: grid;
+  place-items: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-chip);
+  background: var(--surface);
+  color: var(--text-soft);
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.toolbtn:active { background: var(--primary-soft); color: var(--primary); }
+
+/* אזור המגע נשאר 44px גם כשהכפתור קטן יותר */
+.toolbtn::after {
+  content: '';
+  position: absolute;
+  inline-size: var(--tap-min);
+  block-size: var(--tap-min);
+}
+.reader__tools { position: relative; }
