@@ -12,7 +12,7 @@
 import { createPaginator } from './paginator.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
-         getCachedWork, cacheWork } from '../logic/store.js';
+         getCachedWork, cacheWork, earnPages, openDay } from '../logic/store.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
@@ -125,15 +125,15 @@ function beginPage(words) {
 
 /** העמוד עבר את שתי השכבות — נספר פעם אחת בלבד */
 function countPage() {
-  const minutes = settings.pageValueMinutes;
+  // earnPages מטפל בכל השרשרת: בנק, סטריק וסטטיסטיקה יומית
+  const { added } = earnPages(1, now());
 
   reading = setReadingState({
     pagesToday: (reading.pagesToday || 0) + 1,
-    minutesToday: (reading.minutesToday || 0) + minutes,
+    minutesToday: (reading.minutesToday || 0) + added,
   });
 
-  // שלב 4: כאן ייכנס bank.earn(1) — הצבירה בפועל לבנק הזמן.
-  showEarned(minutes);
+  showEarned(added);
   renderStrip();
 }
 
@@ -241,7 +241,7 @@ function bindGestures() {
   document.addEventListener('visibilitychange', () => {
     if (!verifier) return;
     if (document.hidden) { verifier.hide(now()); stopTicker(); }
-    else { verifier.show(now()); startTicker(); }
+    else { openDay(); verifier.show(now()); startTicker(); }
   });
 }
 
@@ -540,6 +540,7 @@ function showEmpty(message) {
 
 async function init() {
   initTheme();
+  openDay();          // חוקי החצות — לפני שקוראים מצב כלשהו
   markThemeButtons();
 
   // ב-RTL חץ החזרה מצביע ימינה — כיוון ה"אחורה" של השפה
