@@ -847,3 +847,118 @@ p  { margin: 0; }
   background: var(--lock);
   color: #fff;
 }
+
+/* ============================================================
+   מסך הנעילה (המפרט, סעיף 7.4) — הוויזואל השיווקי
+   ============================================================ */
+
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--screen-pad)
+           calc(var(--sp-8) + env(safe-area-inset-bottom));
+  text-align: center;
+  background: var(--lock);
+  color: #fff;
+}
+
+.lock__icon {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin-bottom: var(--sp-4);
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: rgba(255, 255, 255, .92);
+}
+
+.lock__title { font-size: var(--fs-h1); }
+.lock__sub   { font-size: var(--fs-body); color: rgba(255, 255, 255, .66); }
+
+.lock__ratio {
+  margin-top: var(--sp-6);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, .08);
+  font-size: var(--fs-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.lock__actions {
+  width: 100%;
+  max-width: 320px;
+  margin-top: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.lock__actions .btn--ghost { color: rgba(255, 255, 255, .6); }
+
+/* ============================================================
+   האפליקציה המדומה עם הטיימר היורד (המפרט, סעיף 7.3)
+   ============================================================ */
+
+.fakeapp {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--screen-pad)
+           calc(var(--sp-8) + env(safe-area-inset-bottom));
+  background: var(--bg);
+  text-align: center;
+}
+
+.fakeapp__top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.fakeapp__name { font-size: var(--fs-h2); font-weight: 700; }
+
+.fakeapp__clock {
+  font-size: 84px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+  transition: color var(--t-base) var(--ease);
+}
+
+.fakeapp__label {
+  font-size: var(--fs-sub);
+  color: var(--text-soft);
+  margin-bottom: var(--sp-8);
+}
+
+/* הדקה האחרונה */
+.fakeapp.is-ending .fakeapp__clock { color: var(--danger); }
+.fakeapp.is-ending .fakeapp__clock { animation: pulse-soft 1s var(--ease) infinite; }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+/* כפתור הקריאה הצף במסך הבית — תמיד זמין */
+.home__read {
+  position: sticky;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-3));
+  margin-top: var(--sp-6);
+}

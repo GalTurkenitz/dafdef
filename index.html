@@ -45,25 +45,12 @@
   </div>
 
   <!-- כפתור צף: הקריאה לעולם לא חסומה -->
-  <a class="btn btn--primary btn--block" href="reader.html">לקריאה 📖</a>
+  <a class="btn btn--primary btn--block home__read" href="reader.html">לקריאה 📖</a>
 
 </main>
 
 <div data-navbar></div>
 
-<script type="module">
-  import { initTheme } from './js/ui/theme.js';
-  import { renderNavbar } from './js/ui/nav.js';
-  import { createRing } from './js/ui/ring.js';
-  import { icon } from './js/ui/icons.js';
-
-  initTheme();
-  renderNavbar('home');
-
-  // שלד בלבד — הערכים האמיתיים מתחברים לבנק ולסטריק בשלב 6
-  document.querySelector('[data-ring-mount]').append(createRing({ minutes: 0, size: 'lg' }));
-  document.querySelector('[data-streak-mount]').innerHTML =
-    `<span class="chip chip--streak">${icon('flame', 16)} 0</span>`;
-</script>
+<script type="module" src="js/ui/home.js"></script>
 </body>
 </html>
