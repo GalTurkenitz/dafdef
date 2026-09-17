@@ -306,7 +306,8 @@ p  { margin: 0; }
 .toast {
   position: fixed;
   inset-inline: 0;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-4));
+  /* מעל הניווט התחתון וגם מעל כפתור הקריאה הצף */
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--btn-h) + var(--sp-6));
   z-index: 40;
   display: flex;
   justify-content: center;
