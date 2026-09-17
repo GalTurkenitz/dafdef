@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="theme-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF6EF">
+<meta name="description" content="דפדף — קרא כדי לפתוח. עמוד אחד שווה דקות מסך.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>דפדף</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+
+<!-- מחיל את מצב התצוגה לפני הציור הראשון כדי שלא תהיה הבזקה -->
+<script>
+(function () {
+  var t;
+  try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
+  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.className = 'theme-' + t;
+})();
+</script>
+</head>
+
+<body>
+<main class="screen screen--nav screen-in">
+
+  <!-- יתרת הדקות + סטריק (המפרט, סעיף 7.3) -->
+  <header class="stack" style="align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-8);">
+    <div data-ring-mount></div>
+    <div data-streak-mount></div>
+  </header>
+
+  <div class="screen__body stack-6">
+    <!-- רשת אייקוני האפליקציות החסומות — נבנית בשלב 6 -->
+    <section data-apps-grid aria-label="האפליקציות החסומות"></section>
+  </div>
+
+  <!-- כפתור צף: הקריאה לעולם לא חסומה -->
+  <a class="btn btn--primary btn--block" href="reader.html">לקריאה 📖</a>
+
+</main>
+
+<div data-navbar></div>
+
+<script type="module">
+  import { initTheme } from './js/ui/theme.js';
+  import { renderNavbar } from './js/ui/nav.js';
+  import { createRing } from './js/ui/ring.js';
+  import { icon } from './js/ui/icons.js';
+
+  initTheme();
+  renderNavbar('home');
+
+  // שלד בלבד — הערכים האמיתיים מתחברים לבנק ולסטריק בשלב 6
+  document.querySelector('[data-ring-mount]').append(createRing({ minutes: 0, size: 'lg' }));
+  document.querySelector('[data-streak-mount]').innerHTML =
+    `<span class="chip chip--streak">${icon('flame', 16)} 0</span>`;
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="theme-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF6EF">
+<meta name="robots" content="noindex">
+<title>מערכת העיצוב · דפדף</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+
+<script>
+(function () {
+  var t;
+  try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
+  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.className = 'theme-' + t;
+})();
+</script>
+
+<!-- סגנונות של עמוד הפיתוח בלבד. לא חלק מהאפליקציה. -->
+<style>
+  .sg { max-width: 560px; }
+  .sg section { margin-bottom: var(--sp-8); }
+  .sg h2 { margin-bottom: var(--sp-4); }
+  .sg__eyebrow {
+    font-size: var(--fs-small);
+    color: var(--text-soft);
+    letter-spacing: .08em;
+    margin-bottom: var(--sp-2);
+  }
+  .sg__swatches { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
+  .sg__swatch {
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .sg__chip-color { height: 56px; }
+  .sg__swatch p { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-small); }
+  .sg__swatch code { color: var(--text-soft); font-size: 11px; }
+  .sg__space { display: flex; align-items: flex-end; gap: var(--sp-2); }
+  .sg__space i { display: block; background: var(--primary-soft); border: 1px solid var(--primary); width: 100%; }
+  .sg__icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); }
+  .sg__icons div {
+    display: grid; place-items: center; aspect-ratio: 1;
+    border: 1px solid var(--border); border-radius: var(--r-btn);
+    background: var(--surface); color: var(--text);
+  }
+  .sg__rings { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+  .sg__themes { display: flex; gap: var(--sp-2); position: sticky; top: 0; z-index: 30;
+                background: var(--bg); padding: var(--sp-3) 0; }
+  .sg__read {
+    font-family: var(--font-read);
+    font-size: var(--fs-body);
+    line-height: var(--lh-read);
+  }
+  .sg__lock {
+    background: var(--lock); color: #fff; border-radius: var(--r-card);
+    padding: var(--sp-6); text-align: center;
+  }
+  .sg__lock .t-soft { color: rgba(255,255,255,.66); }
+</style>
+</head>
+
+<body>
+<main class="screen sg screen-in">
+
+  <header class="stack-2" style="margin-bottom: var(--sp-6);">
+    <p class="sg__eyebrow">עמוד פיתוח — לא חלק מהאפליקציה</p>
+    <h1>מערכת העיצוב</h1>
+    <p class="t-sub">כל מה שמוגדר ב-tokens.css ו-app.css. משמש לאישור השפה העיצובית לפני שבונים עליה מסכים.</p>
+  </header>
+
+  <div class="sg__themes">
+    <button class="btn btn--secondary" data-theme-btn="light">בהיר</button>
+    <button class="btn btn--secondary" data-theme-btn="dark">כהה</button>
+    <button class="btn btn--secondary" data-theme-btn="sepia">ספיה</button>
+  </div>
+
+  <section>
+    <h2>צבעים</h2>
+    <div class="sg__swatches" data-swatches></div>
+  </section>
+
+  <section>
+    <h2>טיפוגרפיה</h2>
+    <div class="stack">
+      <div class="card stack-2">
+        <h1>כותרת ראשית 28</h1>
+        <h2>כותרת משנה 22</h2>
+        <p>טקסט גוף 17 — שקט, ספרותי, חם. האפליקציה מתחרה בטיקטוק, ולכן היא צריכה להרגיש כמו נייר ולא כמו ניאון.</p>
+        <p class="t-sub">טקסט משני 15 — הסברים ותת-כותרות.</p>
+        <p class="t-small">טקסט קטן 13 — חיוויים ומטא.</p>
+      </div>
+      <div class="card stack-2">
+        <p class="t-small">מספר גדול — Heebo 700 / 44 / tabular-nums</p>
+        <p class="t-number">128</p>
+      </div>
+      <div class="card stack-2">
+        <p class="t-small">טקסט קריאה — Frank Ruhl Libre, שורה 1.8</p>
+        <p class="sg__read">וְהָיָה בַּיּוֹם הַהוּא, יֵרֵד הָעֶרֶב לְאַט עַל פְּנֵי הָעִיר, וְהָרְחוֹבוֹת יִתְמַלְּאוּ אוֹר צָהֹב וְרַךְ.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>כפתורים</h2>
+    <div class="stack">
+      <button class="btn btn--primary btn--block">כפתור ראשי · 52px</button>
+      <button class="btn btn--secondary btn--block">כפתור משני</button>
+      <button class="btn btn--primary btn--block" disabled>כפתור מושבת</button>
+      <div class="row">
+        <button class="btn btn--ghost">כפתור שקוף</button>
+        <button class="btn btn--danger">אפס הכל</button>
+        <button class="icon-btn" aria-label="הדגמת אייקון" data-demo-icon></button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>כרטיסים</h2>
+    <div class="stack">
+      <div class="card stack-2">
+        <h2>כרטיס</h2>
+        <p class="t-sub">משטח, מתאר, radius 16, צל עדין.</p>
+      </div>
+      <button class="card card--choice">לצמצם דרסטית</button>
+      <button class="card card--choice is-selected">
+        <span>לאזן</span>
+        <span data-check></span>
+      </button>
+      <button class="card card--choice">בעיקר לקרוא יותר</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>שבבים</h2>
+    <div class="row" style="flex-wrap: wrap;">
+      <span class="chip chip--streak" data-streak-chip></span>
+      <span class="chip">12 דקות</span>
+      <span class="chip">קטעים קצרים</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>טבעת התקדמות</h2>
+    <p class="t-sub" style="margin-bottom: var(--sp-4);">הרכיב המרכזי — יתרת הדקות בבנק. שלושה גדלים; ריק, חלקי, מלא.</p>
+    <div class="sg__rings" data-rings></div>
+    <button class="btn btn--secondary btn--block" style="margin-top: var(--sp-4);" data-ring-demo>
+      הדגמת צבירה (+5 דקות)
+    </button>
+  </section>
+
+  <section>
+    <h2>טוסט</h2>
+    <button class="btn btn--secondary btn--block" data-toast-demo>
+      הצג טוסט — "לאט לאט 🙂"
+    </button>
+  </section>
+
+  <section>
+    <h2>מחוון</h2>
+    <div class="card stack-2">
+      <div class="row-between">
+        <span>יחס עמוד-דקות</span>
+        <span class="chip" data-slider-out>15 דק׳</span>
+      </div>
+      <input class="slider" type="range" min="5" max="30" step="0.5" value="15" data-slider aria-label="יחס עמוד-דקות">
+      <p class="t-small">הטווח מוגבל כדי שהמנגנון יישאר אמיתי</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>מסך נעילה</h2>
+    <div class="sg__lock stack" style="align-items: center;">
+      <div data-lock-icon></div>
+      <h2 style="color: #fff;">האפליקציה נעולה</h2>
+      <p class="t-soft">אין לך דקות בבנק.</p>
+      <p class="t-soft">עמוד אחד = 15 דקות</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Spacing</h2>
+    <div class="sg__space" data-space></div>
+  </section>
+
+  <section>
+    <h2>אייקונים</h2>
+    <p class="t-sub" style="margin-bottom: var(--sp-4);">Lucide, עובי קו 1.75</p>
+    <div class="sg__icons" data-icons></div>
+  </section>
+
+  <section>
+    <h2>המסכים</h2>
+    <div class="stack-2">
+      <a class="btn btn--secondary btn--block" href="index.html">בית</a>
+      <a class="btn btn--secondary btn--block" href="onboarding.html">שאלון</a>
+      <a class="btn btn--secondary btn--block" href="reader.html">קורא</a>
+      <a class="btn btn--secondary btn--block" href="library.html">ספרייה</a>
+      <a class="btn btn--secondary btn--block" href="dashboard.html">דשבורד</a>
+      <a class="btn btn--secondary btn--block" href="settings.html">הגדרות</a>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+  import { initTheme, setTheme, getTheme } from './js/ui/theme.js';
+  import { createRing } from './js/ui/ring.js';
+  import { icon, iconNames } from './js/ui/icons.js';
+  import { toast } from './js/ui/toast.js';
+
+  initTheme();
+
+  /* --- מחליף מצבי תצוגה --- */
+  const markActive = () => {
+    const t = getTheme();
+    document.querySelectorAll('[data-theme-btn]').forEach((b) => {
+      b.classList.toggle('btn--primary', b.dataset.themeBtn === t);
+      b.classList.toggle('btn--secondary', b.dataset.themeBtn !== t);
+    });
+  };
+  document.querySelectorAll('[data-theme-btn]').forEach((b) => {
+    b.addEventListener('click', () => { setTheme(b.dataset.themeBtn); markActive(); });
+  });
+  markActive();
+
+  /* --- דגימות צבע --- */
+  const SWATCHES = [
+    ['--bg', 'רקע'], ['--surface', 'משטח'], ['--text', 'טקסט'], ['--text-soft', 'טקסט רך'],
+    ['--primary', 'ראשי'], ['--accent', 'ענבר'], ['--danger', 'שגיאה'],
+    ['--border', 'מתאר'], ['--lock', 'מסך נעילה'],
+  ];
+  document.querySelector('[data-swatches]').innerHTML = SWATCHES.map(([v, name]) =>
+    `<div class="sg__swatch">
+       <div class="sg__chip-color" style="background: var(${v})"></div>
+       <p>${name}<br><code>${v}</code></p>
+     </div>`).join('');
+
+  /* --- אייקונים --- */
+  document.querySelector('[data-icons]').innerHTML =
+    iconNames.map((n) => `<div title="${n}">${icon(n, 22)}</div>`).join('');
+  document.querySelector('[data-demo-icon]').innerHTML = icon('arrow', 22);
+  document.querySelector('[data-check]').innerHTML = icon('check', 20);
+  document.querySelector('[data-lock-icon]').innerHTML = icon('lock', 40);
+  document.querySelector('[data-streak-chip]').innerHTML = icon('flame', 16) + ' 7';
+
+  /* --- טבעות --- */
+  const rings = document.querySelector('[data-rings]');
+  const big = createRing({ minutes: 0, size: 'lg' });
+  rings.append(big, createRing({ minutes: 24, size: 'md' }), createRing({ minutes: 60, size: 'sm' }));
+
+  let demoMinutes = 0;
+  document.querySelector('[data-ring-demo]').addEventListener('click', () => {
+    demoMinutes = (demoMinutes + 5) % 65;
+    big.update(demoMinutes);
+    big.flick();
+  });
+
+  /* --- טוסט --- */
+  document.querySelector('[data-toast-demo]').addEventListener('click', () => {
+    toast('לאט לאט 🙂 עוד רגע העמוד נספר');
+  });
+
+  /* --- מחוון --- */
+  const slider = document.querySelector('[data-slider]');
+  const out = document.querySelector('[data-slider-out]');
+  slider.addEventListener('input', () => { out.textContent = slider.value + ' דק׳'; });
+
+  /* --- סולם spacing --- */
+  document.querySelector('[data-space]').innerHTML =
+    [4, 8, 12, 16, 24, 32].map((n) => `<i style="height:${n}px" title="${n}px"></i>`).join('');
+</script>
+</body>
+</html>

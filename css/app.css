@@ -1,0 +1,378 @@
+/* ============================================================
+   app.css — סגנונות משותפים ורכיבי בסיס
+   תלוי ב-tokens.css. בלי ערכי צבע/מידה קשיחים.
+   ============================================================ */
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100svh;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+/* מכבה את ההבהוב הכחול של ספארי iOS בלחיצה */
+a, button, [role="button"] { -webkit-tap-highlight-color: transparent; }
+
+img, svg { display: block; max-width: 100%; }
+
+/* ---------- טיפוגרפיה ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.3; }
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+p  { margin: 0; }
+
+.t-sub   { font-size: var(--fs-sub); color: var(--text-soft); }
+.t-small { font-size: var(--fs-small); color: var(--text-soft); }
+.t-soft  { color: var(--text-soft); }
+
+.t-number {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-number);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- שלד המסך (טלפון) ---------- */
+.screen {
+  width: 100%;
+  max-width: var(--phone-max);
+  margin-inline: auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-inline: var(--screen-pad);
+  padding-top: max(var(--sp-6), env(safe-area-inset-top));
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--sp-6));
+}
+
+/* מסך עם ניווט תחתון — מפנה מקום כדי שלא יסתיר תוכן */
+.screen--nav {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-6));
+}
+
+.screen__body { flex: 1; }
+
+.stack    { display: flex; flex-direction: column; gap: var(--sp-4); }
+.stack-2  { display: flex; flex-direction: column; gap: var(--sp-2); }
+.stack-6  { display: flex; flex-direction: column; gap: var(--sp-6); }
+.row      { display: flex; align-items: center; gap: var(--sp-3); }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+
+.screen__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--tap-min);
+  margin-bottom: var(--sp-4);
+}
+
+/* ---------- כפתורים ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--btn-h);
+  padding-inline: var(--sp-6);
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform var(--t-fast) var(--ease),
+              background-color var(--t-fast) var(--ease),
+              opacity var(--t-fast) var(--ease);
+}
+
+.btn:active { transform: scale(.98); }
+
+.btn--block { width: 100%; }
+
+.btn--primary {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-soft);
+  min-height: var(--tap-min);
+  padding-inline: var(--sp-3);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* כפתור אייקון עגול — אזור מגע 44px */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  border-radius: var(--r-chip);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.icon-btn:active { background: var(--primary-soft); }
+
+/* היפוך חצים ב-RTL (המפרט, סעיף 3) */
+[dir="rtl"] .icon-flip { transform: scaleX(-1); }
+
+/* ---------- כרטיס ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-4);
+}
+
+.card--flat { box-shadow: none; }
+
+/* כרטיס שהוא גם אפשרות בחירה (שאלון, בחירת אפליקציות) */
+.card--choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 60px;
+  text-align: start;
+  font-size: var(--fs-body);
+  font-weight: 400;
+  color: var(--text);
+  transition: border-color var(--t-fast) var(--ease),
+              background-color var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease);
+}
+.card--choice:active { transform: scale(.99); }
+.card--choice[aria-checked="true"],
+.card--choice.is-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* ---------- שבב ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  min-height: 28px;
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--text);
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: none;
+}
+
+/* שבב סטריק — ענבר 12% (המפרט, סעיף 3) */
+.chip--streak { background: var(--accent-soft); }
+
+/* ---------- טבעת התקדמות ---------- */
+.ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.ring__svg { transform: rotate(-90deg); }
+/* ב-RTL הטבעת מתמלאת נגד כיוון השעון — כמו כיוון הקריאה */
+[dir="rtl"] .ring__svg { transform: rotate(-90deg) scaleY(-1); }
+
+.ring__track { stroke: var(--track); fill: none; stroke-linecap: round; }
+.ring__value {
+  stroke: var(--primary);
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--t-base) var(--ease);
+}
+
+.ring__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  text-align: center;
+}
+
+.ring__num {
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.ring__label {
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+/* טבעת ריקה — הבנק על אפס */
+.ring.is-empty .ring__num { color: var(--text-soft); }
+
+/* פליק קטן על דקות שנצברו */
+@keyframes ring-flick {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.ring.is-flick { animation: ring-flick var(--t-base) var(--ease); }
+
+/* ---------- ניווט תחתון ---------- */
+.navbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.navbar__inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+  max-width: var(--phone-max);
+}
+
+.navbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--nav-h);
+  text-decoration: none;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+  transition: color var(--t-fast) var(--ease);
+}
+
+.navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
+
+/* ---------- טוסט ---------- */
+.toast {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-4));
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--screen-pad);
+  pointer-events: none;
+}
+
+.toast__body {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--r-chip);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sub);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+}
+.toast.is-open .toast__body { opacity: 1; transform: translateY(0); }
+
+/* ---------- מחוון (הגדרות) ---------- */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--tap-min);
+  background: transparent;
+}
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--r-chip);
+  background: var(--track);
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.slider::-moz-range-track { height: 6px; border-radius: var(--r-chip); background: var(--track); }
+.slider::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: var(--r-chip);
+  background: var(--primary); border: 3px solid var(--surface);
+}
+
+/* ---------- עזרים ---------- */
+.divider { height: 1px; background: var(--border); border: 0; margin: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* מעבר מסך עדין — 200-250ms ease-out */
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.screen-in { animation: screen-in var(--t-base) var(--ease); }
