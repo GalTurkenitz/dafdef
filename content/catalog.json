@@ -1,0 +1,101 @@
+[
+  {
+    "id": "ws-odyssey",
+    "title": "האודיסיאה",
+    "author": "הומרוס · תרגום שאול טשרניחובסקי",
+    "genre": "אפוס",
+    "chapters": 25,
+    "wordCount": 79890,
+    "estMinutes": 470,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%9B%D7%9C%20%D7%9B%D7%AA%D7%91%D7%99%20%D7%A9%D7%90%D7%95%D7%9C%20%D7%98%D7%A9%D7%A8%D7%A0%D7%99%D7%97%D7%95%D7%91%D7%A1%D7%A7%D7%99%2F%D7%9B%D7%A8%D7%9A%20%D7%93%3A%20%D7%90%D7%95%D7%93%D7%99%D7%A1%D7%99%D7%94"
+  },
+  {
+    "id": "ws-iliad",
+    "title": "האיליאדה",
+    "author": "הומרוס · תרגום שאול טשרניחובסקי",
+    "genre": "אפוס",
+    "chapters": 26,
+    "wordCount": 100050,
+    "estMinutes": 589,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%9B%D7%9C%20%D7%9B%D7%AA%D7%91%D7%99%20%D7%A9%D7%90%D7%95%D7%9C%20%D7%98%D7%A9%D7%A8%D7%A0%D7%99%D7%97%D7%95%D7%91%D7%A1%D7%A7%D7%99%2F%D7%9B%D7%A8%D7%9A%20%D7%92%3A%20%D7%90%D7%99%D7%9C%D7%99%D7%90%D7%93%D7%94"
+  },
+  {
+    "id": "ws-bialik-matmid",
+    "title": "המתמיד",
+    "author": "חיים נחמן ביאליק",
+    "genre": "שירה",
+    "chapters": 1,
+    "wordCount": 2498,
+    "estMinutes": 15,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%94%D7%9E%D7%AA%D7%9E%D7%99%D7%93"
+  },
+  {
+    "id": "ws-katzenelson",
+    "title": "כל כתבי י\"ל קאצענעלסון",
+    "author": "יהודה ליב קצנלסון",
+    "genre": "פרוזה",
+    "chapters": 1,
+    "wordCount": 1749,
+    "estMinutes": 10,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%9B%D7%9C%20%D7%9B%D7%AA%D7%91%D7%99%20%D7%99%22%D7%9C%20%D7%A7%D7%90%D7%A6%D7%A2%D7%A0%D7%A2%D7%9C%D7%A1%D7%90%D7%9F"
+  },
+  {
+    "id": "ws-bialik-gader",
+    "title": "מאחורי הגדר",
+    "author": "חיים נחמן ביאליק",
+    "genre": "פרוזה",
+    "chapters": 1,
+    "wordCount": 14481,
+    "estMinutes": 85,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%A4%D7%A8%D7%95%D7%96%D7%94%20(%D7%91%D7%99%D7%90%D7%9C%D7%99%D7%A7)%2F%D7%9E%D7%90%D7%97%D7%95%D7%A8%D7%99%20%D7%94%D7%92%D7%93%D7%A8"
+  },
+  {
+    "id": "ws-bialik-safiach",
+    "title": "ספיח",
+    "author": "חיים נחמן ביאליק",
+    "genre": "פרוזה",
+    "chapters": 1,
+    "wordCount": 16373,
+    "estMinutes": 96,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%A4%D7%A8%D7%95%D7%96%D7%94%20(%D7%91%D7%99%D7%90%D7%9C%D7%99%D7%A7)%2F%D7%A1%D7%A4%D7%99%D7%97"
+  },
+  {
+    "id": "ws-bialik-aggada",
+    "title": "על האגדה",
+    "author": "חיים נחמן ביאליק",
+    "genre": "מסות",
+    "chapters": 3,
+    "wordCount": 12403,
+    "estMinutes": 73,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%A2%D7%9C%20%D7%94%D7%90%D7%92%D7%93%D7%94"
+  },
+  {
+    "id": "ws-bialik-proza",
+    "title": "פרוזה",
+    "author": "חיים נחמן ביאליק",
+    "genre": "פרוזה",
+    "chapters": 67,
+    "wordCount": 141915,
+    "estMinutes": 835,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%A4%D7%A8%D7%95%D7%96%D7%94%20(%D7%91%D7%99%D7%90%D7%9C%D7%99%D7%A7)"
+  },
+  {
+    "id": "ws-bialik-shirim",
+    "title": "שירים ופזמונות לילדים",
+    "author": "חיים נחמן ביאליק",
+    "genre": "שירה",
+    "chapters": 77,
+    "wordCount": 8476,
+    "estMinutes": 50,
+    "source": "he.wikisource.org — נחלת הכלל",
+    "url": "https://he.wikisource.org/wiki/%D7%A9%D7%99%D7%A8%D7%99%D7%9D%20%D7%95%D7%A4%D7%96%D7%9E%D7%95%D7%A0%D7%95%D7%AA%20%D7%9C%D7%99%D7%9C%D7%93%D7%99%D7%9D%20(%D7%91%D7%99%D7%90%D7%9C%D7%99%D7%A7)"
+  }
+]

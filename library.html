@@ -28,25 +28,20 @@
 
 <body>
 <main class="screen screen--nav screen-in">
-  <header class="screen__header">
+  <header class="screen__header row-between">
     <h1>ספרייה</h1>
+    <span class="t-small" data-library-count></span>
   </header>
 
-  <div class="screen__body stack-6">
-    <!-- חיפוש + סינון לפי מחבר/סוגה — נבנה בשלב 3 -->
+  <div class="screen__body stack">
     <div data-library-search></div>
     <div data-library-filters></div>
-    <section class="stack" data-library-list aria-label="יצירות"></section>
+    <section class="stack-2" data-library-list aria-label="ספרים"></section>
   </div>
 </main>
 
 <div data-navbar></div>
 
-<script type="module">
-  import { initTheme } from './js/ui/theme.js';
-  import { renderNavbar } from './js/ui/nav.js';
-  initTheme();
-  renderNavbar('library');
-</script>
+<script type="module" src="js/ui/library.js"></script>
 </body>
 </html>

@@ -22,7 +22,7 @@ import { CONTENT_REV } from '../config.js';
  * קבועים
  * ------------------------------------------------------------------ */
 
-const DEFAULT_WORK = 'dev-safiach';   // עד שהספרייה קיימת (שלב 3)
+const DEFAULT_WORK = 'ws-bialik-safiach';   // כשנכנסים לקורא בלי לבחור ספר
 const EPUB_JS  = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
 const JSZIP_JS = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
