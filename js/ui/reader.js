@@ -532,8 +532,25 @@ async function openEpub(file) {
 }
 
 /* ------------------------------------------------------------------ *
- * מצב ריק / שגיאה
+ * טעינה, מצב ריק ושגיאה
  * ------------------------------------------------------------------ */
+
+/**
+ * ספר גדול יכול לקחת כמה שניות ברשת סלולרית — בין ההורדה לעימוד.
+ * בלי חיווי המסך פשוט נשאר ריק, ונראה שהאפליקציה תקועה.
+ */
+function showLoading(on) {
+  let node = els.stage.querySelector('[data-loading]');
+
+  if (!on) { node?.remove(); return; }
+  if (node) return;
+
+  node = document.createElement('div');
+  node.className = 'reader__loading';
+  node.dataset.loading = '';
+  node.innerHTML = '<span class="spinner" aria-hidden="true"></span><p class="t-sub">רגע, פותחים את הספר…</p>';
+  els.stage.appendChild(node);
+}
 
 function showEmpty(message) {
   els.stage.innerHTML = `
@@ -566,8 +583,10 @@ async function init() {
     const file = e.target.files?.[0];
     if (!file) return;
     toggleBars(false);
+    showLoading(true);
     try { await openEpub(file); }
     catch (err) { toast('לא הצלחנו לפתוח את הקובץ'); console.error(err); }
+    finally { showLoading(false); }
   });
 
   document.querySelectorAll('[data-font]').forEach((b) => {
@@ -601,13 +620,16 @@ async function init() {
     || (reading.workId && !reading.workId.startsWith('epub:') ? reading.workId : null)
     || DEFAULT_WORK;
 
+  showLoading(true);
   try {
     const data = await loadWork(wanted);
     const savedLocation = data.id === reading.workId ? reading.location : null;
     await openText(data, savedLocation);
+    showLoading(false);
   } catch (err) {
     console.error(err);
-    showEmpty('לא הצלחנו לטעון את היצירה.');
+    showLoading(false);
+    showEmpty('לא הצלחנו לטעון את הספר.');
   }
 }
 
