@@ -212,6 +212,14 @@ function init() {
   });
 
   window.addEventListener('pageshow', () => { openDay(); renderAll(); });
+
+  // סגירת טאב באמצע שימוש באפליקציה — רושמים את הדקות שנוצלו לפני שנעלמים
+  window.addEventListener('pagehide', () => {
+    if (!session) return;
+    const { bank: next } = bank.drain(getBank(), now());
+    setBank(next);
+    session.flush();
+  });
 }
 
 init();

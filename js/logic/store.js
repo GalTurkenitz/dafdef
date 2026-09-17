@@ -360,6 +360,15 @@ export function getCachedWork(id) {
   return read('worksCache:' + id);
 }
 
+/**
+ * מעל הגודל הזה אין טעם לנסות לשמור — localStorage מוגבל ל-5-10MB,
+ * וכישלון כתיבה באמצע עלול לפגוע גם במפתחות אחרים.
+ * ספר גדול פשוט נטען מחדש מהרשת; הוא ממילא מגיע מאותו מקור סטטי.
+ */
+export const MAX_CACHE_BYTES = 900_000;
+
 export function cacheWork(work) {
+  const size = (work.html || '').length * 2;   // UTF-16 בזיכרון
+  if (size > MAX_CACHE_BYTES) return false;
   return write('worksCache:' + work.id, work);
 }

@@ -228,7 +228,7 @@ for (const item of books.slice(0, limit)) {
 
   try {
     const work = await fetchText(key, item);
-    await writeFile(path, JSON.stringify(work, null, 2), 'utf8');
+    await writeFile(path, JSON.stringify(work), 'utf8');
     done += 1;
     process.stdout.write(`\r  ${done}/${limit} · ${item.title.slice(0, 40)}`.padEnd(70));
   } catch (err) {

@@ -27,7 +27,7 @@ reader.html       הקורא
 library.html      הספרייה
 dashboard.html    דשבורד
 settings.html     הגדרות
-styleguide.html   עמוד פיתוח — מערכת העיצוב. נמחק לפני סיום.
+styleguide.html   עמוד פיתוח — מערכת העיצוב. נשאר עד שפאס העיצוב יסתיים.
 
 css/tokens.css    כל הצבעים, המידות והטיפוגרפיה
 css/app.css       רכיבי בסיס + הקורא
@@ -44,19 +44,30 @@ scripts/          סקריפט משיכת התוכן (Node)
 
 1. ✅ שלד + tokens.css + רכיבי בסיס (כפתור, כרטיס, טבעת)
 2. ✅ הקורא + verify.js
-3. ⬜ סקריפט בן-יהודה + קטלוג + מסך ספרייה
-4. ⬜ formula.js + bank.js + streak.js + store.js
-5. ⬜ שאלון + תוצאה + בחירת אפליקציות
-6. ⬜ בית + נעילה + אפליקציה מדומה עם טיימר
-7. ⬜ דשבורד + הגדרות
-8. ⬜ ליטוש ומעבר על כל סעיף 9
+3. ✅ סקריפט בן-יהודה + קטלוג + מסך ספרייה
+4. ✅ formula.js + bank.js + streak.js + store.js
+5. ✅ שאלון + תוצאה + בחירת אפליקציות
+6. ✅ בית + נעילה + אפליקציה מדומה עם טיימר
+7. ✅ דשבורד + הגדרות
+8. ✅ מעבר על כל סעיף 9 (פאס העיצוב נדחה בהחלטת המשתמש)
 
 ## בדיקות
 
 ```bash
-node scripts/test-verify.mjs      # לוגיקת האימות
-node scripts/fetch-dev-works.mjs  # רענון יצירות הפיתוח
+node scripts/test-verify.mjs       # אימות הקריאה — 19 בדיקות
+node scripts/test-logic.mjs        # נוסחה, בנק וסטריק — 38 בדיקות
 ```
+
+## תוכן
+
+```bash
+node scripts/fetch-wikisource.mjs  # המקור הזמני (9 ספרים)
+node scripts/fetch-benyehuda.mjs --probe   # בדיקת מפתח ומבנה תשובה
+node scripts/fetch-benyehuda.mjs --limit 200
+```
+
+מפתח בן-יהודה נקרא מ-`~/.secrets/benyehuda.txt` ולעולם לא נכנס לקוד הלקוח.
+הנפקה חינם ומיידית ב-https://benyehuda.org/api_keys/new
 
 ## מחוץ לסקופ
 

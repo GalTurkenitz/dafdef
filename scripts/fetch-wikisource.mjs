@@ -210,7 +210,7 @@ for (const book of BOOKS) {
     html,
   };
 
-  await writeFile(join(WORKS_DIR, book.id + '.json'), JSON.stringify(work, null, 2), 'utf8');
+  await writeFile(join(WORKS_DIR, book.id + '.json'), JSON.stringify(work), 'utf8');
 
   const { html: _drop, ...entry } = work;
   catalog.push(entry);
