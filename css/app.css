@@ -173,6 +173,7 @@ p  { margin: 0; }
 /* כרטיס שהוא גם אפשרות בחירה (שאלון, בחירת אפליקציות) */
 .card--choice {
   display: flex;
+  text-decoration: none;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-3);
