@@ -28,3 +28,24 @@ export function renderNavbar(current) {
   mount.className = 'navbar';
   mount.innerHTML = `<nav class="navbar__inner" aria-label="ניווט ראשי">${links}</nav>`;
 }
+
+/**
+ * כפתור חזרה מובנה בממשק — לא מסתמכים על כפתור ה-back של הדפדפן.
+ * מוזרק לתוך <button data-back-btn></button> שבכותרת המסך.
+ *
+ * @param {string} fallback לאן ללכת כשאין היסטוריה (כניסה ישירה לכתובת)
+ */
+export function mountBack(fallback = 'index.html') {
+  const btn = document.querySelector('[data-back-btn]');
+  if (!btn) return;
+
+  btn.classList.add('icon-btn');
+  btn.setAttribute('aria-label', 'חזרה');
+  btn.innerHTML = icon('arrow', 22);
+
+  btn.addEventListener('click', () => {
+    // חזרה אמיתית רק אם הגענו מתוך האפליקציה
+    if (history.length > 1 && document.referrer.includes(location.host)) history.back();
+    else location.href = fallback;
+  });
+}

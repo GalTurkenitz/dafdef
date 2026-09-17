@@ -18,7 +18,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;
@@ -28,15 +28,15 @@
 
 <body>
 <main class="screen screen--nav screen-in">
-  <header class="screen__header row-between">
+  <header class="screen__header">
+    <button data-back-btn></button>
     <h1>ספרייה</h1>
-    <span class="t-small" data-library-count></span>
+    <span class="t-small" style="margin-inline-start:auto;" data-library-count></span>
   </header>
 
   <div class="screen__body stack">
     <div data-library-search></div>
-    <div data-library-filters></div>
-    <section class="stack-2" data-library-list aria-label="ספרים"></section>
+    <section data-library-list aria-label="ספרים"></section>
   </div>
 </main>
 

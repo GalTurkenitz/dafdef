@@ -22,7 +22,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;
@@ -33,19 +33,19 @@
 <body>
 <main class="screen screen--nav screen-in">
 
-  <!-- יתרת הדקות + סטריק (המפרט, סעיף 7.3) -->
-  <header class="stack" style="align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-8);">
+  <!-- יתרת הדקות + סטריק -->
+  <header class="home__top">
     <div data-ring-mount></div>
     <div data-streak-mount></div>
   </header>
 
   <div class="screen__body stack-6">
-    <!-- רשת אייקוני האפליקציות החסומות — נבנית בשלב 6 -->
+    <!-- האפליקציות החסומות -->
     <section data-apps-grid aria-label="האפליקציות החסומות"></section>
-  </div>
 
-  <!-- כפתור צף: הקריאה לעולם לא חסומה -->
-  <a class="btn btn--primary btn--block home__read" href="reader.html">לקריאה 📖</a>
+    <!-- הספרים שבקריאה כרגע -->
+    <section data-my-books aria-label="הספרים שלי"></section>
+  </div>
 
 </main>
 

@@ -5,8 +5,9 @@
  */
 
 import { initTheme } from './theme.js';
-import { renderNavbar } from './nav.js';
+import { renderNavbar, mountBack } from './nav.js';
 import { createRing } from './ring.js';
+import { bookCard } from './bookcard.js';
 import { icon } from './icons.js';
 import { getBank, getReadingState, getStreak, getWeek, getStartedBooks,
          getSettings, openDay } from '../logic/store.js';
@@ -126,20 +127,8 @@ function renderBooks() {
 
   els.books.innerHTML = `
     <h2 class="section__title">ספרים שהתחלת</h2>
-    <div class="stack-2">
-      ${books.map((b) => {
-        const pct = Math.round((b.percent || 0) * 100);
-        return `<a class="card book-progress" href="reader.html?work=${encodeURIComponent(b.id)}">
-          <div class="row-between">
-            <span class="book__title">${b.title || b.id}</span>
-            <span class="t-small">${pct}%</span>
-          </div>
-          ${b.author ? `<span class="t-small">${b.author}</span>` : ''}
-          <div class="progress" style="margin-top: var(--sp-2);">
-            <i style="inline-size:${pct}%"></i>
-          </div>
-        </a>`;
-      }).join('')}
+    <div class="bookgrid">
+      ${books.map((b) => bookCard(b, { percent: b.percent ?? 0 })).join('')}
     </div>`;
 }
 
@@ -168,6 +157,7 @@ function init() {
   initTheme();
   openDay();
   renderNavbar('dashboard');
+  mountBack('index.html');
   renderAll();
 
   document.addEventListener('visibilitychange', () => {

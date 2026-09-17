@@ -1,7 +1,7 @@
 /**
- * theme.js — מצב תצוגה (בהיר / כהה / ספיה).
- * המצב הוא class על <html>: theme-light / theme-dark / theme-sepia.
- * ברירת מחדל: prefers-color-scheme (המפרט, סעיף 3).
+ * theme.js — מצב תצוגה (בהיר / כהה).
+ * המצב הוא class על <html>: theme-light / theme-dark.
+ * ברירת מחדל: prefers-color-scheme.
  *
  * הערה: בשלב 4 המפתח יעבור לעבור דרך store.js יחד עם שאר settings.
  * עד אז הקריאה/כתיבה כאן מקומית ותואמת את אותו מפתח.
@@ -16,7 +16,7 @@ export function systemTheme() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-/** @returns {'light'|'dark'|'sepia'} המצב השמור, או העדפת המערכת */
+/** @returns {'light'|'dark'} המצב השמור, או העדפת המערכת */
 export function getTheme() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || '{}').theme;
@@ -29,7 +29,7 @@ export function getTheme() {
 export function applyTheme(theme) {
   const t = THEMES.includes(theme) ? theme : systemTheme();
   const root = document.documentElement;
-  root.classList.remove('theme-light', 'theme-dark', 'theme-sepia');
+  root.classList.remove('theme-light', 'theme-dark');
   root.classList.add('theme-' + t);
   root.dataset.theme = t;
 

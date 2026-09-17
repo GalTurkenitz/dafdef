@@ -171,5 +171,8 @@ export function createPaginator({ viewport, content, gap = 32 }) {
     },
 
     get totalWords() { return countWords(fullText); },
+
+    /** אורך הטקסט בתווים — הבסיס לחישוב אחוזי התקדמות */
+    get totalChars() { return fullText.length; },
   };
 }

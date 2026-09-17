@@ -18,7 +18,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;
@@ -29,6 +29,7 @@
 <body>
 <main class="screen screen--nav screen-in">
   <header class="screen__header">
+    <button data-back-btn></button>
     <h1>הגדרות</h1>
   </header>
 

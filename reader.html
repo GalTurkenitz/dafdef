@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FAF6EF">
+<meta name="theme-color" content="#FFFFFF">
 <title>קורא · דפדף</title>
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -18,7 +18,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;
@@ -27,13 +27,12 @@
 </head>
 
 <body>
-<!-- הקורא הוא מסך מלא בלי ניווט תחתון: העמוד תופס את כל השטח -->
 <main class="reader">
 
-  <!-- פס עליון דק — תמיד גלוי (המפרט, סעיף 7.5) -->
+  <!-- פס עליון: שני שבבים בצבע המותג -->
   <div class="reader__strip">
-    <span data-pages-today>0 עמודים היום</span>
-    <span data-page-value>+15 דק׳ לעמוד</span>
+    <span class="rchip" data-pages-today></span>
+    <span class="rchip" data-page-value></span>
   </div>
 
   <!-- אזור העמוד -->
@@ -42,33 +41,66 @@
     <div class="earned" data-earned></div>
   </div>
 
-  <!-- סרגלים — נפתחים בהקשה במרכז -->
-  <div class="reader__bars" data-bars>
+  <!-- פס תחתון קבוע: ניווט עמודים + מספר עמוד ואחוז -->
+  <div class="reader__foot">
+    <button class="pagebtn" data-turn="prev" aria-label="העמוד הקודם"></button>
+    <div class="reader__pos">
+      <span data-position></span>
+      <span class="reader__pct" data-percent></span>
+    </div>
+    <button class="pagebtn" data-turn="next" aria-label="העמוד הבא"></button>
+  </div>
 
+  <!-- סרגל עליון — נפתח בהקשה במרכז -->
+  <div class="reader__bars" data-bars>
     <div class="reader__bar reader__bar--top">
       <button class="icon-btn" data-back aria-label="חזרה"></button>
       <span class="reader__title" data-title></span>
       <button class="icon-btn" data-import aria-label="ייבוא קובץ EPUB"></button>
+      <button class="icon-btn" data-open-settings aria-label="הגדרות תצוגה"></button>
       <input type="file" accept=".epub,application/epub+zip" hidden data-file>
     </div>
+  </div>
 
-    <div class="reader__bar reader__bar--bottom">
-      <div class="row-between">
+  <!-- גיליון הגדרות צף — נפתח מעל הטקסט ולא מחליף מסך -->
+  <div class="sheet" data-sheet hidden>
+    <div class="sheet__scrim" data-sheet-close></div>
+    <div class="sheet__panel" role="dialog" aria-label="הגדרות תצוגה">
+      <div class="sheet__grip" aria-hidden="true"></div>
+
+      <div class="sheet__row">
+        <span>גודל טקסט</span>
         <div class="reader__group">
           <button class="icon-btn" data-font="-" aria-label="הקטנת טקסט"></button>
-          <span class="t-small" data-font-size>17</span>
+          <span class="chip" data-font-size>17</span>
           <button class="icon-btn" data-font="+" aria-label="הגדלת טקסט"></button>
         </div>
-        <div class="reader__group">
-          <button class="swatch swatch--light" data-mode="light" aria-label="בהיר"></button>
-          <button class="swatch swatch--sepia" data-mode="sepia" aria-label="ספיה"></button>
-          <button class="swatch swatch--dark"  data-mode="dark"  aria-label="כהה"></button>
+      </div>
+
+      <div class="sheet__row">
+        <span>מצב תצוגה</span>
+        <div class="seg" role="radiogroup" aria-label="מצב תצוגה">
+          <button class="seg__item" data-mode="light" role="radio">בהיר</button>
+          <button class="seg__item" data-mode="dark" role="radio">כהה</button>
         </div>
       </div>
-      <div class="reader__pos" data-position></div>
-    </div>
 
+      <hr class="divider">
+
+      <button class="sheet__action" data-mark="start">
+        <b>הספר מתחיל כאן</b>
+        <small>מדלגים על תודות ופתח דבר — ההתקדמות תימדד מכאן</small>
+      </button>
+
+      <button class="sheet__action" data-mark="end">
+        <b>זה סוף הספר</b>
+        <small>מה שאחרי זה לא נספר, וסיום הספר ייחשב כאן</small>
+      </button>
+
+      <button class="btn btn--ghost btn--block" data-sheet-close>סגירה</button>
+    </div>
   </div>
+
 </main>
 
 <script type="module" src="js/ui/reader.js"></script>

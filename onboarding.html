@@ -18,7 +18,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;

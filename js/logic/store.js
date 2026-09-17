@@ -136,19 +136,32 @@ export function setBlockedApps(apps) {
 }
 
 /* ------------------------------------------------------------------ *
- * readingState
+ * readingState — מונים יומיים בלבד
+ *
+ * המיקום בספר כבר לא יושב כאן אלא ב-books, כי המשתמש קורא
+ * כמה ספרים במקביל. כאן נשאר רק מה שגלובלי ליום.
  * ------------------------------------------------------------------ */
 
 const READING_DEFAULTS = {
-  workId: null,
-  location: null,     // היסט תווים, או CFI ב-EPUB מיובא
+  lastWorkId: null,   // הספר האחרון שנפתח — לכניסה מהירה לקורא
   pagesToday: 0,
   minutesToday: 0,
   date: null,
 };
 
 export function getReadingState() {
-  const state = { ...READING_DEFAULTS, ...(read('readingState') || {}) };
+  const raw = read('readingState') || {};
+
+  // הגירה מהמבנה הישן, שבו המיקום היה גלובלי
+  if (raw.workId && !raw.lastWorkId) {
+    raw.lastWorkId = raw.workId;
+    if (raw.location != null) touchBook(raw.workId, { location: raw.location });
+  }
+
+  const state = { ...READING_DEFAULTS, ...raw };
+  delete state.workId;
+  delete state.location;
+
   const now = today();
   if (state.date !== now) {
     state.pagesToday = 0;
@@ -312,10 +325,11 @@ export function devJumpDay(days = 1) {
 }
 
 /* ------------------------------------------------------------------ *
- * books — ספרים שהתחלת (המפרט, סעיף 7.6)
+ * books — כל ספר ומצב הקריאה שלו
  *
- * המפתח הזה לא מופיע ברשימת סעיף 4, אבל הדשבורד מחויב להציג
- * "ספרים שהתחלת עם התקדמות", ואי אפשר בלי לזכור אותם.
+ * המשתמש קורא כמה ספרים במקביל, ולכן המיקום, נקודת ההתחלה
+ * ונקודת הסיום נשמרים לכל ספר בנפרד. מונה העמודים היומי והבנק
+ * נשארים גלובליים.
  * ------------------------------------------------------------------ */
 
 export function getBooks() {
@@ -323,33 +337,53 @@ export function getBooks() {
   return raw && typeof raw === 'object' ? raw : {};
 }
 
+export function getBook(id) {
+  return getBooks()[id] || null;
+}
+
 /**
- * מעדכן את ההתקדמות בספר. שומר את המקסימום שהגעת אליו,
- * כדי שדפדוף אחורה לא "יוריד" את ההתקדמות.
+ * מעדכן ספר. שדות שלא נשלחו נשארים כמו שהם.
+ * page/percent נשמרים כמקסימום, כדי שדפדוף אחורה לא יוריד התקדמות.
  */
-export function touchBook(id, { title, author, percent = 0, page = 0, pages = 0 } = {}) {
+export function touchBook(id, patch = {}) {
   if (!id) return getBooks();
 
   const books = getBooks();
   const prev = books[id] || {};
+  const next = { ...prev, id, updatedAt: Date.now() };
 
-  books[id] = {
-    id,
-    title: title || prev.title || '',
-    author: author || prev.author || '',
-    percent: Math.min(1, Math.max(prev.percent || 0, percent)),
-    page: Math.max(prev.page || 0, page),
-    pages: pages || prev.pages || 0,
-    updatedAt: Date.now(),
-  };
+  for (const key of ['title', 'author', 'genre', 'estMinutes', 'pages', 'chars']) {
+    if (patch[key] != null) next[key] = patch[key];
+  }
 
+  // מיקום נוכחי — נע חופשי קדימה ואחורה
+  if (patch.location != null) next.location = patch.location;
+
+  // נקודות ההתחלה והסיום שהמשתמש סימן
+  if ('start' in patch) next.start = patch.start;
+  if ('end' in patch) next.end = patch.end;
+
+  // התקדמות — רק קדימה
+  if (patch.page != null) next.page = Math.max(prev.page || 0, patch.page);
+  if (patch.percent != null) next.percent = Math.min(1, Math.max(prev.percent || 0, patch.percent));
+
+  if (patch.finished) next.finished = true;
+
+  books[id] = next;
   write('books', books);
   return books;
 }
 
-/** הספרים שהתחלת, מהאחרון שנקרא (המפרט, סעיף 7.6) */
+export function removeBook(id) {
+  const books = getBooks();
+  delete books[id];
+  write('books', books);
+  return books;
+}
+
+/** הספרים שבקריאה, מהאחרון שנקרא. משמש את "הספרים שלי" ואת הדשבורד. */
 export function getStartedBooks() {
-  return Object.values(getBooks()).sort((a, b) => b.updatedAt - a.updatedAt);
+  return Object.values(getBooks()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 }
 
 /* ------------------------------------------------------------------ *

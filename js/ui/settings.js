@@ -12,7 +12,7 @@
  */
 
 import { initTheme, setTheme, getTheme } from './theme.js';
-import { renderNavbar } from './nav.js';
+import { renderNavbar, mountBack } from './nav.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
 import { getSettings, setSettings, getBlockedApps, getProfile,
@@ -73,10 +73,9 @@ function render() {
       ${row('מצב תצוגה', {
         main: `<div class="seg" role="radiogroup" aria-label="מצב תצוגה">
           <button class="seg__item" data-theme="light" aria-checked="${theme === 'light'}" role="radio">בהיר</button>
-          <button class="seg__item" data-theme="sepia" aria-checked="${theme === 'sepia'}" role="radio">ספיה</button>
           <button class="seg__item" data-theme="dark"  aria-checked="${theme === 'dark'}"  role="radio">כהה</button>
         </div>`,
-      }, 'ספיה זמין גם בקורא עצמו')}
+      })}
 
       ${row('גודל טקסט בקורא', {
         head: `<span class="chip" data-font-out>${settings.fontSize}</span>`,
@@ -186,5 +185,6 @@ function bindDevUnlock() {
 initTheme();
 openDay();
 renderNavbar('settings');
+mountBack('index.html');
 render();
 bindDevUnlock();

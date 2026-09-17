@@ -1,18 +1,20 @@
 /**
- * reader.js — מסך הקורא (המפרט, סעיף 7.5).
+ * reader.js — מסך הקורא.
  *
  * שני מסלולי תצוגה, אותה לוגיקת אימות:
- *   text — יצירות בן-יהודה (HTML מומר), מעומדות ב-paginator.js
+ *   text — ספרים מהקטלוג (HTML מומר), מעומדים ב-paginator.js
  *   epub — קובץ EPUB שהמשתמש מייבא, מעומד ב-epub.js
  *
- * האימות עצמו (verify.js) לא יודע דבר על אף אחד מהם — הוא מקבל
- * מספר מילים וחותמות זמן, וזהו.
+ * שני עקרונות שמנחים את הקובץ:
+ *   1. הדפדוף לעולם לא נחסם. עמוד שלא שהו בו מספיק פשוט לא נספר.
+ *   2. מצב הקריאה נשמר לכל ספר בנפרד — אפשר לקרוא כמה ספרים במקביל.
  */
 
 import { createPaginator } from './paginator.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
-         getCachedWork, cacheWork, earnPages, openDay, touchBook } from '../logic/store.js';
+         getCachedWork, cacheWork, earnPages, openDay,
+         touchBook, getBook } from '../logic/store.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
@@ -22,15 +24,15 @@ import { CONTENT_REV } from '../config.js';
  * קבועים
  * ------------------------------------------------------------------ */
 
-const DEFAULT_WORK = 'ws-bialik-safiach';   // כשנכנסים לקורא בלי לבחור ספר
+const DEFAULT_WORK = 'ws-bialik-safiach';
 const EPUB_JS  = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
 const JSZIP_JS = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
 const FONT_MIN = 15;
 const FONT_MAX = 26;
 const TICK_MS = 500;
-const SWIPE_PX = 40;      // מרחק מינימלי שנחשב החלקה
-const TAP_PX = 12;        // תזוזה מתחת לזה היא הקשה, לא החלקה
+const SWIPE_PX = 40;
+const TAP_PX = 12;
 
 /* ------------------------------------------------------------------ *
  * DOM
@@ -39,18 +41,21 @@ const TAP_PX = 12;        // תזוזה מתחת לזה היא הקשה, לא ה
 const $ = (sel) => document.querySelector(sel);
 
 const els = {
-  stage:      $('[data-stage]'),
-  content:    $('[data-content]'),
-  bars:       $('[data-bars]'),
-  title:      $('[data-title]'),
-  back:       $('[data-back]'),
-  importBtn:  $('[data-import]'),
-  file:       $('[data-file]'),
-  position:   $('[data-position]'),
-  fontSize:   $('[data-font-size]'),
-  pagesToday: $('[data-pages-today]'),
-  pageValue:  $('[data-page-value]'),
-  earned:     $('[data-earned]'),
+  stage:       $('[data-stage]'),
+  content:     $('[data-content]'),
+  bars:        $('[data-bars]'),
+  title:       $('[data-title]'),
+  back:        $('[data-back]'),
+  importBtn:   $('[data-import]'),
+  settingsBtn: $('[data-open-settings]'),
+  file:        $('[data-file]'),
+  position:    $('[data-position]'),
+  percent:     $('[data-percent]'),
+  fontSize:    $('[data-font-size]'),
+  pagesToday:  $('[data-pages-today]'),
+  pageValue:   $('[data-page-value]'),
+  earned:      $('[data-earned]'),
+  sheet:       $('[data-sheet]'),
 };
 
 /* ------------------------------------------------------------------ *
@@ -60,20 +65,23 @@ const els = {
 let settings = getSettings();
 let reading = getReadingState();
 
-let mode = 'text';        // 'text' | 'epub'
-let work = null;          // { id, title, author, html, ... }
-let pager = null;         // paginator (mode === 'text')
-let rendition = null;     // epub.js (mode === 'epub')
+let mode = 'text';
+let work = null;
+let pager = null;
+let rendition = null;
 let book = null;
 let verifier = null;
 let ticker = null;
 let barsTimer = null;
 
+/** נקודות ההתחלה והסיום שהמשתמש סימן, בהיסטי תווים */
+let marks = { start: 0, end: null };
+
+const now = () => Date.now();
+
 /* ------------------------------------------------------------------ *
  * עזרים
  * ------------------------------------------------------------------ */
-
-const now = () => Date.now();
 
 function setFontSize(px) {
   const size = Math.min(FONT_MAX, Math.max(FONT_MIN, px));
@@ -85,19 +93,21 @@ function setFontSize(px) {
 
 function renderStrip() {
   const pages = reading.pagesToday || 0;
-  els.pagesToday.textContent = pages === 1 ? 'עמוד אחד היום' : `${pages} עמודים היום`;
-  els.pageValue.textContent = `+${settings.pageValueMinutes} דק׳ לעמוד`;
+  els.pagesToday.innerHTML =
+    `${icon('book', 14)}<span>${pages === 1 ? 'עמוד אחד היום' : `${pages} עמודים היום`}</span>`;
+  els.pageValue.innerHTML =
+    `${icon('flame', 14)}<span>${settings.pageValueMinutes} דק׳ לעמוד</span>`;
 }
 
 function showEarned(minutes) {
   els.earned.textContent = `+${minutes} דק׳`;
   els.earned.classList.remove('is-on');
-  void els.earned.offsetWidth;   // reflow — כדי שהאנימציה תרוץ שוב
+  void els.earned.offsetWidth;
   els.earned.classList.add('is-on');
 }
 
 /* ------------------------------------------------------------------ *
- * סרגלים
+ * סרגלים וגיליון ההגדרות
  * ------------------------------------------------------------------ */
 
 function toggleBars(force) {
@@ -107,10 +117,18 @@ function toggleBars(force) {
   if (open) barsTimer = setTimeout(() => els.bars.classList.remove('is-open'), 4000);
 }
 
+function openSheet(open) {
+  if (open) els.sheet.hidden = false;
+  requestAnimationFrame(() => els.sheet.classList.toggle('is-open', open));
+
+  if (open) { markThemeButtons(); toggleBars(false); }
+  else setTimeout(() => { els.sheet.hidden = true; }, 250);
+}
+
 function markThemeButtons() {
   const current = getTheme();
   document.querySelectorAll('[data-mode]').forEach((b) => {
-    b.setAttribute('aria-pressed', String(b.dataset.mode === current));
+    b.setAttribute('aria-checked', String(b.dataset.mode === current));
   });
 }
 
@@ -118,14 +136,11 @@ function markThemeButtons() {
  * אימות העמוד המוצג
  * ------------------------------------------------------------------ */
 
-/** מתחיל לאמת את העמוד שמוצג עכשיו */
 function beginPage(words) {
   verifier = createPageVerifier({ words, now: now() });
 }
 
-/** העמוד עבר את שתי השכבות — נספר פעם אחת בלבד */
 function countPage() {
-  // earnPages מטפל בכל השרשרת: בנק, סטריק וסטטיסטיקה יומית
   const { added } = earnPages(1, now());
 
   reading = setReadingState({
@@ -142,21 +157,44 @@ function tick() {
   if (verifier.claim(now())) countPage();
 }
 
-function startTicker() {
-  stopTicker();
-  ticker = setInterval(tick, TICK_MS);
-}
+function startTicker() { stopTicker(); ticker = setInterval(tick, TICK_MS); }
+function stopTicker() { clearInterval(ticker); ticker = null; }
 
-function stopTicker() {
-  clearInterval(ticker);
-  ticker = null;
-}
-
-/** נקרא בכל ניסיון דפדוף — כאן נופל הטוסט של "לאט לאט" */
+/**
+ * נקרא בכל דפדוף קדימה. הדפדוף עצמו אף פעם לא נעצר —
+ * העמוד פשוט לא נספר, והמשתמש מקבל רמז עדין.
+ */
 function leavingPage() {
   if (!verifier) return;
   tick();
   if (!verifier.counted) toast('לאט לאט 🙂 עוד רגע העמוד נספר');
+}
+
+/* ------------------------------------------------------------------ *
+ * התקדמות
+ * ------------------------------------------------------------------ */
+
+/** אחוז השלמה, נמדד מנקודת ההתחלה שסומנה ועד נקודת הסיום */
+function progressPercent() {
+  if (mode !== 'text' || !pager) return 0;
+
+  const start = marks.start || 0;
+  const end = marks.end ?? pager.totalChars;
+  const span = end - start;
+  if (span <= 0) return 1;
+
+  const at = pager.offsetOfPage() - start;
+  return Math.min(1, Math.max(0, at / span));
+}
+
+function renderPosition() {
+  if (mode !== 'text' || !pager) return;
+
+  els.position.textContent = `עמוד ${pager.page + 1} מתוך ${pager.pageCount}`;
+  els.percent.textContent = `${Math.round(progressPercent() * 100)}%`;
+
+  $('[data-turn="prev"]').disabled = pager.atStart;
+  $('[data-turn="next"]').disabled = false;   // הדפדוף לעולם לא נחסם
 }
 
 /* ------------------------------------------------------------------ *
@@ -169,6 +207,7 @@ function turn(direction) {
   if (mode === 'text') {
     const wasLast = pager.atEnd;
     const moved = direction === 'next' ? pager.next() : pager.prev();
+
     if (!moved) {
       if (direction === 'next' && wasLast) finishWork();
       return;
@@ -176,7 +215,6 @@ function turn(direction) {
     afterTurn();
   } else {
     (direction === 'next' ? rendition.next() : rendition.prev());
-    // afterTurn נקרא מאירוע relocated של epub.js
   }
 }
 
@@ -184,16 +222,55 @@ function afterTurn() {
   if (mode !== 'text') return;
 
   beginPage(pager.wordsOnPage());
-  reading = setReadingState({ workId: work.id, location: pager.offsetOfPage() });
-  els.position.textContent = `עמוד ${pager.page + 1} מתוך ${pager.pageCount}`;
+  renderPosition();
 
+  const offset = pager.offsetOfPage();
   touchBook(work.id, {
     title: work.title,
     author: work.author,
+    estMinutes: work.estMinutes,
+    location: offset,
     page: pager.page + 1,
     pages: pager.pageCount,
-    percent: pager.pageCount > 1 ? (pager.page + 1) / pager.pageCount : 1,
+    chars: pager.totalChars,
+    percent: progressPercent(),
   });
+  reading = setReadingState({ lastWorkId: work.id });
+
+  // הגענו לנקודת הסיום שסומנה
+  if (marks.end != null && offset >= marks.end) finishWork();
+}
+
+/* ------------------------------------------------------------------ *
+ * סימון תחילת וסוף ספר
+ * ------------------------------------------------------------------ */
+
+function markHere(which) {
+  if (mode !== 'text' || !pager) { toast('הסימון זמין בספרי הקטלוג'); return; }
+
+  const offset = pager.offsetOfPage();
+
+  if (which === 'start') {
+    if (marks.end != null && offset >= marks.end) {
+      toast('נקודת ההתחלה חייבת לבוא לפני הסוף'); return;
+    }
+    marks.start = offset;
+    touchBook(work.id, { start: offset });
+    toast('סומן: הספר מתחיל כאן');
+  } else {
+    if (offset <= (marks.start || 0)) {
+      toast('נקודת הסיום חייבת לבוא אחרי ההתחלה'); return;
+    }
+    marks.end = offset;
+    touchBook(work.id, { end: offset });
+  }
+
+  touchBook(work.id, { percent: progressPercent() });
+  renderPosition();
+  openSheet(false);
+
+  // סימון הסוף הוא גם ההצהרה שסיימת — מציגים מיד את אישור הסיום
+  if (which === 'end') setTimeout(finishWork, 260);
 }
 
 /* ------------------------------------------------------------------ *
@@ -202,7 +279,6 @@ function afterTurn() {
 
 function bindGestures() {
   let startX = 0, startY = 0, startT = 0, tracking = false;
-
   const activity = () => verifier && verifier.activity(now());
 
   els.stage.addEventListener('pointerdown', (e) => {
@@ -219,33 +295,29 @@ function bindGestures() {
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
 
-    // החלקה אופקית
     if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-      // RTL: העמוד הבא נמצא משמאל, ולכן החלקה שמאלה מקדמת (המפרט, סעיף 3)
-      turn(dx < 0 ? 'next' : 'prev');
+      turn(dx < 0 ? 'next' : 'prev');   // RTL: שמאלה = הבא
       return;
     }
 
-    // הקשה
     if (Math.abs(dx) < TAP_PX && Math.abs(dy) < TAP_PX && now() - startT < 600) {
       const rect = els.stage.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      if (x < rect.width / 3) turn('next');            // שליש שמאלי
-      else if (x > (rect.width * 2) / 3) turn('prev'); // שליש ימני
+      if (x < rect.width / 3) turn('next');
+      else if (x > (rect.width * 2) / 3) turn('prev');
       else toggleBars();
     }
   });
 
   els.stage.addEventListener('pointercancel', () => { tracking = false; });
 
-  // מקלדת — נוח לבדיקה בדסקטופ
   document.addEventListener('keydown', (e) => {
     activity();
     if (e.key === 'ArrowLeft') turn('next');
     if (e.key === 'ArrowRight') turn('prev');
+    if (e.key === 'Escape') openSheet(false);
   });
 
-  // מעבר אפליקציה עוצר מיידית (המפרט, סעיף 5)
   document.addEventListener('visibilitychange', () => {
     if (!verifier) return;
     if (document.hidden) { verifier.hide(now()); stopTicker(); }
@@ -254,13 +326,12 @@ function bindGestures() {
 }
 
 /* ------------------------------------------------------------------ *
- * מסך סיום (המפרט, סעיף 7.5 — הרגע היחיד עם קונפטי)
+ * מסך סיום
  * ------------------------------------------------------------------ */
 
 function finishWork() {
   if (document.querySelector('.finish')) return;
 
-  // הסטטיסטיקה של הסיום היא על מה שנקרא היום — זה מה שיש לנו עד שלב 4
   const pages = reading.pagesToday || 0;
   const minutes = reading.minutesToday || 0;
 
@@ -282,7 +353,7 @@ function finishWork() {
 
   stopTicker();
   verifier = null;
-  reading = setReadingState({ workId: null, location: null });
+  touchBook(work.id, { finished: true, percent: 1 });
 }
 
 function confetti(host) {
@@ -300,7 +371,7 @@ function confetti(host) {
 }
 
 /* ------------------------------------------------------------------ *
- * מסלול טקסט — יצירות בן-יהודה
+ * מסלול טקסט
  * ------------------------------------------------------------------ */
 
 async function loadWork(id) {
@@ -309,20 +380,20 @@ async function loadWork(id) {
 
   const res = await fetch(`content/works/${id}.json`);
   if (!res.ok) {
-    if (cached) return cached;   // אין רשת אבל יש עותק שמור — קוראים אותו
-    throw new Error('היצירה לא נמצאה');
+    if (cached) return cached;
+    throw new Error('הספר לא נמצא');
   }
 
   const data = await res.json();
   data._rev = CONTENT_REV;
-  cacheWork(data);      // המפרט, סעיף 6: נשמר לקריאה offline
+  cacheWork(data);
   return data;
 }
 
 /**
- * פונט הקריאה נטען רק כשיש טקסט שמשתמש בו, ולכן קודם מזריקים את התוכן,
- * ורק אחר כך מחכים לפונט ומעמדים. בלי זה העימוד נעשה על פונט הגיבוי
- * ומספר העמודים משתנה אחרי שהפונט האמיתי נכנס.
+ * פונט הקריאה נטען רק כשיש טקסט שמשתמש בו, ולכן קודם מזריקים את
+ * התוכן ורק אחר כך מחכים לפונט ומעמדים — אחרת מספר העמודים משתנה
+ * אחרי שהפונט האמיתי נכנס.
  */
 async function waitForReadingFont() {
   if (!document.fonts) return;
@@ -332,10 +403,10 @@ async function waitForReadingFont() {
       document.fonts.load(`500 ${settings.fontSize}px "Frank Ruhl Libre"`),
     ]);
     await document.fonts.ready;
-  } catch { /* הפונט לא נטען — מעמדים על פונט הגיבוי */ }
+  } catch { /* נופלים לפונט הגיבוי */ }
 }
 
-async function openText(data, location) {
+async function openText(data) {
   mode = 'text';
   work = data;
 
@@ -349,19 +420,20 @@ async function openText(data, location) {
   pager = createPaginator({ viewport: els.stage, content: els.content });
   pager.layout();
 
-  if (Number.isFinite(location)) pager.goTo(pager.pageOfOffset(location));
+  // מצב הקריאה של הספר הזה בלבד
+  const saved = getBook(data.id) || {};
+  marks = { start: saved.start || 0, end: saved.end ?? null };
+  if (Number.isFinite(saved.location)) pager.goTo(pager.pageOfOffset(saved.location));
+
   afterTurn();
   startTicker();
 }
 
-/** מעמדים מחדש בשינוי גודל טקסט, סיבוב מסך או שינוי חלון — ושומרים על המקום */
+/** מעמדים מחדש בשינוי גודל טקסט, סיבוב מסך או שינוי חלון */
 function relayout() {
-  if (mode === 'epub') {
-    applyEpubStyles();
-    rendition?.resize();
-    return;
-  }
+  if (mode === 'epub') { applyEpubStyles(); rendition?.resize(); return; }
   if (!pager) return;
+
   const keep = pager.offsetOfPage();
   pager.layout();
   pager.goTo(pager.pageOfOffset(keep));
@@ -369,7 +441,7 @@ function relayout() {
 }
 
 /* ------------------------------------------------------------------ *
- * מסלול EPUB — קובץ שהמשתמש מייבא (המפרט, סעיף 7.5)
+ * מסלול EPUB
  * ------------------------------------------------------------------ */
 
 function loadScript(src) {
@@ -381,6 +453,47 @@ function loadScript(src) {
     s.onerror = () => reject(new Error('טעינת הספרייה נכשלה'));
     document.head.appendChild(s);
   });
+}
+
+function applyEpubStyles() {
+  if (!rendition) return;
+  const css = getComputedStyle(document.documentElement);
+  const val = (name) => css.getPropertyValue(name).trim();
+
+  rendition.themes.override('color', val('--text'), true);
+  rendition.themes.override('background', val('--bg'), true);
+  rendition.themes.override('font-family', val('--font-read'), true);
+  rendition.themes.override('line-height', String(val('--lh-read')), true);
+  rendition.themes.fontSize(settings.fontSize + 'px');
+}
+
+function bindEpubGestures(doc) {
+  let x0 = 0, y0 = 0;
+
+  ['pointerdown', 'touchstart', 'keydown'].forEach((ev) =>
+    doc.addEventListener(ev, () => verifier && verifier.activity(now()), { passive: true }));
+
+  doc.addEventListener('touchstart', (e) => {
+    const t = e.changedTouches[0];
+    x0 = t.clientX; y0 = t.clientY;
+  }, { passive: true });
+
+  doc.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0;
+    const dy = t.clientY - y0;
+
+    if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+      turn(dx < 0 ? 'next' : 'prev');
+      return;
+    }
+    if (Math.abs(dx) < TAP_PX && Math.abs(dy) < TAP_PX) {
+      const w = doc.documentElement.clientWidth;
+      if (t.clientX < w / 3) turn('next');
+      else if (t.clientX > (w * 2) / 3) turn('prev');
+      else toggleBars();
+    }
+  }, { passive: true });
 }
 
 /**
@@ -411,72 +524,21 @@ function rangeCfi(a, b) {
        + ',' + CFI.segmentString(out.start) + ',' + CFI.segmentString(out.end) + ')';
 }
 
-/**
- * תוכן ה-EPUB חי ב-iframe משלו ולא יורש את משתני העיצוב שלנו,
- * ולכן מזריקים לו את הצבעים, הפונט וגודל הטקסט הנוכחיים.
- */
-function applyEpubStyles() {
-  if (!rendition) return;
-  const css = getComputedStyle(document.documentElement);
-  const val = (name) => css.getPropertyValue(name).trim();
-
-  rendition.themes.override('color', val('--text'), true);
-  rendition.themes.override('background', val('--bg'), true);
-  rendition.themes.override('font-family', val('--font-read'), true);
-  rendition.themes.override('line-height', String(val('--lh-read')), true);
-  rendition.themes.fontSize(settings.fontSize + 'px');
-}
-
-/** מחבר מחוות מגע בתוך ה-iframe — אירועים משם לא מגיעים למסמך שלנו */
-function bindEpubGestures(doc) {
-  let x0 = 0, y0 = 0;
-
-  ['pointerdown', 'touchstart', 'keydown'].forEach((ev) =>
-    doc.addEventListener(ev, () => verifier && verifier.activity(now()), { passive: true }));
-
-  doc.addEventListener('touchstart', (e) => {
-    const t = e.changedTouches[0];
-    x0 = t.clientX; y0 = t.clientY;
-  }, { passive: true });
-
-  doc.addEventListener('touchend', (e) => {
-    const t = e.changedTouches[0];
-    const dx = t.clientX - x0;
-    const dy = t.clientY - y0;
-
-    if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-      turn(dx < 0 ? 'next' : 'prev');   // RTL: שמאלה = הבא
-      return;
-    }
-    if (Math.abs(dx) < TAP_PX && Math.abs(dy) < TAP_PX) {
-      const w = doc.documentElement.clientWidth;
-      if (t.clientX < w / 3) turn('next');
-      else if (t.clientX > (w * 2) / 3) turn('prev');
-      else toggleBars();
-    }
-  }, { passive: true });
-}
-
-/** חיווי מיקום ב-EPUB: אחוזים כשיש מפת מיקומים, אחרת מספר הפרק */
-function epubPosition(loc) {
+function epubPercent(loc) {
   try {
     if (book?.locations?.length()) {
-      const pct = Math.round(book.locations.percentageFromCfi(loc.start.cfi) * 100);
-      return `${pct}% מהספר`;
+      return Math.round(book.locations.percentageFromCfi(loc.start.cfi) * 100);
     }
   } catch { /* המפה עוד נבנית */ }
-  const chapter = (loc.start.index ?? 0) + 1;
-  const total = book?.spine?.length || 0;
-  return total ? `פרק ${chapter} מתוך ${total}` : '';
+  return null;
 }
 
-/** כמה מילים מוצגות בעמוד ה-EPUB הנוכחי */
 async function epubWordsOnPage(loc) {
   try {
     const range = await book.getRange(rangeCfi(loc.start.cfi, loc.end.cfi));
     return countWords(range.toString());
   } catch {
-    return 0;   // נופלים לרצפת 20 השניות של verify.js
+    return 0;
   }
 }
 
@@ -492,30 +554,28 @@ async function openEpub(file) {
   book = window.ePub(await file.arrayBuffer());
   rendition = book.renderTo(els.stage, {
     width: '100%', height: '100%',
-    flow: 'paginated', spread: 'none',
-    direction: 'rtl',
+    flow: 'paginated', spread: 'none', direction: 'rtl',
   });
 
-  const saved = reading.workId === 'epub:' + file.name ? reading.location : null;
-  await rendition.display(saved || undefined);
-
   work = { id: 'epub:' + file.name, title: file.name.replace(/\.epub$/i, ''), author: '' };
+  const saved = getBook(work.id) || {};
+  await rendition.display(saved.location || undefined);
+
   els.title.textContent = work.title;
   document.title = `${work.title} · דפדף`;
 
   rendition.on('relocated', async (loc) => {
     beginPage(await epubWordsOnPage(loc));
-    reading = setReadingState({ workId: work.id, location: loc.start.cfi });
-    els.position.textContent = epubPosition(loc);
-    touchBook(work.id, { title: work.title, author: work.author, percent: loc.start.percentage || 0 });
+
+    const pct = epubPercent(loc);
+    els.position.textContent = `פרק ${(loc.start.index ?? 0) + 1}`;
+    els.percent.textContent = pct == null ? '' : `${pct}%`;
+
+    touchBook(work.id, { title: work.title, location: loc.start.cfi, percent: (pct ?? 0) / 100 });
+    reading = setReadingState({ lastWorkId: work.id });
+
     if (loc.atEnd) finishWork();
   });
-
-  // אחוזי התקדמות דורשים מפת מיקומים. נבנית ברקע כדי לא לעכב את הפתיחה.
-  book.locations.generate(1400).then(() => {
-    const loc = rendition.currentLocation();
-    if (loc) els.position.textContent = epubPosition(loc);
-  }).catch(() => { /* בלי מפה נישאר עם חיווי הפרק */ });
 
   rendition.on('rendered', (_section, view) => {
     const doc = view?.document || view?.contents?.document;
@@ -523,10 +583,12 @@ async function openEpub(file) {
     applyEpubStyles();
   });
 
-  rendition.on('keyup', (e) => {
-    if (e.key === 'ArrowLeft') turn('next');
-    if (e.key === 'ArrowRight') turn('prev');
-  });
+  book.locations.generate(1400).then(() => {
+    const loc = rendition.currentLocation();
+    if (!loc) return;
+    const pct = epubPercent(loc);
+    if (pct != null) els.percent.textContent = `${pct}%`;
+  }).catch(() => { /* בלי מפה נישאר עם חיווי הפרק */ });
 
   startTicker();
 }
@@ -535,13 +597,8 @@ async function openEpub(file) {
  * טעינה, מצב ריק ושגיאה
  * ------------------------------------------------------------------ */
 
-/**
- * ספר גדול יכול לקחת כמה שניות ברשת סלולרית — בין ההורדה לעימוד.
- * בלי חיווי המסך פשוט נשאר ריק, ונראה שהאפליקציה תקועה.
- */
 function showLoading(on) {
   let node = els.stage.querySelector('[data-loading]');
-
   if (!on) { node?.remove(); return; }
   if (node) return;
 
@@ -556,7 +613,7 @@ function showEmpty(message) {
   els.stage.innerHTML = `
     <div class="reader__empty">
       <p class="t-sub">${message}</p>
-      <a class="btn btn--secondary" href="index.html">חזרה לבית</a>
+      <a class="btn btn--secondary" href="library.html">לספרייה</a>
     </div>`;
 }
 
@@ -564,20 +621,46 @@ function showEmpty(message) {
  * הפעלה
  * ------------------------------------------------------------------ */
 
-async function init() {
-  initTheme();
-  openDay();          // חוקי החצות — לפני שקוראים מצב כלשהו
-  markThemeButtons();
-
-  // ב-RTL חץ החזרה מצביע ימינה — כיוון ה"אחורה" של השפה
+function bindChrome() {
   els.back.innerHTML = icon('arrow', 22);
+  els.back.classList.add('icon-flip');
   els.importBtn.innerHTML = icon('book', 22);
+  els.settingsBtn.innerHTML = icon('settings', 22);
 
-  setFontSize(settings.fontSize);
-  renderStrip();
+  els.back.addEventListener('click', () => {
+    if (history.length > 1 && document.referrer.includes(location.host)) history.back();
+    else location.href = 'index.html';
+  });
 
-  // ניווט וסרגלים
-  els.back.addEventListener('click', () => history.length > 1 ? history.back() : (location.href = 'index.html'));
+  // כפתורי דפדוף קבועים — ב-RTL "הבא" מצביע שמאלה
+  document.querySelectorAll('[data-turn]').forEach((btn) => {
+    btn.innerHTML = icon('arrow', 22);
+    btn.classList.toggle('is-next', btn.dataset.turn === 'next');
+    btn.addEventListener('click', (e) => { e.stopPropagation(); turn(btn.dataset.turn); });
+  });
+
+  // גיליון ההגדרות
+  els.settingsBtn.addEventListener('click', () => openSheet(true));
+  document.querySelectorAll('[data-sheet-close]').forEach((n) =>
+    n.addEventListener('click', () => openSheet(false)));
+
+  document.querySelectorAll('[data-font]').forEach((b) => {
+    b.innerHTML = icon(b.dataset.font === '+' ? 'plus' : 'minus', 20);
+    b.addEventListener('click', () => {
+      setFontSize(settings.fontSize + (b.dataset.font === '+' ? 1 : -1));
+      relayout();
+    });
+  });
+
+  document.querySelectorAll('[data-mode]').forEach((b) => {
+    b.addEventListener('click', () => { setTheme(b.dataset.mode); markThemeButtons(); relayout(); });
+  });
+
+  document.querySelectorAll('[data-mark]').forEach((b) => {
+    b.addEventListener('click', () => markHere(b.dataset.mark));
+  });
+
+  // ייבוא EPUB
   els.importBtn.addEventListener('click', () => els.file.click());
   els.file.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
@@ -588,26 +671,17 @@ async function init() {
     catch (err) { toast('לא הצלחנו לפתוח את הקובץ'); console.error(err); }
     finally { showLoading(false); }
   });
+}
 
-  document.querySelectorAll('[data-font]').forEach((b) => {
-    b.innerHTML = icon(b.dataset.font === '+' ? 'plus' : 'minus', 20);
-    b.addEventListener('click', () => {
-      setFontSize(settings.fontSize + (b.dataset.font === '+' ? 1 : -1));
-      relayout();
-      toggleBars(true);
-    });
-  });
-
-  document.querySelectorAll('[data-mode]').forEach((b) => {
-    b.addEventListener('click', () => {
-      setTheme(b.dataset.mode);
-      markThemeButtons();
-      relayout();
-      toggleBars(true);
-    });
-  });
-
+async function init() {
+  initTheme();
+  openDay();
+  markThemeButtons();
+  bindChrome();
   bindGestures();
+
+  setFontSize(settings.fontSize);
+  renderStrip();
 
   let resizeTimer;
   window.addEventListener('resize', () => {
@@ -615,16 +689,13 @@ async function init() {
     resizeTimer = setTimeout(relayout, 150);
   });
 
-  // איזו יצירה לפתוח: פרמטר בכתובת ⇐ מה שנקרא לאחרונה ⇐ ברירת מחדל
   const wanted = new URLSearchParams(location.search).get('work')
-    || (reading.workId && !reading.workId.startsWith('epub:') ? reading.workId : null)
+    || (reading.lastWorkId && !reading.lastWorkId.startsWith('epub:') ? reading.lastWorkId : null)
     || DEFAULT_WORK;
 
   showLoading(true);
   try {
-    const data = await loadWork(wanted);
-    const savedLocation = data.id === reading.workId ? reading.location : null;
-    await openText(data, savedLocation);
+    await openText(await loadWork(wanted));
     showLoading(false);
   } catch (err) {
     console.error(err);

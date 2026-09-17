@@ -19,7 +19,7 @@
 (function () {
   var t;
   try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark', 'sepia'].indexOf(t) === -1) {
+  if (['light', 'dark'].indexOf(t) === -1) {
     t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.className = 'theme-' + t;
@@ -68,6 +68,7 @@
     padding: var(--sp-6); text-align: center;
   }
   .sg__lock .t-soft { color: rgba(255,255,255,.66); }
+  .sg__books { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
 </style>
 </head>
 
@@ -83,7 +84,6 @@
   <div class="sg__themes">
     <button class="btn btn--secondary" data-theme-btn="light">בהיר</button>
     <button class="btn btn--secondary" data-theme-btn="dark">כהה</button>
-    <button class="btn btn--secondary" data-theme-btn="sepia">ספיה</button>
   </div>
 
   <section>

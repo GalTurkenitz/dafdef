@@ -8,12 +8,13 @@
 
 import { initTheme } from './theme.js';
 import { renderNavbar } from './nav.js';
+import { bookCard, newBookCard } from './bookcard.js';
 import { createRing } from './ring.js';
 import { icon } from './icons.js';
 import { appIcon, appById } from './apps.js';
 import { toast } from './toast.js';
 import { getSettings, getBank, setBank, getBlockedApps, getStreak,
-         addToday, openDay } from '../logic/store.js';
+         addToday, openDay, getStartedBooks } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
 
 const $ = (s) => document.querySelector(s);
@@ -22,7 +23,7 @@ const els = {
   ring:   $('[data-ring-mount]'),
   streak: $('[data-streak-mount]'),
   apps:   $('[data-apps-grid]'),
-  screen: $('.screen'),
+  books:  $('[data-my-books]'),
 };
 
 const TICK_MS = 1000;
@@ -48,8 +49,17 @@ function renderRing() {
 }
 
 function renderStreak() {
-  const { current } = getStreak();
-  els.streak.innerHTML = `<span class="chip chip--streak">${icon('flame', 16)} ${current}</span>`;
+  const { current, best } = getStreak();
+  const label = current === 0
+    ? 'מתחילים רצף'
+    : (current === 1 ? 'יום ברצף' : 'ימים ברצף');
+
+  els.streak.innerHTML = `
+    <div class="streak">
+      <span class="streak__flame" aria-hidden="true">🔥</span>
+      <span class="streak__num">${current}</span>
+      <span class="streak__label">${label}${best > current ? `<br>השיא ${best}` : ''}</span>
+    </div>`;
 }
 
 function renderApps() {
@@ -75,10 +85,29 @@ function renderApps() {
   });
 }
 
+/**
+ * "הספרים שלי" — אפשר לקרוא כמה ספרים במקביל, ולכן כאן מוצגים
+ * כל הספרים שבקריאה עם אחוז ההתקדמות, ולא כפתור קריאה יחיד.
+ */
+function renderMyBooks() {
+  const books = getStartedBooks().filter((b) => !b.finished).slice(0, 5);
+
+  els.books.innerHTML = `
+    <div class="home__section">
+      <h2>הספרים שלי</h2>
+      ${books.length ? '<a href="library.html">לספרייה</a>' : ''}
+    </div>
+    <div class="bookgrid">
+      ${books.map((b) => bookCard(b, { percent: b.percent ?? 0 })).join('')}
+      ${newBookCard()}
+    </div>`;
+}
+
 function renderAll() {
   renderRing();
   renderStreak();
   renderApps();
+  renderMyBooks();
 }
 
 /* ------------------------------------------------------------------ *
