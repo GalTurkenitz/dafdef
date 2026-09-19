@@ -1843,3 +1843,142 @@ p  { margin: 0; }
   cursor: pointer;
 }
 .writer__past p { font-family: var(--font-read); line-height: var(--lh-read); }
+
+/* ============================================================
+   מסכי המצלמה (המפרט, סעיף 5)
+   ============================================================ */
+
+.cam {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: #0B0907;
+}
+
+.cam__video,
+.cam__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* מצלמה קדמית — מראה, אחרת התנועה מרגישה הפוכה */
+  transform: scaleX(-1);
+}
+
+.cam__guide {
+  position: absolute;
+  inset-inline: var(--sp-3);
+  inset-block-start: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-chip);
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font-size: var(--fs-sub);
+  text-align: center;
+  backdrop-filter: blur(6px);
+  transition: opacity var(--t-fast) var(--ease);
+}
+.cam__guide:empty { opacity: 0; }
+.cam__guide.is-warn { background: rgba(179, 64, 58, .8); }
+
+.cam__badge {
+  position: absolute;
+  inset-block-start: var(--sp-3);
+  inset-inline-end: var(--sp-3);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-chip);
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* שורת הפרטיות — מופיעה בכל מסך מצלמה, לפי המפרט */
+.cam__privacy {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: linear-gradient(to top, rgba(0, 0, 0, .6), transparent);
+  color: rgba(255, 255, 255, .85);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ---------- נשימות ---------- */
+.breath {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.breath__ring {
+  display: grid;
+  place-items: center;
+  width: 150px; height: 150px;
+  border-radius: var(--r-chip);
+  border: 3px solid var(--primary);
+  background: var(--primary-soft);
+  transform: scale(var(--open, .5));
+  transition: transform 120ms linear;
+}
+
+.breath__label { font-size: var(--fs-h2); font-weight: 700; color: var(--primary); }
+.breath__count {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.breath__left { font-size: var(--fs-sub); color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.breath__sync { min-height: 20px; font-size: var(--fs-small); color: var(--text-soft); }
+.breath__sync.is-on { color: var(--primary); font-weight: 500; }
+
+/* ---------- כושר ---------- */
+.reps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.reps__count {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.reps__count span { font-size: 28px; color: var(--text-soft); }
+.reps .progress { width: 100%; }
+
+/* ---------- מים ---------- */
+.water { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
+
+.water__steps { display: flex; gap: var(--sp-2); justify-content: center; }
+
+.water__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  width: 78px;
+  padding: var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.water__step small { font-size: 11px; font-weight: 400; }
+.water__step.is-current { border-color: var(--primary); color: var(--primary); }
+.water__step.is-done { background: var(--primary); border-color: var(--primary); color: var(--primary-contrast); }

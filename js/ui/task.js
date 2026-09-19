@@ -4,8 +4,8 @@
  * עטיפה אחידה לכל משימת רוטציה: כותרת, שווי, תוכן המודול,
  * התקדמות, ובסיום — אנימציית "+X דק'" וחזרה הביתה עם ✓ בסבב.
  *
- * המודולים עצמם נבנים בשלבים 6-7. עד אז כל נישה שאין לה מודול
- * מציגה מסך "בקרוב" כן, ולא מתחזה לעבוד.
+ * כל נישה טוענת את המודול שלה דינמית — כך שקוד המצלמה הכבד
+ * יורד רק כשבאמת צריך אותו.
  */
 
 import { initTheme } from './theme.js';
@@ -55,21 +55,29 @@ function complete(units = 1) {
  * מודול שעוד לא נבנה
  * ------------------------------------------------------------------ */
 
-const COMING = {
-  fitness:   'ספירת חזרות במצלמה — שכיבות סמיכה וסקוואטים.',
-  breathing: 'תרגיל נשימה מונחה של שתי דקות, עם מצלמה.',
-  water:     'רצף מונחה במצלמה — כוס, שתייה, אישור.',
+const COMING = {};
+
+/** המודולים. כל אחד מייצא mount(host, hooks). */
+const MODULES = {
+  learning:  () => import('./modules/learning.js'),
+  writing:   () => import('./modules/writing.js'),
+  breathing: () => import('./modules/breathing.js'),
+  water:     () => import('./modules/water.js'),
+  fitness:   () => import('./modules/fitness.js'),
 };
 
-/** המודולים שכבר נבנו. כל אחד מייצא mount(host, hooks). */
-const MODULES = {
-  learning: () => import('./modules/learning.js'),
-  writing:  () => import('./modules/writing.js'),
-};
+/** מודולים שדורשים מצלמה — צריך HTTPS ו-getUserMedia */
+const NEEDS_CAMERA = new Set(['breathing', 'water', 'fitness']);
+
+function cameraUnavailable() {
+  return !navigator.mediaDevices?.getUserMedia;
+}
 
 /** מריץ מודול אמיתי בתוך עטיפת המשימה */
 async function runModule(id) {
   const mod = await MODULES[id]();
+
+  let live = null;
 
   const api = await mod.mount(els.module, {
     onComplete: (units = 1) => complete(units),
@@ -78,6 +86,10 @@ async function runModule(id) {
         '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';
     },
   });
+
+  live = api;
+  // מודול שמחזיק מצלמה חייב להשתחרר כשעוזבים את המסך
+  window.addEventListener('pagehide', () => live?.stop?.());
 
   // מודול יכול לבקש כפתור משלו בפוטר (כמו "סיימתי לכתוב")
   if (api?.actions) {
@@ -141,6 +153,14 @@ function init() {
         : 'המשימה לא זמינה כרגע.';
 
     els.module.innerHTML = `<p class="t-sub empty">${why}</p>`;
+    els.actions.innerHTML = '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';
+    return;
+  }
+
+  if (NEEDS_CAMERA.has(nicheId) && cameraUnavailable()) {
+    els.module.innerHTML = `
+      <p class="t-sub empty">המשימה הזו צריכה מצלמה, והדפדפן הזה לא נותן גישה.<br>
+        נסה לפתוח את האתר ב-HTTPS.</p>`;
     els.actions.innerHTML = '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';
     return;
   }
