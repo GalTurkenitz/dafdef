@@ -1,0 +1,290 @@
+/**
+ * build-learning.mjs — בונה את מאגר המילים ללמידה (המפרט, סעיף 10.2).
+ *
+ * רץ מראש ויוצר content/learning/words.json. לא רץ בזמן ריצה —
+ * האפליקציה קוראת רק את הקובץ המוכן.
+ *
+ * המאגר הוא אנגלית⇐עברית בשלוש רמות. המילים נבחרו לפי שכיחות:
+ * מתחיל = אלף המילים הנפוצות, בינוני = שימוש יומיומי, מתקדם =
+ * מילים שמופיעות בטקסט כתוב ובשיחה מורכבת.
+ *
+ * הרצה:  node scripts/build-learning.mjs
+ */
+
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const OUT = join(ROOT, 'content', 'learning');
+
+/* ------------------------------------------------------------------ *
+ * המילים. [אנגלית, עברית, משפט לדוגמה]
+ * המשפט משמש לשאלות השלמה — המילה מוחלפת ב-____.
+ * ------------------------------------------------------------------ */
+
+const BEGINNER = [
+  ['water', 'מים', 'I drink ____ every morning.'],
+  ['house', 'בית', 'They live in a small ____.'],
+  ['book', 'ספר', 'She is reading a good ____.'],
+  ['friend', 'חבר', 'He is my best ____.'],
+  ['food', 'אוכל', 'The ____ smells delicious.'],
+  ['work', 'עבודה', 'I go to ____ at eight.'],
+  ['night', 'לילה', 'The stars come out at ____.'],
+  ['morning', 'בוקר', 'Good ____, how are you?'],
+  ['child', 'ילד', 'The ____ is playing outside.'],
+  ['city', 'עיר', 'Tel Aviv is a busy ____.'],
+  ['street', 'רחוב', 'Cross the ____ carefully.'],
+  ['money', 'כסף', 'I need more ____ for this.'],
+  ['time', 'זמן', 'We do not have much ____.'],
+  ['year', 'שנה', 'Next ____ I will travel.'],
+  ['week', 'שבוע', 'See you next ____.'],
+  ['door', 'דלת', 'Please close the ____.'],
+  ['table', 'שולחן', 'Put the plate on the ____.'],
+  ['window', 'חלון', 'Open the ____ for fresh air.'],
+  ['hand', 'יד', 'He raised his ____.'],
+  ['head', 'ראש', 'My ____ hurts today.'],
+  ['heart', 'לב', 'She has a kind ____.'],
+  ['eye', 'עין', 'He closed one ____.'],
+  ['car', 'מכונית', 'The ____ would not start.'],
+  ['road', 'כביש', 'The ____ was empty.'],
+  ['tree', 'עץ', 'A bird sat in the ____.'],
+  ['rain', 'גשם', 'The ____ stopped at noon.'],
+  ['sun', 'שמש', 'The ____ rose behind the hills.'],
+  ['moon', 'ירח', 'The ____ was full last night.'],
+  ['dog', 'כלב', 'Their ____ barks a lot.'],
+  ['cat', 'חתול', 'The ____ sleeps all day.'],
+  ['school', 'בית ספר', 'The children walk to ____.'],
+  ['teacher', 'מורה', 'Our ____ explained it twice.'],
+  ['story', 'סיפור', 'Tell me a ____.'],
+  ['word', 'מילה', 'I did not know that ____.'],
+  ['name', 'שם', 'What is your ____?'],
+  ['day', 'יום', 'It was a long ____.'],
+  ['hour', 'שעה', 'Wait one more ____.'],
+  ['month', 'חודש', 'Last ____ was quiet.'],
+  ['family', 'משפחה', 'My ____ lives nearby.'],
+  ['mother', 'אמא', 'His ____ called him.'],
+  ['father', 'אבא', 'Her ____ is a doctor.'],
+  ['brother', 'אח', 'My ____ is younger.'],
+  ['sister', 'אחות', 'Her ____ studies law.'],
+  ['bread', 'לחם', 'We bought fresh ____.'],
+  ['milk', 'חלב', 'Add ____ to the coffee.'],
+  ['coffee', 'קפה', 'I need a strong ____.'],
+  ['light', 'אור', 'Turn on the ____.'],
+  ['dark', 'חושך', 'It was completely ____.'],
+  ['cold', 'קר', 'The water is too ____.'],
+  ['warm', 'חם', 'Keep the soup ____.'],
+  ['big', 'גדול', 'That is a ____ mistake.'],
+  ['small', 'קטן', 'She lives in a ____ flat.'],
+  ['good', 'טוב', 'That is a ____ idea.'],
+  ['bad', 'רע', 'The weather was ____.'],
+  ['new', 'חדש', 'He bought a ____ phone.'],
+  ['old', 'ישן', 'This is an ____ photograph.'],
+  ['happy', 'שמח', 'They looked ____ together.'],
+  ['sad', 'עצוב', 'The ending was ____.'],
+  ['tired', 'עייף', 'I am too ____ to talk.'],
+  ['hungry', 'רעב', 'The kids are ____.'],
+  ['open', 'פתוח', 'The shop is still ____.'],
+  ['close', 'לסגור', 'Please ____ the window.'],
+  ['walk', 'ללכת', 'Let us ____ to the park.'],
+  ['run', 'לרוץ', 'He had to ____ for the bus.'],
+  ['eat', 'לאכול', 'We ____ dinner at seven.'],
+  ['sleep', 'לישון', 'I could not ____ last night.'],
+  ['read', 'לקרוא', 'She likes to ____ before bed.'],
+  ['write', 'לכתוב', 'Please ____ your name here.'],
+  ['speak', 'לדבר', 'Do you ____ Hebrew?'],
+  ['listen', 'להקשיב', 'You never ____ to me.'],
+  ['see', 'לראות', 'I can ____ the sea.'],
+  ['know', 'לדעת', 'I do not ____ his name.'],
+  ['think', 'לחשוב', 'Let me ____ about it.'],
+  ['want', 'לרצות', 'What do you ____?'],
+  ['give', 'לתת', 'Please ____ me a minute.'],
+  ['take', 'לקחת', 'You can ____ this one.'],
+  ['come', 'לבוא', 'She will ____ tomorrow.'],
+  ['go', 'ללכת', 'We have to ____ now.'],
+  ['buy', 'לקנות', 'I want to ____ a ticket.'],
+  ['help', 'לעזור', 'Can you ____ me?'],
+];
+
+const INTERMEDIATE = [
+  ['decide', 'להחליט', 'We have to ____ by Friday.'],
+  ['remember', 'לזכור', 'I cannot ____ his face.'],
+  ['forget', 'לשכוח', 'Do not ____ the keys.'],
+  ['explain', 'להסביר', 'Could you ____ that again?'],
+  ['choose', 'לבחור', 'You must ____ one option.'],
+  ['improve', 'לשפר', 'He wants to ____ his English.'],
+  ['continue', 'להמשיך', 'Please ____ from page ten.'],
+  ['prepare', 'להתכונן', 'We need to ____ for the trip.'],
+  ['accept', 'לקבל', 'She did not ____ the offer.'],
+  ['refuse', 'לסרב', 'He had to ____ politely.'],
+  ['suggest', 'להציע', 'May I ____ another way?'],
+  ['increase', 'להגדיל', 'They plan to ____ the budget.'],
+  ['reduce', 'לצמצם', 'Try to ____ your screen time.'],
+  ['achieve', 'להשיג', 'She hopes to ____ her goal.'],
+  ['avoid', 'להימנע', 'Try to ____ the main road.'],
+  ['allow', 'לאפשר', 'They do not ____ pets here.'],
+  ['require', 'לדרוש', 'This job will ____ patience.'],
+  ['provide', 'לספק', 'We ____ the equipment.'],
+  ['receive', 'לקבל', 'Did you ____ my message?'],
+  ['produce', 'לייצר', 'The factory can ____ more.'],
+  ['develop', 'לפתח', 'They want to ____ an app.'],
+  ['describe', 'לתאר', 'Can you ____ what happened?'],
+  ['compare', 'להשוות', 'Let us ____ the two plans.'],
+  ['measure', 'למדוד', 'We cannot ____ that easily.'],
+  ['succeed', 'להצליח', 'He worked hard to ____.'],
+  ['fail', 'להיכשל', 'Nobody wants to ____.'],
+  ['attempt', 'ניסיון', 'It was his third ____.'],
+  ['reason', 'סיבה', 'There is a good ____ for this.'],
+  ['result', 'תוצאה', 'The ____ surprised everyone.'],
+  ['problem', 'בעיה', 'We found the ____ quickly.'],
+  ['solution', 'פתרון', 'There is a simple ____.'],
+  ['answer', 'תשובה', 'I am still waiting for an ____.'],
+  ['question', 'שאלה', 'That is a fair ____.'],
+  ['example', 'דוגמה', 'Give me an ____.'],
+  ['difference', 'הבדל', 'What is the ____ between them?'],
+  ['choice', 'בחירה', 'It was not an easy ____.'],
+  ['chance', 'הזדמנות', 'Give him another ____.'],
+  ['change', 'שינוי', 'The ____ was gradual.'],
+  ['effort', 'מאמץ', 'It took real ____.'],
+  ['habit', 'הרגל', 'Reading became a ____.'],
+  ['goal', 'מטרה', 'Set a realistic ____.'],
+  ['progress', 'התקדמות', 'We made good ____.'],
+  ['attention', 'תשומת לב', 'Pay ____ to the details.'],
+  ['memory', 'זיכרון', 'She has a sharp ____.'],
+  ['knowledge', 'ידע', 'His ____ is impressive.'],
+  ['experience', 'ניסיון', 'She has years of ____.'],
+  ['opinion', 'דעה', 'In my ____, it is wrong.'],
+  ['advice', 'עצה', 'Let me give you some ____.'],
+  ['decision', 'החלטה', 'It was a difficult ____.'],
+  ['meeting', 'פגישה', 'The ____ was postponed.'],
+  ['message', 'הודעה', 'I sent you a ____.'],
+  ['report', 'דוח', 'The ____ is due tomorrow.'],
+  ['project', 'פרויקט', 'The ____ took six months.'],
+  ['company', 'חברה', 'He works for a small ____.'],
+  ['customer', 'לקוח', 'The ____ was satisfied.'],
+  ['service', 'שירות', 'The ____ here is slow.'],
+  ['price', 'מחיר', 'The ____ went up again.'],
+  ['value', 'ערך', 'It has sentimental ____.'],
+  ['quality', 'איכות', 'The ____ is excellent.'],
+  ['amount', 'כמות', 'A large ____ of water.'],
+  ['almost', 'כמעט', 'We are ____ there.'],
+  ['already', 'כבר', 'She has ____ left.'],
+  ['perhaps', 'אולי', '____ we should wait.'],
+  ['instead', 'במקום', 'Take the train ____.'],
+  ['although', 'למרות ש', '____ it rained, we walked.'],
+  ['however', 'לעומת זאת', 'It is cheap; ____, it breaks.'],
+  ['therefore', 'לכן', 'He was late and ____ missed it.'],
+  ['enough', 'מספיק', 'That is ____ for today.'],
+  ['several', 'כמה', 'I called ____ times.'],
+  ['certain', 'בטוח', 'Are you ____ about this?'],
+  ['possible', 'אפשרי', 'Is that even ____?'],
+  ['difficult', 'קשה', 'The exam was ____.'],
+  ['simple', 'פשוט', 'The answer is ____.'],
+  ['important', 'חשוב', 'This is very ____.'],
+  ['useful', 'שימושי', 'That tip was ____.'],
+  ['common', 'נפוץ', 'It is a ____ mistake.'],
+  ['strange', 'מוזר', 'He gave me a ____ look.'],
+  ['quiet', 'שקט', 'The street was ____.'],
+  ['strong', 'חזק', 'She has a ____ opinion.'],
+  ['ready', 'מוכן', 'Dinner is ____.'],
+];
+
+const ADVANCED = [
+  ['acknowledge', 'להודות, להכיר ב', 'He refused to ____ the mistake.'],
+  ['assume', 'להניח', 'Do not ____ they agree.'],
+  ['consider', 'לשקול', 'Please ____ the alternative.'],
+  ['determine', 'לקבוע', 'The test will ____ the outcome.'],
+  ['establish', 'לבסס', 'They hope to ____ a routine.'],
+  ['maintain', 'לשמר', 'It is hard to ____ the pace.'],
+  ['obtain', 'להשיג', 'He managed to ____ a permit.'],
+  ['pursue', 'לרדוף אחרי', 'She chose to ____ medicine.'],
+  ['reveal', 'לחשוף', 'The study did not ____ much.'],
+  ['sustain', 'לקיים לאורך זמן', 'Can you ____ this effort?'],
+  ['undermine', 'לערער', 'Doubt began to ____ his plan.'],
+  ['emphasise', 'להדגיש', 'I must ____ this point.'],
+  ['anticipate', 'לצפות מראש', 'We did not ____ the delay.'],
+  ['implement', 'ליישם', 'They will ____ the change slowly.'],
+  ['evaluate', 'להעריך', 'We need to ____ the results.'],
+  ['justify', 'להצדיק', 'Can you ____ that expense?'],
+  ['distinguish', 'להבחין', 'It is hard to ____ between them.'],
+  ['persuade', 'לשכנע', 'Nothing could ____ him.'],
+  ['postpone', 'לדחות', 'Let us ____ the meeting.'],
+  ['abandon', 'לנטוש', 'They had to ____ the project.'],
+  ['assumption', 'הנחה', 'That is a dangerous ____.'],
+  ['consequence', 'תוצאה, השלכה', 'Every choice has a ____.'],
+  ['perspective', 'נקודת מבט', 'From my ____, it is fine.'],
+  ['approach', 'גישה', 'We need a different ____.'],
+  ['framework', 'מסגרת', 'The ____ is still incomplete.'],
+  ['evidence', 'ראיות', 'There is little ____ for that.'],
+  ['argument', 'טיעון', 'His ____ was convincing.'],
+  ['assessment', 'הערכה', 'The ____ took two weeks.'],
+  ['insight', 'תובנה', 'That was a sharp ____.'],
+  ['tendency', 'נטייה', 'He has a ____ to exaggerate.'],
+  ['constraint', 'אילוץ', 'Time is the main ____.'],
+  ['priority', 'עדיפות', 'Sleep is a ____ now.'],
+  ['significance', 'משמעות', 'I missed its ____.'],
+  ['implication', 'השלכה', 'Consider every ____.'],
+  ['distinction', 'הבחנה', 'It is a subtle ____.'],
+  ['contradiction', 'סתירה', 'There is a ____ here.'],
+  ['assumption', 'הנחת יסוד', 'Question every ____.'],
+  ['resilience', 'חוסן', 'Her ____ impressed everyone.'],
+  ['integrity', 'יושרה', 'He is known for his ____.'],
+  ['ambiguity', 'דו-משמעות', 'The wording has ____.'],
+  ['deliberate', 'מכוון', 'It was a ____ choice.'],
+  ['inevitable', 'בלתי נמנע', 'The delay was ____.'],
+  ['substantial', 'משמעותי', 'That is a ____ amount.'],
+  ['reluctant', 'מהסס', 'She was ____ to agree.'],
+  ['thorough', 'יסודי', 'He gave it a ____ check.'],
+  ['consistent', 'עקבי', 'Be ____ with the routine.'],
+  ['adequate', 'מספק', 'The light was barely ____.'],
+  ['relevant', 'רלוונטי', 'Is that ____ here?'],
+  ['apparent', 'ניכר', 'The problem became ____.'],
+  ['crucial', 'קריטי', 'Timing is ____.'],
+  ['feasible', 'בר ביצוע', 'Is the plan ____?'],
+  ['arbitrary', 'שרירותי', 'The rule feels ____.'],
+  ['explicit', 'מפורש', 'He gave ____ instructions.'],
+  ['implicit', 'מרומז', 'There was an ____ promise.'],
+  ['redundant', 'מיותר', 'That sentence is ____.'],
+  ['coherent', 'קוהרנטי', 'Give me a ____ answer.'],
+  ['profound', 'עמוק', 'It had a ____ effect.'],
+  ['subtle', 'עדין', 'The difference is ____.'],
+  ['vulnerable', 'פגיע', 'He felt ____ afterwards.'],
+  ['sceptical', 'ספקן', 'I remain ____ about it.'],
+  ['nevertheless', 'ובכל זאת', 'It rained; ____, we went.'],
+  ['regardless', 'ללא קשר', 'He went ____ of the cost.'],
+  ['whereas', 'בעוד ש', 'He reads, ____ she writes.'],
+  ['furthermore', 'יתרה מזו', '____, the price rose.'],
+  ['accordingly', 'בהתאם', 'Plan ____.'],
+  ['deliberately', 'בכוונה', 'She ____ ignored him.'],
+  ['eventually', 'בסופו של דבר', 'He ____ agreed.'],
+  ['occasionally', 'מדי פעם', 'We meet ____.'],
+  ['sufficiently', 'די', 'It is ____ clear.'],
+  ['predominantly', 'בעיקר', 'The group is ____ young.'],
+];
+
+/* ------------------------------------------------------------------ */
+
+const clean = (rows) => {
+  const seen = new Set();
+  return rows.filter(([en]) => {
+    const k = en.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).map(([en, he, sentence], i) => ({ id: `${en}-${i}`, en, he, sentence }));
+};
+
+const words = {
+  beginner: clean(BEGINNER),
+  intermediate: clean(INTERMEDIATE),
+  advanced: clean(ADVANCED),
+};
+
+await mkdir(OUT, { recursive: true });
+await writeFile(join(OUT, 'words.json'), JSON.stringify(words), 'utf8');
+
+const total = Object.values(words).reduce((a, w) => a + w.length, 0);
+for (const [level, list] of Object.entries(words)) {
+  console.log(`  ${level.padEnd(14)} ${list.length} מילים`);
+}
+console.log(`\nסה"כ ${total} מילים · ${join(OUT, 'words.json')}`);

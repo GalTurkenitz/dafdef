@@ -1705,3 +1705,141 @@ p  { margin: 0; }
   color: var(--text);
   font-size: var(--fs-sub);
 }
+
+/* ============================================================
+   מודול הלמידה (המפרט, סעיף 10.2)
+   ============================================================ */
+
+.quiz { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.quiz__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  text-align: center;
+  min-height: 132px;
+  justify-content: center;
+}
+
+.quiz__label { font-size: var(--fs-small); color: var(--text-soft); }
+
+.quiz__word {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  direction: ltr;
+}
+
+.quiz__sentence {
+  font-family: var(--font-read);
+  font-size: var(--fs-h2);
+  line-height: 1.5;
+  direction: ltr;
+}
+
+.quiz__input {
+  flex: 1;
+  min-width: 0;
+  height: var(--btn-h);
+  padding-inline: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  color: var(--text);
+  direction: ltr;
+  text-align: left;
+  outline: 0;
+}
+.quiz__input:focus { border-color: var(--primary); }
+
+.quiz__feedback {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-sub);
+  font-weight: 500;
+}
+.quiz__feedback.is-right { color: var(--primary); }
+.quiz__feedback.is-wrong { color: var(--danger); }
+
+.card--choice.is-right { border-color: var(--primary); background: var(--primary-soft); }
+.card--choice.is-wrong { border-color: var(--danger); background: rgba(179, 64, 58, .08); }
+
+.quiz__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding-block: var(--sp-8);
+}
+.quiz__score {
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--danger);
+  font-variant-numeric: tabular-nums;
+}
+.quiz__score span { font-size: 28px; color: var(--text-soft); }
+
+/* ============================================================
+   מודול הכתיבה (המפרט, סעיף 10.3)
+   ============================================================ */
+
+.writer { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.writer__prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  background: var(--primary-soft);
+}
+.writer__prompt b { font-family: var(--font-read); font-size: var(--fs-h2); line-height: 1.35; }
+
+.writer__area {
+  width: 100%;
+  min-height: 220px;
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-read);
+  font-size: var(--fs-body);
+  line-height: var(--lh-read);
+  resize: vertical;
+  outline: 0;
+}
+.writer__area:focus { border-color: var(--primary); }
+
+.writer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+.writer__foot .is-ready { color: var(--primary); font-weight: 500; }
+.writer__foot .is-warn  { color: var(--danger); }
+
+.writer__past summary {
+  padding: var(--sp-3) 0;
+  font-size: var(--fs-sub);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+.writer__past p { font-family: var(--font-read); line-height: var(--lh-read); }

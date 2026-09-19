@@ -57,11 +57,36 @@ function complete(units = 1) {
 
 const COMING = {
   fitness:   'ספירת חזרות במצלמה — שכיבות סמיכה וסקוואטים.',
-  learning:  'כרטיסיות אנגלית, סט של עשר שאלות.',
-  writing:   'עורך יומן עם פרומפט יומי.',
   breathing: 'תרגיל נשימה מונחה של שתי דקות, עם מצלמה.',
   water:     'רצף מונחה במצלמה — כוס, שתייה, אישור.',
 };
+
+/** המודולים שכבר נבנו. כל אחד מייצא mount(host, hooks). */
+const MODULES = {
+  learning: () => import('./modules/learning.js'),
+  writing:  () => import('./modules/writing.js'),
+};
+
+/** מריץ מודול אמיתי בתוך עטיפת המשימה */
+async function runModule(id) {
+  const mod = await MODULES[id]();
+
+  const api = await mod.mount(els.module, {
+    onComplete: (units = 1) => complete(units),
+    onFail: () => {
+      els.actions.innerHTML =
+        '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';
+    },
+  });
+
+  // מודול יכול לבקש כפתור משלו בפוטר (כמו "סיימתי לכתוב")
+  if (api?.actions) {
+    els.actions.innerHTML = api.actions;
+    api.bind?.(els.actions);
+  } else {
+    els.actions.innerHTML = '';
+  }
+}
 
 function renderComing() {
   els.module.innerHTML = `
@@ -117,6 +142,14 @@ function init() {
 
     els.module.innerHTML = `<p class="t-sub empty">${why}</p>`;
     els.actions.innerHTML = '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';
+    return;
+  }
+
+  if (MODULES[nicheId]) {
+    runModule(nicheId).catch((err) => {
+      console.error(err);
+      els.module.innerHTML = '<p class="t-sub empty">משהו השתבש בטעינת המשימה.</p>';
+    });
     return;
   }
 
