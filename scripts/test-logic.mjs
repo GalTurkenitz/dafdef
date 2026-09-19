@@ -1,11 +1,10 @@
 /**
- * test-logic.mjs — בדיקות למודולים הטהורים: formula, bank, streak.
- * (verify.js נבדק בנפרד ב-test-verify.mjs)
+ * test-logic.mjs — בדיקות ל-bank ול-streak.
+ * formula ו-rotation נבדקים ב-test-rotation.mjs, verify ב-test-verify.mjs.
  *
  * הרצה: node scripts/test-logic.mjs
  */
 
-import { computePageValue, graceFactor, roundToHalf, explainPageValue } from '../js/logic/formula.js';
 import { createBank, earn, drain, touch, isEmpty, remainingMs, resetDaily } from '../js/logic/bank.js';
 import { createStreak, registerRead, closeDay, daysBetween } from '../js/logic/streak.js';
 
@@ -20,42 +19,6 @@ const near = (name, got, want, eps = 1e-6) => {
   if (!ok) fail++;
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name} → ${got}${ok ? '' : `  (want ${want})`}`);
 };
-
-console.log('— formula —');
-is('עיגול לחצי', roundToHalf(12.3), 12.5);
-is('עיגול לחצי 2', roundToHalf(12.1), 12);
-
-// המטרות, במצב בינוני, לקורא קבוע
-is('לצמצם · בינוני', computePageValue({ goal: 'reduce', strictness: 'medium', readingHabit: 'regular' }), 10);
-is('לאזן · בינוני',  computePageValue({ goal: 'balance', strictness: 'medium', readingHabit: 'regular' }), 15);
-is('לקרוא · בינוני', computePageValue({ goal: 'read', strictness: 'medium', readingHabit: 'regular' }), 20);
-
-// מקדמי קשיחות
-is('לאזן · רך',     computePageValue({ goal: 'balance', strictness: 'soft', readingHabit: 'regular' }), 19);
-is('לאזן · אכזרי',  computePageValue({ goal: 'balance', strictness: 'brutal', readingHabit: 'regular' }), 7.5);
-is('לצמצם · אכזרי', computePageValue({ goal: 'reduce', strictness: 'brutal', readingHabit: 'regular' }), 5);
-is('לקרוא · רך',    computePageValue({ goal: 'read', strictness: 'soft', readingHabit: 'regular' }), 25);
-
-// הטווח כולו נשאר בתוך 5-30 של מחוון ההגדרות (המפרט, סעיף 7.7)
-const all = [];
-for (const goal of ['reduce', 'balance', 'read'])
-  for (const strictness of ['soft', 'medium', 'brutal'])
-    for (const readingHabit of ['none', 'some', 'regular'])
-      for (const daysSinceStart of [0, 7, 14, 30])
-        all.push(computePageValue({ goal, strictness, readingHabit, daysSinceStart }));
-is('כל התוצאות ≥ 5', Math.min(...all) >= 5, true);
-is('כל התוצאות ≤ 30', Math.max(...all) <= 30, true);
-
-// חסד למי שלא קורא
-near('חסד ביום 0',  graceFactor('none', 0), 1.25);
-near('חסד ביום 7',  graceFactor('none', 7), 1.125);
-near('חסד ביום 14', graceFactor('none', 14), 1);
-near('חסד ביום 30', graceFactor('none', 30), 1);
-near('אין חסד לקורא קבוע', graceFactor('regular', 0), 1);
-is('לאזן · בינוני · לא קורא · יום 0', computePageValue({ goal: 'balance', strictness: 'medium', readingHabit: 'none', daysSinceStart: 0 }), 19);
-is('אותו דבר ביום 14', computePageValue({ goal: 'balance', strictness: 'medium', readingHabit: 'none', daysSinceStart: 14 }), 15);
-
-is('הסבר מזכיר אכזרי', explainPageValue({ goal: 'reduce', strictness: 'brutal', readingHabit: 'regular' }).includes('מחמיר'), true);
 
 console.log('\n— bank —');
 let b = createBank(0);

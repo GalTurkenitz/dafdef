@@ -1,14 +1,17 @@
 /**
- * store.js — העטיפה היחידה של localStorage (המפרט, סעיף 4).
+ * store.js — העטיפה היחידה של localStorage (המפרט, סעיף 7).
  * שום קובץ אחר לא נוגע ב-localStorage ישירות.
  *
  * כאן גם יושבים חוקי החצות: כל טעינת עמוד וכל חזרה לפוקוס קוראות
  * ל-openDay(), שסוגרת את היום הקודם אם עבר חצות.
  */
 
-import { STORE_PREFIX } from '../config.js';
+import { STORE_PREFIX, BACKGROUND_DEFAULTS, ROUND_BONUS_MINUTES,
+         WATER_COOLDOWN_MS, NICHES } from '../config.js';
 import * as bankLogic from './bank.js';
 import * as streakLogic from './streak.js';
+import * as rotation from './rotation.js';
+import { earnFor } from './formula.js';
 
 /* ------------------------------------------------------------------ *
  * גישה גולמית
@@ -110,16 +113,50 @@ export function setBank(bank) {
   return bank;
 }
 
-/** צבירה של עמודים מאומתים. מחזיר את הבנק החדש ואת הדקות שנוספו. */
-export function earnPages(pages = 1, now = Date.now()) {
-  const { pageValueMinutes } = getSettings();
-  const bank = bankLogic.earn(getBank(), pages, pageValueMinutes, now);
+/**
+ * צבירה על ביצוע יחידות בנישה כלשהי — עמוד, חזרה, סט, כוס וכו'.
+ * זו הדלת היחידה לבנק: כל מודול קורא לה, אף אחד לא נוגע בבנק ישירות.
+ *
+ * מסמן ✓ בסבב, מזין את הסטריק ואת הסטטיסטיקה, ומשלם בונוס השלמה
+ * אם הסבב נסגר בדיוק עכשיו.
+ *
+ * @returns {{bank, added, roundComplete, bonus}}
+ */
+export function earnUnits(nicheId, units = 1, now = Date.now()) {
+  const profile = getProfile() || {};
+  const added = earnFor(nicheId, units, profile);
+
+  let bank = bankLogic.earn(getBank(), 1, added, now);   // added כבר בדקות
+  const stats = { minutesEarned: added };
+  if (nicheId === 'reading') stats.pagesRead = units;
+
+  // סימון בסבב
+  const selected = getSelectedNiches();
+  const { round, bonusDue } = rotation.markDone(getRound(), selected, nicheId);
+
+  let bonus = 0;
+  if (bonusDue && ROUND_BONUS_MINUTES > 0) {
+    bonus = ROUND_BONUS_MINUTES;
+    bank = bankLogic.earn(bank, 1, bonus, now);
+    stats.minutesEarned += bonus;
+    setRound(rotation.markBonusGiven(round));
+  } else {
+    setRound(round);
+  }
+
   setBank(bank);
+  addToday(stats, now);
+  addNicheToday(nicheId, added + bonus, now);
 
-  registerReadToday(now);
-  addToday({ pagesRead: pages, minutesEarned: pages * pageValueMinutes }, now);
+  // סטריק = יום שבו הושלם סבב מלא (המפרט, סעיף 3)
+  if (round.roundComplete) registerRoundToday(now);
 
-  return { bank, added: pages * pageValueMinutes };
+  return { bank, added, roundComplete: round.roundComplete, bonus };
+}
+
+/** תאימות לאחור — הקורא עדיין מדבר בעמודים */
+export function earnPages(pages = 1, now = Date.now()) {
+  return earnUnits('reading', pages, now);
 }
 
 /* ------------------------------------------------------------------ *
@@ -190,10 +227,10 @@ export function setStreak(streak) {
   return streak;
 }
 
-function registerReadToday(now = Date.now()) {
+/** הסטריק נזקף על השלמת סבב מלא, לא על עמוד בודד (המפרט, סעיף 3) */
+function registerRoundToday(now = Date.now()) {
   const day = today(new Date(now));
-  const next = streakLogic.registerRead(getStreak(), day);
-  return setStreak(next);
+  return setStreak(streakLogic.registerRead(getStreak(), day));
 }
 
 /* ------------------------------------------------------------------ *
@@ -281,6 +318,9 @@ export function openDay(now = Date.now()) {
   // מונים יומיים — getReadingState כבר מאפס לפי תאריך, רק צריך לשמור
   setReadingState({});
 
+  // הסבב היומי מתחיל מחדש (המפרט, סעיף 3)
+  setRound(rotation.createRound(day));
+
   // הבנק
   const bankReset = settings.resetMode === 'midnight' && getBank().minutes > 0;
   setBank(bankLogic.resetDaily(getBank(), settings.resetMode, now));
@@ -318,10 +358,143 @@ export function devJumpDay(days = 1) {
   const marker = read('lastOpenDay');
   if (marker) write('lastOpenDay', shiftDate(marker));
 
+  const round = read('dailyRound');
+  if (round?.date) write('dailyRound', { ...round, date: shiftDate(round.date) });
+
+  const nicheStats = read('nicheStats');
+  if (nicheStats) {
+    write('nicheStats', Object.fromEntries(
+      Object.entries(nicheStats).map(([d, v]) => [shiftDate(d), v])));
+  }
+
   const bank = getBank();
   setBank({ ...bank, lastUpdate: bank.lastUpdate - shiftMs });
 
   return openDay();
+}
+
+/* ------------------------------------------------------------------ *
+ * niches — הנישות שנבחרו וההגדרות שלהן (המפרט, סעיף 7)
+ * ------------------------------------------------------------------ */
+
+const NICHES_DEFAULTS = {
+  selected: [],
+  settings: {
+    steps: { ...BACKGROUND_DEFAULTS.steps },
+    sleep: { ...BACKGROUND_DEFAULTS.sleep },
+    learning: { level: 'beginner' },
+  },
+};
+
+export function getNiches() {
+  const raw = read('niches') || {};
+  return {
+    selected: Array.isArray(raw.selected) ? raw.selected : NICHES_DEFAULTS.selected,
+    settings: { ...NICHES_DEFAULTS.settings, ...(raw.settings || {}) },
+  };
+}
+
+export function getSelectedNiches() {
+  return getNiches().selected;
+}
+
+export function setNiches(patch) {
+  const next = { ...getNiches(), ...patch };
+  write('niches', next);
+  return next;
+}
+
+/** מעדכן את ההגדרות של נישה אחת בלי לדרוס את האחרות */
+export function setNicheSettings(nicheId, patch) {
+  const n = getNiches();
+  n.settings[nicheId] = { ...(n.settings[nicheId] || {}), ...patch };
+  write('niches', n);
+  return n;
+}
+
+/* ------------------------------------------------------------------ *
+ * dailyRound — הסבב היומי (המפרט, סעיפים 3, 7)
+ * ------------------------------------------------------------------ */
+
+/** הסבב של היום. אם השמור הוא מיום אחר — מתחילים סבב נקי. */
+export function getRound() {
+  const raw = read('dailyRound');
+  const now = today();
+  if (!raw || raw.date !== now) return rotation.createRound(now);
+  return { ...rotation.createRound(now), ...raw };
+}
+
+export function setRound(round) {
+  write('dailyRound', { ...round, date: today() });
+  return round;
+}
+
+/** הנישה שכרטיס "המשימה שלי" מציע עכשיו */
+export function currentTask() {
+  return rotation.nextTask(getRound(), getSelectedNiches());
+}
+
+/** דוחה את המשימה הנוכחית לסוף התור */
+export function skipTask(nicheId) {
+  return setRound(rotation.skip(getRound(), nicheId));
+}
+
+/** האם מותר לבצע את הנישה עכשיו */
+export function canPerform(nicheId) {
+  return rotation.canPerform(getRound(), getSelectedNiches(), nicheId);
+}
+
+/** מחוון הסבב לתצוגה */
+export function roundStatus() {
+  return rotation.roundStatus(getRound(), getSelectedNiches());
+}
+
+export function roundProgress() {
+  return rotation.progress(getRound(), getSelectedNiches());
+}
+
+/* ------------------------------------------------------------------ *
+ * moduleData:<niche> — מצב פנימי של כל מודול
+ * ------------------------------------------------------------------ */
+
+export function getModuleData(nicheId, fallback = {}) {
+  return { ...fallback, ...(read('moduleData:' + nicheId) || {}) };
+}
+
+export function setModuleData(nicheId, patch) {
+  const next = { ...getModuleData(nicheId), ...patch };
+  write('moduleData:' + nicheId, next);
+  return next;
+}
+
+/** קירור המים — כמה זמן נשאר עד הכוס הבאה (המפרט, סעיף 10.5) */
+export function waterCooldownLeft(now = Date.now()) {
+  const last = getModuleData('water').lastDrink || 0;
+  return Math.max(0, WATER_COOLDOWN_MS - (now - last));
+}
+
+/* ------------------------------------------------------------------ *
+ * פירוט יומי לפי נישה — מה הדשבורד מציג (המפרט, סעיף 9.4)
+ * ------------------------------------------------------------------ */
+
+function addNicheToday(nicheId, minutes, now = Date.now()) {
+  const day = today(new Date(now));
+  const all = read('nicheStats') || {};
+  const forDay = all[day] || {};
+
+  forDay[nicheId] = (forDay[nicheId] || 0) + minutes;
+  all[day] = forDay;
+
+  // שומרים שבוע אחורה בלבד
+  const keep = Object.keys(all).sort().slice(-7);
+  write('nicheStats', Object.fromEntries(keep.map((d) => [d, all[d]])));
+  return forDay;
+}
+
+/** כמה הרוויח היום מכל נישה */
+export function getNicheToday(now = Date.now()) {
+  const all = read('nicheStats') || {};
+  return all[today(new Date(now))] || {};
 }
 
 /* ------------------------------------------------------------------ *
