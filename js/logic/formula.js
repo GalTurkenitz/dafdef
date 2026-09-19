@@ -123,21 +123,3 @@ export function explainGates({ goal, strictness } = {}) {
 
   return line;
 }
-
-/* ------------------------------------------------------------------ *
- * תאימות זמנית — נמחק בשלב 3
- *
- * ה-onboarding הישן עדיין מדבר בשפה של "שווי עמוד". השלב הבא
- * מחליף אותו בשאלון הרב-נישתי, ואז שתי הפונקציות האלה יורדות.
- * עד אז הן קיימות רק כדי שכל קומיט יישאר פריס.
- * ------------------------------------------------------------------ */
-
-/** @deprecated השתמש ב-unitValue('reading', profile) */
-export function computePageValue(profile = DEFAULT_PROFILE) {
-  return roundMinutes(unitValue('reading', profile));
-}
-
-/** @deprecated השתמש ב-explainGates */
-export function explainPageValue(profile = DEFAULT_PROFILE) {
-  return explainGates(profile);
-}
