@@ -13,7 +13,7 @@
 import { createPaginator } from './paginator.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
-         getCachedWork, cacheWork, earnPages, openDay,
+         getCachedWork, cacheWork, earnUnits, openDay,
          touchBook, getBook } from '../logic/store.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
@@ -138,15 +138,19 @@ function beginPage(words) {
 }
 
 function countPage() {
-  const { added } = earnPages(1, now());
+  // קריאה היא ערוץ חופשי — היא צוברת תמיד, וגם מסמנת ✓ בסבב היומי
+  const { added, bonus, roundComplete } = earnUnits('reading', 1, now());
 
   reading = setReadingState({
     pagesToday: (reading.pagesToday || 0) + 1,
-    minutesToday: (reading.minutesToday || 0) + added,
+    minutesToday: (reading.minutesToday || 0) + added + bonus,
   });
 
   showEarned(added);
   renderStrip();
+
+  if (bonus) toast(`הסבב היומי הושלם — ועוד ${bonus} דקות בונוס 🎉`, 3200);
+  else if (roundComplete) toast('הסבב היומי הושלם ✓', 2400);
 }
 
 function tick() {
