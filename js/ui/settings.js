@@ -94,6 +94,8 @@ function render() {
       <div data-dev hidden></div>
 
       <button class="btn btn--danger btn--block" data-reset-all>אפס הכל</button>
+
+      <p class="credit">הטקסטים באדיבות <a href="https://benyehuda.org" target="_blank" rel="noopener">פרויקט בן-יהודה</a></p>
     </div>`;
 
   bind();

@@ -1417,3 +1417,12 @@ p  { margin: 0; }
   block-size: var(--tap-min);
 }
 .reader__tools { position: relative; }
+
+/* שורת קרדיט תוכן */
+.credit {
+  margin-top: var(--sp-2);
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+.credit a { color: var(--primary); }
