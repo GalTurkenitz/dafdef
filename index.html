@@ -33,13 +33,22 @@
 <body>
 <main class="screen screen--nav screen-in">
 
-  <!-- יתרת הדקות + סטריק -->
+  <!-- סטריק גדול + טבעת הבנק -->
   <header class="home__top">
-    <div data-ring-mount></div>
     <div data-streak-mount></div>
+    <div data-ring-mount></div>
   </header>
 
   <div class="screen__body stack-6">
+    <!-- כרטיס "המשימה שלי" — הנישה הבאה בסבב -->
+    <section data-task-card aria-label="המשימה שלי"></section>
+
+    <!-- מחוון הסבב היומי -->
+    <section data-round aria-label="הסבב היומי"></section>
+
+    <!-- הערוץ החופשי — תמיד פתוח -->
+    <section data-free aria-label="הערוץ החופשי"></section>
+
     <!-- האפליקציות החסומות -->
     <section data-apps-grid aria-label="האפליקציות החסומות"></section>
 

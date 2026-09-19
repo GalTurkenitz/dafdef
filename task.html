@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="theme-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>משימה · דפדף</title>
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+
+<script>
+(function () {
+  var t;
+  try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
+  if (['light', 'dark'].indexOf(t) === -1) {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.className = 'theme-' + t;
+})();
+</script>
+</head>
+
+<body>
+<!-- עטיפה אחידה לכל משימת רוטציה (המפרט, סעיף 9.3) -->
+<main class="screen screen-in">
+  <header class="screen__header">
+    <button data-back-btn></button>
+    <h1 data-task-title></h1>
+    <span class="chip" style="margin-inline-start:auto;" data-task-value></span>
+  </header>
+
+  <div class="screen__body stack" data-module></div>
+
+  <footer data-task-actions></footer>
+</main>
+
+<script type="module" src="js/ui/task.js"></script>
+</body>
+</html>

@@ -1545,3 +1545,163 @@ p  { margin: 0; }
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
+
+/* ============================================================
+   מסך הבית V2 — משימה, סבב וערוץ חופשי (המפרט, סעיף 9.1)
+   ============================================================ */
+
+/* ---------- כרטיס "המשימה שלי" ---------- */
+.taskcard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-3);
+  align-items: center;
+  border-color: var(--primary);
+  background: var(--primary-softer);
+}
+
+.taskcard__icon {
+  display: grid;
+  place-items: center;
+  width: 52px; height: 52px;
+  border-radius: var(--r-card);
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.taskcard__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.taskcard__body > b { font-size: var(--fs-h2); font-weight: 700; line-height: 1.2; }
+.taskcard__body b b { color: var(--primary); }
+
+.taskcard__actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.taskcard__actions .btn { min-height: var(--btn-h); }
+
+.taskcard--done { border-color: var(--border); background: var(--surface); }
+.taskcard--done .taskcard__icon { background: var(--accent); color: #fff; }
+
+/* ---------- מחוון הסבב ---------- */
+.roundbar {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: calc(var(--screen-pad) * -1);
+  padding-inline: var(--screen-pad);
+  padding-block: var(--sp-1);
+}
+.roundbar::-webkit-scrollbar { display: none; }
+
+.roundbar__item {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 62px;
+}
+
+.roundbar__icon {
+  display: grid;
+  place-items: center;
+  width: 46px; height: 46px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  transition: background-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease);
+}
+
+.roundbar__name { font-size: 11px; color: var(--text-soft); }
+
+.roundbar__item.is-done .roundbar__icon {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.roundbar__item.is-current .roundbar__icon {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.roundbar__item.is-current .roundbar__name { color: var(--primary); font-weight: 500; }
+
+/* ---------- הערוץ החופשי ---------- */
+.freegrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--sp-2);
+}
+
+.freecard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.freecard:active { transform: scale(.97); border-color: var(--primary); }
+
+.freecard__icon { color: var(--primary); }
+.freecard__name { font-size: var(--fs-sub); font-weight: 500; }
+.freecard__value { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   מסך המשימה (המפרט, סעיף 9.3)
+   ============================================================ */
+
+.taskdone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  text-align: center;
+  min-height: 46svh;
+}
+
+.taskdone__mark {
+  display: grid;
+  place-items: center;
+  width: 84px; height: 84px;
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  animation: pop-in var(--t-base) var(--ease);
+}
+
+@keyframes pop-in {
+  from { transform: scale(.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.taskdone__earn {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.taskdone__bonus {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-chip);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: var(--fs-sub);
+}
