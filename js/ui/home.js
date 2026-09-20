@@ -119,7 +119,7 @@ function renderTaskCard() {
     renderTaskCard();
     renderRound();
     const next = currentTask();
-    if (next) toast(`דחינו. הבאה בתור: ${NICHES[next].name}`);
+    if (next) toast(`נדחה להמשך היום. עכשיו: ${NICHES[next].name}`);
   });
 }
 
@@ -334,6 +334,7 @@ function dayMessages(rollover) {
   if (rollover.streakBroke) toast('מתחילים רצף חדש היום', 2800);
   else if (rollover.bankReset) toast('יום חדש, סבב חדש. מתחילים?', 2800);
   else if (bank.isEmpty(getBank())) toast('נגמרו הדקות — משימה אחת ואתה בפנים', 2800);
+  else if (rollover.rolled) toast('יום חדש, סבב חדש', 2400);
 }
 
 /* ------------------------------------------------------------------ */

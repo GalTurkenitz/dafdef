@@ -338,6 +338,10 @@ export function openDay(now = Date.now()) {
 export function devJumpDay(days = 1) {
   const shiftMs = days * 86_400_000;
 
+  // בלי סמן יום קודם, openDay יחשוב שזו ריצה ראשונה ולא יאפס כלום.
+  // קורה רק כשקופצים יום מיד אחרי איפוס, אבל אז הכפתור נראה שבור.
+  if (!read('lastOpenDay')) write('lastOpenDay', today());
+
   const shiftDate = (dateStr) => {
     if (!dateStr) return dateStr;
     const d = new Date(dateStr + 'T00:00:00');
