@@ -2045,3 +2045,24 @@ p  { margin: 0; }
   font-weight: 500;
 }
 .nichetoggle[aria-pressed="true"] svg { color: var(--primary); }
+
+/* מסך טעינת המצלמה — ההורדה הראשונה כבדה, וצריך לומר את זה */
+.cam__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+  background: #0B0907;
+  color: #fff;
+  text-align: center;
+}
+.cam__loading[hidden] { display: none; }
+.cam__loading .spinner { border-color: rgba(255, 255, 255, .2); border-top-color: #B08968; }
+.cam__loading p { margin: 0; font-size: var(--fs-sub); }
+.cam__loading-note { font-size: var(--fs-small); color: rgba(255, 255, 255, .55); }
+.cam__loading-note:empty { display: none; }

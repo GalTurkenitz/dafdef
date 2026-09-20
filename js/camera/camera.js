@@ -63,6 +63,11 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
       <canvas class="cam__overlay" data-overlay></canvas>
       <div class="cam__guide" data-guide></div>
       <div class="cam__badge" data-fps hidden></div>
+      <div class="cam__loading" data-loading>
+        <span class="spinner" aria-hidden="true"></span>
+        <p data-loading-text>מפעילים מצלמה…</p>
+        <p class="cam__loading-note" data-loading-note></p>
+      </div>
       <p class="cam__privacy">הכל רץ על המכשיר שלך. שום וידאו לא נשמר ולא נשלח.</p>
     </div>`;
 
@@ -70,7 +75,33 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
   const canvas = host.querySelector('[data-overlay]');
   const guide = host.querySelector('[data-guide]');
   const fpsBadge = host.querySelector('[data-fps]');
+  const loading = host.querySelector('[data-loading]');
+  const loadingText = host.querySelector('[data-loading-text]');
+  const loadingNote = host.querySelector('[data-loading-note]');
   const ctx2d = canvas.getContext('2d');
+
+  /**
+   * ההורדה הראשונה של MediaPipe היא כ-9MB (WASM + מודל), ולוקחת
+   * שניות גם על חיבור טוב. בלי חיווי המשתמש רואה מסך שחור ותוהה
+   * אם משהו נשבר. אחרי הפעם הראשונה הדפדפן מגיש מהמטמון.
+   */
+  const MODEL_SEEN_KEY = 'dafdef:cameraModelSeen';
+
+  function setLoading(text, note = '') {
+    if (!loading) return;
+    loading.hidden = false;
+    loadingText.textContent = text;
+    loadingNote.textContent = note;
+  }
+
+  function doneLoading() {
+    if (loading) loading.hidden = true;
+    try { localStorage.setItem(MODEL_SEEN_KEY, '1'); } catch { /* ignore */ }
+  }
+
+  function firstTime() {
+    try { return !localStorage.getItem(MODEL_SEEN_KEY); } catch { return true; }
+  }
 
   /* ---------------------------------------------------------------- */
 
@@ -133,7 +164,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
     showFps(on = true) { fpsBadge.hidden = !on; },
 
     async start() {
-      setGuide('מפעילים מצלמה…');
+      setLoading('מפעילים מצלמה…');
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -141,9 +172,9 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
           audio: false,
         });
       } catch (err) {
-        setGuide(err?.name === 'NotAllowedError'
+        setLoading(err?.name === 'NotAllowedError'
           ? 'צריך הרשאה למצלמה כדי לבצע את המשימה הזו.'
-          : 'לא הצלחנו לפתוח את המצלמה.', 'warn');
+          : 'לא הצלחנו לפתוח את המצלמה.');
         throw err;
       }
 
@@ -153,7 +184,8 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
 
-      setGuide('טוען את המודל…');
+      setLoading('טוען את מנוע הזיהוי…',
+        firstTime() ? 'בפעם הראשונה יורדים כ-9MB. אחר כך זה מיידי.' : '');
       const { m, fileset } = await loadVision();
 
       if (model === 'face') {
@@ -170,6 +202,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
         });
       }
 
+      doneLoading();
       running = true;
       lastSeen = performance.now();
       fpsSince = performance.now();
