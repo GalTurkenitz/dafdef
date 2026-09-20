@@ -11,6 +11,7 @@ import { STORE_PREFIX, BACKGROUND_DEFAULTS, ROUND_BONUS_MINUTES,
 import * as bankLogic from './bank.js';
 import * as streakLogic from './streak.js';
 import * as rotation from './rotation.js';
+import * as background from './background.js';
 import { earnFor } from './formula.js';
 
 /* ------------------------------------------------------------------ *
@@ -361,6 +362,9 @@ export function devJumpDay(days = 1) {
   const round = read('dailyRound');
   if (round?.date) write('dailyRound', { ...round, date: shiftDate(round.date) });
 
+  const bg = read('moduleData:background');
+  if (bg?.date) write('moduleData:background', { ...bg, date: shiftDate(bg.date) });
+
   const nicheStats = read('nicheStats');
   if (nicheStats) {
     write('nicheStats', Object.fromEntries(
@@ -495,6 +499,66 @@ function addNicheToday(nicheId, minutes, now = Date.now()) {
 export function getNicheToday(now = Date.now()) {
   const all = read('nicheStats') || {};
   return all[today(new Date(now))] || {};
+}
+
+/* ------------------------------------------------------------------ *
+ * נישות הרקע — צעדים ושינה (המפרט, סעיף 10.7)
+ *
+ * בדמו הנתונים מדומים ומוזרקים ידנית. בגרסת ה-iOS הם יגיעו
+ * מ-HealthKit, והפונקציות כאן יישארו כמו שהן.
+ * ------------------------------------------------------------------ */
+
+const BACKGROUND_EMPTY = { date: null, steps: 0, sleepHours: 0, paid: { steps: 0, sleep: 0 } };
+
+export function getBackground() {
+  const raw = read('moduleData:background') || {};
+  const day = today();
+
+  // יום חדש — המונים והתשלומים מתאפסים
+  if (raw.date !== day) return { ...BACKGROUND_EMPTY, date: day };
+
+  return { ...BACKGROUND_EMPTY, ...raw, paid: { ...BACKGROUND_EMPTY.paid, ...(raw.paid || {}) } };
+}
+
+export function setBackground(patch) {
+  const next = { ...getBackground(), ...patch, date: today() };
+  write('moduleData:background', next);
+  return next;
+}
+
+/**
+ * משלם על צעדים ושינה שנצברו וטרם שולמו.
+ * עובר דרך bank.js הרגיל, בדיוק כמו כל נישה אחרת.
+ *
+ * @returns {{steps: number, sleep: number, minutes: number}} מה שולם עכשיו
+ */
+export function settleBackground(now = Date.now()) {
+  const data = getBackground();
+  const { settings } = getNiches();
+  const selected = getSelectedNiches();
+
+  const due = background.duePayout(data, settings);
+  let minutes = 0;
+
+  for (const niche of ['steps', 'sleep']) {
+    if (!selected.includes(niche) || due[niche] <= 0) continue;
+
+    const { added } = earnUnits(niche, due[niche], now);
+    minutes += added;
+    data.paid[niche] = (data.paid[niche] || 0) + due[niche];
+  }
+
+  if (minutes > 0) setBackground({ paid: data.paid });
+  return { ...due, minutes };
+}
+
+/** כלי פיתוח: הזרקת צעדים ושינה לבדיקת הזרימה (המפרט, סעיף 10.7) */
+export function devInjectBackground({ steps, sleepHours } = {}) {
+  const patch = {};
+  if (steps != null) patch.steps = Math.max(0, steps);
+  if (sleepHours != null) patch.sleepHours = Math.max(0, sleepHours);
+  setBackground(patch);
+  return settleBackground();
 }
 
 /* ------------------------------------------------------------------ *

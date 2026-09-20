@@ -1982,3 +1982,66 @@ p  { margin: 0; }
 .water__step small { font-size: 11px; font-weight: 400; }
 .water__step.is-current { border-color: var(--primary); color: var(--primary); }
 .water__step.is-done { background: var(--primary); border-color: var(--primary); color: var(--primary-contrast); }
+
+/* פירוט הדקות לפי נישה (המפרט, סעיף 9.4) */
+.nicherow {
+  display: grid;
+  grid-template-columns: auto 5.5em 1fr auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.nicherow__icon { color: var(--primary); display: grid; place-items: center; }
+.nicherow__name { font-size: var(--fs-sub); }
+
+.nicherow__bar {
+  block-size: 8px;
+  border-radius: var(--r-chip);
+  background: var(--track);
+  overflow: hidden;
+}
+.nicherow__bar i {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+}
+
+.nicherow__num {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sub);
+  min-width: 2.2em;
+  text-align: end;
+}
+
+/* מתגי נישות בהגדרות (המפרט, סעיף 9.5) */
+.nichetoggles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+}
+
+.nichetoggle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: var(--fs-sub);
+  text-align: start;
+  transition: border-color var(--t-fast) var(--ease),
+              background-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.nichetoggle span { flex: 1; }
+.nichetoggle[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary-softer);
+  color: var(--text);
+  font-weight: 500;
+}
+.nichetoggle[aria-pressed="true"] svg { color: var(--primary); }
