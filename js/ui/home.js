@@ -64,9 +64,9 @@ function renderWheel() {
   // הגלגל רשאי לחרוג מריפוד המסך — השמות ממילא יושבים עמוק בתוך
   // הריבוע, ולכן ניצול הרוחב המלא רק מגדיל את העיגול
   const size = Math.max(230, Math.min(
-    376,
-    Math.round(window.innerWidth * 0.96),
-    Math.round(window.innerHeight * 0.48),
+    392,
+    window.innerWidth,
+    Math.round(window.innerHeight * 0.50),
   ));
 
   if (!wheel) {
@@ -105,8 +105,9 @@ function renderNext() {
   const niche = NICHES[nicheId];
   const minutes = roundMinutes(taskValue(nicheId, getProfile() || {}));
 
+  // שם הנישה הוא מה שמופיע כאן (סעיף א4.5), והפירוט מתחתיו
   els.next.innerHTML = `
-    <p class="nexttask__label">המשימה הבאה</p>
+    <p class="nexttask__label">המשימה הבאה: <b>${niche.name}</b></p>
     <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>`;
 }
 

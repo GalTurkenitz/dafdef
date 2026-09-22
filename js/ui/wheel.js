@@ -68,7 +68,7 @@ function metrics(size) {
     ringW: 1.5,
     doneW: 2.5,
     glow: 5,
-    chevron: Math.max(3.5, tile * 0.10),
+    arrow: Math.max(3.4, tile * 0.062),   // ראש החץ — קטן בכוונה
   };
 }
 
@@ -190,7 +190,7 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
 
     const step = 360 / n;
     const padNode  = gapDeg(m.nodeR + 7);   // לא נוגעים בעיגול
-    const padArrow = gapDeg(11);             // חלון לחץ באמצע הקטע
+    const padArrow = gapDeg(m.arrow * 1.7);  // חלון צמוד לראש החץ
 
     niches.forEach((niche, i) => {
       const deg = angleOf(i, n);
@@ -227,19 +227,23 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
           }
         }
 
-        /* ---- החץ שבין העיגולים ---- */
+        /* ---- ראש החץ שבין התחנות ----
+           משולש מלא ולא "וי" משורטט: בגודל הזה צורה מלאה נקראת
+           כחץ, וקו שבור נקרא כשבר במסלול. הוא יושב על הקו עצמו,
+           והרווח סביבו נגזר מגודלו כדי שלא ייראה מנותק. */
         const tip = point(mid);
-        const c = m.chevron;
+        const a = m.arrow;
         gArrows.appendChild(el('path', {
           class: 'wheel__arrow' + (niche.done ? ' is-done' : ''),
-          d: `M ${-c} ${-c} L ${c * 0.75} 0 L ${-c} ${c}`,
+          d: `M ${(-a * 0.8).toFixed(2)} ${(-a).toFixed(2)} `
+           + `L ${(a * 1.1).toFixed(2)} 0 `
+           + `L ${(-a * 0.8).toFixed(2)} ${a.toFixed(2)} Z`,
           transform: `translate(${tip.x.toFixed(2)} ${tip.y.toFixed(2)}) `
                    + `rotate(${headingAt(mid).toFixed(2)})`,
-          fill: 'none',
-          stroke: niche.done ? color : null,
-          'stroke-width': 1.6,
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
+          // דרך style ולא מאפיין fill: כלל CSS גובר על מאפיין הצגה,
+          // והחץ היה נשאר אפור גם אחרי שהקטע נצבע
+          style: niche.done ? `fill:${color}` : null,
+          stroke: 'none',
         }));
       }
 
