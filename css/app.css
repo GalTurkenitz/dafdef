@@ -2332,65 +2332,99 @@ p  { margin: 0; }
 .track__divider--s3 { border-top-style: dotted; border-top-width: 3px; }
 .track__divider--s4 { border-top-style: double; border-top-width: 4px; }
 
-/* ---------- עיגול שלב ---------- */
+/* ---------- עיגול שלב ----------
+
+   האפקט התלת-ממדי נבנה מצל **קשה בלי טשטוש** שיושב ישירות מתחת
+   לעיגול: box-shadow עם היסט אנכי ו-blur אפס. הוא קורא כבסיס
+   מוצק שהכפתור יושב עליו, ולא כצל. לחיצה מזיזה את הכפתור מטה
+   ומקצרת את הבסיס באותה מידה, כך שהוא נראה נלחץ פנימה.
+
+   --top   פני הכפתור
+   --base  הבסיס שמתחתיו — אותו גוון, כהה יותר
+   --lift  עובי הבסיס
+   -------------------------------------------------------- */
 
 .track__node {
   position: absolute;
   display: grid;
   place-items: center;
+
+  --lift: 6px;
+  --top: var(--c, var(--primary));
+  --base: color-mix(in srgb, var(--c, var(--primary)) 55%, #000);
+
+  border: 0;
   border-radius: var(--r-chip);
-  border: 2px solid var(--c, var(--primary));
-  background: #1A1A20;
-  color: var(--c, var(--primary));
+  background: var(--top);
+  color: var(--niche-contrast);
+  box-shadow: 0 var(--lift) 0 var(--base);
+
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: var(--fs-sub);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
-  transition: transform var(--t-fast) var(--ease);
-}
-.track__node:active:not([disabled]) { transform: scale(.94); }
 
+  /* הכפתור מרחף בגובה הבסיס, כדי שהלחיצה תוכל לשקוע לתוכו */
+  transform: translateY(0);
+  transition: transform 90ms var(--ease), box-shadow 90ms var(--ease);
+}
+
+/* הלחיצה שוקעת: הכפתור יורד והבסיס מתקצר באותה מידה */
+.track__node:active {
+  transform: translateY(var(--lift));
+  box-shadow: 0 0 0 var(--base);
+}
+
+/* הושלם — צבע הנישה מלא */
 .track__node.is-done {
-  background: var(--c, var(--primary));
-  color: var(--niche-contrast);
+  --top: var(--c, var(--primary));
 }
 
-/* השלב שאפשר לבצע עכשיו — בוהק בהרבה משאר העיגולים, כי הוא
-   הדבר היחיד במסך שדורש פעולה. */
+/* נעול — אפור. אותו עובי, כדי שהמסלול יישאר פיזי לכל אורכו */
+.track__node.is-locked {
+  --top: #3F3F48;
+  --base: #26262C;
+  color: #9C9CA6;
+}
+
+/* השלב שאפשר לבצע עכשיו — בסיס עבה יותר וטבעת סביבו, כדי שיהיה
+   מיידי איפה עומדים */
 .track__node.is-current {
-  background: var(--c, var(--primary));
-  color: var(--niche-contrast);
-  border-width: 3px;
-  border-color: #fff;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--c, var(--primary)) 55%, transparent),
-              0 0 22px 6px color-mix(in srgb, var(--c, var(--primary)) 45%, transparent),
-              0 6px 18px rgba(0, 0, 0, .45);
+  --lift: 9px;
+  --top: color-mix(in srgb, var(--c, var(--primary)) 88%, #fff);
+  --base: color-mix(in srgb, var(--c, var(--primary)) 45%, #000);
   font-size: var(--fs-h2);
+  box-shadow:
+    0 var(--lift) 0 var(--base),
+    0 0 0 5px var(--bg),
+    0 0 0 9px var(--c, var(--primary)),
+    0 0 26px 6px color-mix(in srgb, var(--c, var(--primary)) 40%, transparent);
   animation: track-pulse 2.4s var(--ease) infinite;
 }
 
+.track__node.is-current:active {
+  transform: translateY(var(--lift));
+  box-shadow:
+    0 0 0 var(--base),
+    0 0 0 5px var(--bg),
+    0 0 0 9px var(--c, var(--primary));
+}
+
 @keyframes track-pulse {
-  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 55%, transparent),
-                         0 0 22px 6px color-mix(in srgb, var(--c) 45%, transparent),
-                         0 6px 18px rgba(0, 0, 0, .45); }
-  50%      { box-shadow: 0 0 0 9px color-mix(in srgb, var(--c) 28%, transparent),
-                         0 0 30px 10px color-mix(in srgb, var(--c) 30%, transparent),
-                         0 6px 18px rgba(0, 0, 0, .45); }
+  0%, 100% { box-shadow: 0 var(--lift) 0 var(--base),
+                         0 0 0 5px var(--bg),
+                         0 0 0 9px var(--c),
+                         0 0 26px 6px color-mix(in srgb, var(--c) 40%, transparent); }
+  50%      { box-shadow: 0 var(--lift) 0 var(--base),
+                         0 0 0 5px var(--bg),
+                         0 0 0 9px var(--c),
+                         0 0 34px 12px color-mix(in srgb, var(--c) 22%, transparent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .track__node.is-current { animation: none; }
-}
-
-.track__node.is-locked {
-  /* אפור מלא, לא רקע המסך: שלב שטרם בוצע צריך להיראות כמו
-     מקום שקיים ומחכה, ולא כמו חור שחור ברקע.
-     הוא לחיץ — נפתח כדי להראות מה הוא, בלי אפשרות לבצע. */
-  border-color: #4A4A52;
-  background: #3A3A42;
-  color: #9C9CA6;
-  opacity: 1;
+  .track__node { transition: none; }
 }
 
 /* ============================================================
