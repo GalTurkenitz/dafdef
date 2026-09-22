@@ -1941,11 +1941,13 @@ p  { margin: 0; }
 
 /* ---------- מסלול הסבב ---------- */
 
-.wheel__seg { stroke: var(--border); }
-.wheel__seg-done { transition: stroke var(--t-base) var(--ease); }
+/* הצבע קבוע; רק העוצמה משתנה בין טרם לבוצע */
+.wheel__seg { opacity: .6; transition: opacity var(--t-base) var(--ease),
+                                       stroke-width var(--t-base) var(--ease); }
+.wheel__seg.is-done { opacity: 1; }
 
-.wheel__arrow { fill: var(--text-soft); opacity: .38; }
-.wheel__arrow.is-done { opacity: .9; }
+.wheel__arrow { opacity: .75; transition: opacity var(--t-base) var(--ease); }
+.wheel__arrow.is-done { opacity: 1; }
 
 /* ---------- תחנה ---------- */
 

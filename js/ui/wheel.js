@@ -208,26 +208,19 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
           [mid + padArrow * DIRECTION, deg + (step - padNode) * DIRECTION],
         ];
 
+        /* הקשת תמיד בצבע הנישה — גם לפני הביצוע. קודם היא הייתה
+           אפורה עד שהמשימה בוצעה, והגלגל נראה דהוי. ההבדל בין
+           בוצע לטרם נשען על עובי הקו, על התמונה ועל ה-V, שהם
+           חזקים ממילא. קשת אחת לכל קטע, לא שתיים בשכבות. */
         for (const [from, to] of segs) {
           gTrack.appendChild(el('path', {
-            class: 'wheel__seg',
+            class: 'wheel__seg' + (niche.done ? ' is-done' : ''),
             d: arc(from, to),
             fill: 'none',
-            'stroke-width': m.ringW,
+            style: `stroke:${color}`,
+            'stroke-width': niche.done ? m.doneW : m.ringW,
             'stroke-linecap': 'round',
           }));
-
-          // קשת של נישה שהושלמה נצבעת בצבע שלה (סעיף א4)
-          if (niche.done) {
-            gArcs.appendChild(el('path', {
-              class: 'wheel__seg-done',
-              d: arc(from, to),
-              fill: 'none',
-              stroke: color,
-              'stroke-width': m.doneW,
-              'stroke-linecap': 'round',
-            }));
-          }
         }
 
         /* ---- ראש החץ שבין התחנות ----
@@ -243,9 +236,9 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
            + `L ${(-a * 0.8).toFixed(2)} ${a.toFixed(2)} Z`,
           transform: `translate(${tip.x.toFixed(2)} ${tip.y.toFixed(2)}) `
                    + `rotate(${headingAt(mid).toFixed(2)})`,
-          // דרך style ולא מאפיין fill: כלל CSS גובר על מאפיין הצגה,
-          // והחץ היה נשאר אפור גם אחרי שהקטע נצבע
-          style: niche.done ? `fill:${color}` : null,
+          // דרך style ולא מאפיין fill: כלל CSS גובר על מאפיין הצגה.
+          // החץ צבוע תמיד, בדיוק כמו הקשת שהוא יושב עליה.
+          style: `fill:${color}`,
           stroke: 'none',
         }));
       }
