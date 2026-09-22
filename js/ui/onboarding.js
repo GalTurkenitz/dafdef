@@ -29,7 +29,6 @@ const els = {
   actions:  $('[data-actions]'),
 };
 
-const AUTO_ADVANCE_MS = 250;
 
 /* ------------------------------------------------------------------ *
  * השאלות
@@ -126,7 +125,8 @@ let selectedApps = new Set(getBlockedApps().map((a) => a.id));
 /* דף אחד לכל שאלה, בלי גלילה (V3, סעיף ח5). מסכים שאינם רלוונטיים
    לבחירה של המשתמש מדולגים ב-go(). */
 const SCREENS = ['age', 'screenTime', 'goal', 'strictness',
-                 'nichesTask', 'nichesBg', 'steps', 'sleep', 'english', 'book',
+                 'nichesTask', 'nichesBg', 'steps', 'sleep', 'english',
+                 'book', 'bookImport',
                  'resetChoice', 'gates1', 'gates2', 'apps'];
 
 /** אילו מסכים מותנים בבחירת נישה */
@@ -134,6 +134,8 @@ const SCREEN_NEEDS = {
   steps: () => selectedNiches.has('steps'),
   sleep: () => selectedNiches.has('sleep'),
   book:  () => selectedNiches.has('reading'),
+  // מסך הייבוא נפתח רק מהכפתור שבדף הספר, לא בזרימה הרגילה
+  bookImport: () => false,
   // ח1: רמת האנגלית נשאלת מכולם, גם בלי נישת למידה
   english: () => true,
   // הדף השני של הטבלה מדולג כשאין בו מה להציג
@@ -164,6 +166,7 @@ const PART_OF = {
   nichesTask: 'הבחירות שלך', nichesBg: 'הבחירות שלך',
   steps: 'הבחירות שלך', sleep: 'הבחירות שלך',
   english: 'הבחירות שלך', book: 'הבחירות שלך',
+  bookImport: 'הבחירות שלך',
   resetChoice: 'המסגרת', gates1: 'המסגרת', gates2: 'המסגרת', apps: 'המסגרת',
 };
 
@@ -231,13 +234,11 @@ function renderResetChoice() {
       answers[key] = btn.dataset.value;
       els.step.querySelectorAll('[data-value]').forEach((b) =>
         b.setAttribute('aria-checked', String(b === btn)));
-      setTimeout(() => go(1), AUTO_ADVANCE_MS);
+      nextButton(true);
     });
   });
 
-  els.actions.innerHTML = answers[key]
-    ? '<button class="btn btn--ghost btn--block" data-next>הבא</button>' : '';
-  els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
+  nextButton(Boolean(answers[key]));
 }
 
 function renderQuestion(key) {
@@ -266,12 +267,21 @@ function renderQuestion(key) {
         b.setAttribute('aria-checked', String(on));
         b.querySelector('[data-mark]').innerHTML = on ? icon('check', 20) : '';
       });
-      setTimeout(() => go(1), AUTO_ADVANCE_MS);
+      nextButton(Boolean(answers[key]));
     });
   });
 
-  els.actions.innerHTML = isEdit && answers[key]
-    ? '<button class="btn btn--ghost btn--block" data-next>הבא</button>' : '';
+  nextButton(Boolean(answers[key]));
+}
+
+/**
+ * כפתור "המשך" אחיד לכל שאלות השאלון. קודם חלק מהמסכים קידמו
+ * לבד אחרי בחירה ואחרים הציגו כפתור אחר, וזה הפך את הזרימה
+ * ללא צפויה.
+ */
+function nextButton(enabled = true, label = 'המשך') {
+  els.actions.innerHTML =
+    `<button class="btn btn--primary btn--block" data-next ${enabled ? '' : 'disabled'}>${label}</button>`;
   els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
 }
 
@@ -362,7 +372,7 @@ function renderNichesFooter(kind) {
  * המשותף יושב ב-settingPage כדי שהדפים יישארו זהים בצורתם.
  * ------------------------------------------------------------------ */
 
-function settingPage({ title, sub = '', body }) {
+function settingPage({ title, sub = '', body, extra = '' }) {
   els.step.innerHTML = `
     <div class="onepage">
       <div class="onepage__head">
@@ -372,7 +382,8 @@ function settingPage({ title, sub = '', body }) {
       <div class="onepage__body">${body}</div>
     </div>`;
 
-  els.actions.innerHTML = '<button class="btn btn--primary btn--block" data-next>המשך</button>';
+  els.actions.innerHTML =
+    '<button class="btn btn--primary btn--block" data-next>המשך</button>' + extra;
   els.actions.querySelector('[data-next]').addEventListener('click', () => go(1));
 }
 
@@ -454,38 +465,141 @@ function renderEnglish() {
   });
 }
 
-/* ח5: מי שבחר קריאה בוחר כאן את הספר הפעיל הראשון */
+/* ח5: מי שבחר קריאה בוחר כאן את הספר הפעיל הראשון.
+   מוצגות שלוש התאמות בלבד — הקטלוג ימשיך לגדול, ורשימה מלאה לא
+   תיכנס במסך שאינו גולל. החיפוש הוא הדרך להגיע לשאר. */
+
+const BOOK_RESULTS = 3;
+
+let catalogCache = null;
+
 function renderBook() {
-  const chosen = getActiveBookId();
   settingPage({
     title: 'איזה ספר תרצה לקרוא?',
     sub: 'אפשר להחליף בכל רגע מתוך הקורא.',
-    body: `<div class="bookpick" data-book-pick>
-        <p class="t-sub empty">טוען ספרים…</p>
-      </div>`,
+    body: `<div data-book-search></div>
+           <div class="bookpick" data-book-pick>
+             <p class="t-sub empty">טוען ספרים…</p>
+           </div>`,
+    extra: `<button class="btn btn--ghost btn--block" type="button" data-own-book>
+              יש לי ספר משלי
+            </button>`,
   });
 
   const host = els.step.querySelector('[data-book-pick]');
+  const searchHost = els.step.querySelector('[data-book-search]');
 
-  fetch('content/catalog.json')
-    .then((r) => r.json())
-    .then((list) => {
-      list.sort((a, b) => a.estMinutes - b.estMinutes);
-      host.innerHTML = `<div class="bookgrid bookgrid--pick">${
-        list.map((b) => bookCard(b)).join('')}</div>`;
+  searchHost.innerHTML = `
+    <label class="search">
+      <span class="search__icon">${icon('search', 20)}</span>
+      <input class="search__input" type="search" inputmode="search"
+             placeholder="חיפוש ספר או מחבר" aria-label="חיפוש ספר או מחבר" data-q>
+    </label>`;
 
-      host.querySelectorAll('[data-book]').forEach((a) => {
-        a.classList.toggle('is-chosen', a.dataset.book === chosen);
-        a.addEventListener('click', (e) => {
-          e.preventDefault();               // הבחירה לא יוצאת מהשאלון
-          setActiveBookId(a.dataset.book);
-          host.querySelectorAll('[data-book]').forEach((x) =>
-            x.classList.toggle('is-chosen', x === a));
-        });
+  els.actions.querySelector('[data-own-book]')
+    ?.addEventListener('click', () => { index = SCREENS.indexOf('bookImport'); render(); });
+
+  const norm = (v) => String(v || '')
+    .replace(/[\u0591-\u05C7]/g, '').replace(/["'׳״־-]/g, '').toLowerCase().trim();
+
+  function show(list, q) {
+    const chosen = getActiveBookId();
+    const words = norm(q).split(/\s+/).filter(Boolean);
+
+    const found = (words.length
+      ? list.filter((b) => {
+          const hay = norm(`${b.title} ${b.author} ${b.genre}`);
+          return words.every((w) => hay.includes(w));
+        })
+      : list
+    ).slice(0, BOOK_RESULTS);
+
+    if (!found.length) {
+      host.innerHTML = '<p class="t-sub empty">לא מצאנו ספר כזה.</p>';
+      return;
+    }
+
+    host.innerHTML = `<div class="bookgrid bookgrid--pick">${
+      found.map((b) => bookCard(b)).join('')}</div>`;
+
+    host.querySelectorAll('[data-book]').forEach((a) => {
+      a.classList.toggle('is-chosen', a.dataset.book === chosen);
+      a.addEventListener('click', (e) => {
+        e.preventDefault();               // הבחירה לא יוצאת מהשאלון
+        setActiveBookId(a.dataset.book);
+        host.querySelectorAll('[data-book]').forEach((x) =>
+          x.classList.toggle('is-chosen', x === a));
       });
-    })
-    .catch(() => { host.innerHTML = '<p class="t-sub">לא הצלחנו לטעון את הקטלוג.</p>'; });
+    });
+  }
+
+  const load = catalogCache
+    ? Promise.resolve(catalogCache)
+    : fetch('content/catalog.json').then((r) => r.json())
+        .then((list) => { list.sort((a, b) => a.estMinutes - b.estMinutes);
+                          catalogCache = list; return list; });
+
+  load.then((list) => {
+    show(list, '');
+    const input = searchHost.querySelector('[data-q]');
+    input.addEventListener('input', () => show(list, input.value));
+  }).catch(() => { host.innerHTML = '<p class="t-sub">לא הצלחנו לטעון את הקטלוג.</p>'; });
 }
+
+/** מסך ייבוא ספר אישי — גרירה או בחירת קובץ EPUB */
+function renderBookImport() {
+  settingPage({
+    title: 'הספר שלך',
+    sub: 'גרור לכאן קובץ EPUB, או בחר אותו מהמכשיר.',
+    body: `<div class="dropzone" data-drop tabindex="0" role="button"
+                aria-label="גרור קובץ EPUB או בחר אותו">
+             <span class="dropzone__icon">${icon('book', 30)}</span>
+             <span class="dropzone__main" data-drop-main>גרור לכאן קובץ EPUB</span>
+             <span class="dropzone__sub">או הקש לבחירה מהמכשיר</span>
+             <input type="file" accept=".epub,application/epub+zip" hidden data-drop-file>
+           </div>`,
+    extra: `<button class="btn btn--ghost btn--block" type="button" data-back-book>
+              חזרה לרשימת הספרים
+            </button>`,
+  });
+
+  els.actions.querySelector('[data-back-book]')
+    ?.addEventListener('click', () => { index = SCREENS.indexOf('book'); render(); });
+
+  const zone = els.step.querySelector('[data-drop]');
+  const file = els.step.querySelector('[data-drop-file]');
+  const main = els.step.querySelector('[data-drop-main]');
+
+  const accept = (f) => {
+    if (!f) return;
+    if (!/\.epub$/i.test(f.name)) {
+      zone.classList.add('is-bad');
+      main.textContent = 'זה לא קובץ EPUB';
+      return;
+    }
+    /* הקובץ נשמר לקורא, שיודע לפתוח EPUB. אין העלאה לשום מקום —
+       הכל נשאר על המכשיר. */
+    pendingEpub = f;
+    zone.classList.remove('is-bad');
+    zone.classList.add('is-ready');
+    main.textContent = f.name;
+  };
+
+  zone.addEventListener('click', () => file.click());
+  zone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); }
+  });
+  file.addEventListener('change', () => accept(file.files?.[0]));
+
+  ['dragenter', 'dragover'].forEach((ev) =>
+    zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add('is-over'); }));
+  ['dragleave', 'drop'].forEach((ev) =>
+    zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove('is-over'); }));
+  zone.addEventListener('drop', (e) => accept(e.dataTransfer?.files?.[0]));
+}
+
+/** הקובץ שנבחר, אם נבחר — נמסר לקורא בסיום השאלון */
+let pendingEpub = null;
 
 /* ------------------------------------------------------------------ *
  * טבלת השערים האישית (המפרט, סעיף 8ג8)
@@ -543,8 +657,8 @@ function renderGates(page = 1) {
   } else {
     els.actions.innerHTML = isEdit
       ? `<a class="btn btn--primary btn--block" href="settings.html">שמירה</a>
-         <button class="btn btn--ghost btn--block" data-next>שינוי האפליקציות החסומות</button>`
-      : '<button class="btn btn--primary btn--block" data-next>בחירת האפליקציות לחסימה</button>';
+         <button class="btn btn--ghost btn--block" data-next>המשך</button>`
+      : '<button class="btn btn--primary btn--block" data-next>המשך</button>';
   }
   els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
 }
@@ -636,7 +750,8 @@ function render() {
     case 'steps':   renderSteps(); break;
     case 'sleep':   renderSleep(); break;
     case 'english': renderEnglish(); break;
-    case 'book':    renderBook(); break;
+    case 'book':       renderBook(); break;
+    case 'bookImport': renderBookImport(); break;
     case 'gates1':  renderGates(1); break;
     case 'gates2':  renderGates(2); break;
     case 'apps':    renderApps(); break;
