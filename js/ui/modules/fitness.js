@@ -1,45 +1,34 @@
 /**
- * modules/fitness.js — ספירת חזרות (המפרט, סעיף 10.6).
+ * modules/fitness.js — ספירת חזרות (V3, סעיף ו7).
  *
- * שכיבות סמיכה וסקוואטים, לפי זוויות מפרקים ב-MediaPipe Pose.
- * חזרה = ירידה מלאה ואז עלייה מלאה — מכונת מצבים פשוטה שלא
- * נספרת פעמיים ולא נתפסת על רעידות.
+ * המודול הזה הוא הקליפה בלבד: מצלמה, ציור ותצוגה. **כל ההחלטה**
+ * אם חזרה נספרת יושבת ב-js/logic/reps.js, כמודול טהור שנבדק
+ * בבדיקות אוטומטיות (scripts/test-reps.mjs) בלי מצלמה — אחרת אין
+ * דרך לאמת שחצי-חזרה לא נספרת בלי לעשות עשר שכיבות בכל שינוי.
  *
  * במשימת רוטציה נדרשות 10 חזרות; בערוץ החופשי כל חזרה צוברת.
  */
 
 import { GATES } from '../../config.js';
 import { createCamera, POSE, angle, mid, drawPose } from '../../camera/camera.js';
+import { createCounter, update as stepCounter, bodyVisible, STATE } from '../../logic/reps.js';
 
 /**
  * לכל תרגיל: אילו זוויות מודדים, ומה נחשב "למטה" ו"למעלה".
  * הספים שמרניים בכוונה — עדיף לא לספור חזרה מאשר לספור אוויר.
  */
+/**
+ * לכל תרגיל: השם וההוראה איך להציב את הטלפון. הספים והמדידה
+ * עברו ל-js/logic/reps.js — כאן נשאר רק מה שמוצג למשתמש.
+ */
 const EXERCISES = {
   pushup: {
     name: 'שכיבות סמיכה',
     setup: 'הנח את הטלפון על הרצפה בצד, כך שכל הגוף בפריים.',
-    measure: (lm) => {
-      const left = angle(lm[POSE.LEFT_SHOULDER], lm[POSE.LEFT_ELBOW], lm[POSE.LEFT_WRIST]);
-      const right = angle(lm[POSE.RIGHT_SHOULDER], lm[POSE.RIGHT_ELBOW], lm[POSE.RIGHT_WRIST]);
-      const both = [left, right].filter((v) => v != null);
-      return both.length ? both.reduce((a, b) => a + b, 0) / both.length : null;
-    },
-    down: 100,   // מרפק כפוף
-    up: 155,     // יד כמעט ישרה
   },
-
   squat: {
     name: 'סקוואטים',
     setup: 'העמד את הטלפון על משטח, במרחק שני מטרים, כך שכל הגוף נראה.',
-    measure: (lm) => {
-      const left = angle(lm[POSE.LEFT_HIP], lm[POSE.LEFT_KNEE], lm[POSE.LEFT_ANKLE]);
-      const right = angle(lm[POSE.RIGHT_HIP], lm[POSE.RIGHT_KNEE], lm[POSE.RIGHT_ANKLE]);
-      const both = [left, right].filter((v) => v != null);
-      return both.length ? both.reduce((a, b) => a + b, 0) / both.length : null;
-    },
-    down: 105,
-    up: 160,
   },
 };
 
@@ -87,9 +76,7 @@ export async function mount(host, { onComplete } = {}) {
   host.innerHTML = '<div data-cam></div><div class="reps" data-reps></div>';
   const panel = host.querySelector('[data-reps]');
 
-  let reps = 0;
-  let stage = 'up';          // מחכים לירידה
-  let smooth = null;
+  let counter = createCounter(exercise, TARGET);
   let finished = false;
 
   const cam = createCamera({
@@ -103,39 +90,34 @@ export async function mount(host, { onComplete } = {}) {
       drawPose(ctx.ctx, ctx.canvas, lm);
       if (!lm || finished) return;
 
-      const raw = cfg.measure(lm);
-      if (raw == null) { cam.setGuide('לא רואים את כל הגוף', 'warn'); return; }
+      const visible = bodyVisible(lm, POSE, exercise);
+      const before = counter;
+      counter = stepCounter(counter, { lm, POSE, angle, now: ctx.now, visible });
 
-      // החלקה — מונעת ספירה על רעידה בודדת
-      smooth = smooth == null ? raw : smooth * 0.7 + raw * 0.3;
+      // ההנחיה מגיעה מהמנוע, כך שהמסך והספירה לא יכולים להיפרד
+      const tone = (counter.state === STATE.WAITING || counter.state === STATE.PAUSED)
+        ? 'warn' : '';
+      cam.setGuide(counter.cue, tone);
 
-      if (stage === 'up' && smooth < cfg.down) {
-        stage = 'down';
-        cam.setGuide('עכשיו למעלה');
-      } else if (stage === 'down' && smooth > cfg.up) {
-        stage = 'up';
-        reps += 1;
-        render();
-        cam.setGuide(reps >= TARGET ? 'יפה מאוד' : 'עוד אחת');
+      if (counter.reps !== before.reps || counter.state !== before.state) render();
 
-        if (reps >= TARGET) {
-          finished = true;
-          setTimeout(() => { cam.stop(); onComplete?.(reps, { exercise }); }, 900);
-        }
-        return;
-      } else {
-        cam.setGuide(stage === 'up' ? 'רד למטה' : 'עכשיו למעלה');
+      if (counter.state === STATE.DONE && !finished) {
+        finished = true;
+        setTimeout(() => { cam.stop(); onComplete?.(counter.reps, { exercise }); }, 900);
       }
-
-      render();
     },
   });
 
   function render() {
+    const counting = counter.state === STATE.UP || counter.state === STATE.DOWN
+                  || counter.state === STATE.DONE;
+
     panel.innerHTML = `
-      <div class="reps__count">${reps}<span>/${TARGET}</span></div>
-      <div class="progress"><i style="inline-size:${Math.min(100, (reps / TARGET) * 100)}%"></i></div>
-      <p class="t-small">${cfg.name}</p>`;
+      ${counter.state === STATE.COUNTDOWN
+        ? `<div class="reps__countdown">${counter.cue}</div>`
+        : `<div class="reps__count">${counter.reps}<span>/${TARGET}</span></div>`}
+      <div class="progress"><i style="inline-size:${Math.min(100, (counter.reps / TARGET) * 100)}%"></i></div>
+      <p class="t-small">${cfg.name}${counting ? '' : ` · ${counter.cue || 'ממתינים'}`}</p>`;
   }
 
   render();

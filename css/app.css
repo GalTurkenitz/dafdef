@@ -2593,3 +2593,13 @@ p  { margin: 0; }
   margin-top: var(--sp-3);
   min-height: 1.5em;
 }
+
+/* ספירה לאחור לפני תחילת הסט (V3, סעיף ו7) */
+.reps__countdown {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}

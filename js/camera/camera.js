@@ -18,9 +18,17 @@ const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1';
 const WASM = `${CDN}/wasm`;
 
 const MODELS = {
-  pose: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+  /* ו7: full במקום lite — מדויק בהרבה על הברכיים והירכיים, וזה
+     מה שספירת הסקוואטים נשענת עליו. כבד יותר, ולכן הלולאה מדלגת
+     פריימים לפי מד ה-FPS. */
+  pose: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
   face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+  /* ו6: מזהה אובייקטים אמיתי — בלעדיו "הראה את הכוס" עובר עם יד ריקה */
+  objects: 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
 };
+
+/** מה נחשב "כוס" לצורך משימת המים (שמות מחלקות של COCO) */
+export const CUP_CLASSES = ['cup', 'wine glass', 'bottle'];
 
 /** כמה זמן בלי זיהוי נחשב "יצא מהפריים" */
 export const OUT_OF_FRAME_MS = 1500;
@@ -45,9 +53,12 @@ async function loadVision() {
  * @param {(result, ctx) => void} opts.onFrame  נקרא על כל פריים מנותח
  * @param {(state) => void} [opts.onPresence]   נוכחות/יציאה מהפריים
  */
-export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
+export function createCamera({ host, model = 'pose', detectObjects = false,
+                               onFrame, onPresence }) {
   let stream = null;
   let landmarker = null;
+  let detector = null;
+  let objects = [];
   let raf = null;
   let running = false;
   let lastVideoTime = -1;
@@ -56,6 +67,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
 
   // מד קצב — כדי לדעת אם המכשיר בכלל עומד בזה
   let frames = 0, fpsSince = 0, fps = 0;
+  let lastDetect = 0;
 
   host.innerHTML = `
     <div class="cam">
@@ -167,10 +179,22 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
         // פריים בודד שנכשל אינו סיבה להפיל את הכל
       }
 
+      // זיהוי אובייקטים רץ בקצב נמוך יותר — הוא יקר ולא צריך
+      // להיות חד-פריימי כדי לזהות שכוס נמצאת ביד
+      if (detector && now - lastDetect > 300) {
+        lastDetect = now;
+        try {
+          objects = detector.detectForVideo(video, now)?.detections || [];
+        } catch {
+          // פריים בודד שנכשל אינו סיבה להפיל את הכל
+        }
+      }
+
       if (result) {
         const found = (result.landmarks?.length || result.faceLandmarks?.length || 0) > 0;
         const here = markPresence(found, now);
-        onFrame?.(result, { present: here, now, ctx: ctx2d, canvas, video, setGuide });
+        onFrame?.(result, { present: here, now, ctx: ctx2d, canvas, video,
+                            setGuide, objects });
       }
 
       frames += 1;
@@ -190,6 +214,9 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
   return {
     get fps() { return fps; },
     get present() { return present; },
+    get objects() { return objects; },
+    /** האם מזהה האובייקטים באמת נטען — משמש לשגיאה ברורה */
+    get hasDetector() { return Boolean(detector); },
     setGuide,
     setFlow,
 
@@ -235,6 +262,16 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
         });
       }
 
+      if (detectObjects) {
+        setLoading('טוען מזהה אובייקטים…');
+        detector = await m.ObjectDetector.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: MODELS.objects, delegate: 'GPU' },
+          runningMode: 'VIDEO',
+          scoreThreshold: 0.35,
+          maxResults: 8,
+        });
+      }
+
       doneLoading();
       running = true;
       lastSeen = performance.now();
@@ -254,6 +291,10 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
 
       try { landmarker?.close(); } catch { /* ignore */ }
       landmarker = null;
+
+      try { detector?.close(); } catch { /* ignore */ }
+      detector = null;
+      objects = [];
     },
   };
 }

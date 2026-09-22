@@ -4,20 +4,46 @@
  * שלושה שלבים: "הראה את הכוס" ⇐ "שתה" ⇐ "מאושר".
  * קירור של 30 דקות בין כוסות, והשווי נמוך בכוונה.
  *
- * ** מגבלת אמת שכדאי לדעת: **
- * ל-MediaPipe אין מזהה כוסות. האימות כאן מבוסס על תנועת יד אל
- * הפה והטיית ראש אחורה — זו אינדיקציה, לא הוכחה, ואפשר לרמות
- * אותה. זו הסיבה שהמפרט קובע לנישה הזו את השווי הנמוך ביותר
- * (3 דקות לכוס) ושהיא זמינה רק כמשימת רוטציה.
+ * V3 סעיף ו6 — תיקון באג: קודם "הראה את הכוס" עבר עם יד ריקה,
+ * כי הבדיקה הייתה רק "יד מורמת". עכשיו רץ במקביל מזהה אובייקטים
+ * אמיתי (EfficientDet-Lite, על המכשיר), ונדרש **זיהוי בפועל** של
+ * כוס, כוס יין או בקבוק. גם בשלב השתייה הכוס חייבת להישאר מזוהה
+ * לאורך הלגימה — לא רק תנועת יד.
+ *
+ * אם המודל לא נטען מוצגת שגיאה ברורה והמשימה אינה מתקדמת, במקום
+ * לעבור בשקט.
  */
 
 import { WATER_COOLDOWN_MS } from '../../config.js';
-import { createCamera, POSE, mid } from '../../camera/camera.js';
+import { createCamera, POSE, mid, CUP_CLASSES } from '../../camera/camera.js';
 import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
 
 /** כמה זמן צריך להחזיק את היד ליד הפה כדי שזה ייחשב שתייה */
 const SIP_MS = 2500;
+
+/** כמה זמן הכוס צריכה להיות מזוהה ברצף כדי לעבור את שלב ההצגה */
+const CUP_HOLD_MS = 1200;
+
+/** זיהוי נחשב "כוס" רק מעל הסף הזה */
+const CUP_SCORE = 0.4;
+
+/**
+ * מאתר כוס בין הזיהויים של הפריים.
+ * @returns {{score:number, box:object}|null}
+ */
+function findCup(objects = []) {
+  let best = null;
+  for (const d of objects) {
+    for (const c of d.categories || []) {
+      const name = (c.categoryName || '').toLowerCase();
+      if (!CUP_CLASSES.includes(name)) continue;
+      if (c.score < CUP_SCORE) continue;
+      if (!best || c.score > best.score) best = { score: c.score, box: d.boundingBox };
+    }
+  }
+  return best;
+}
 
 export async function mount(host, { onComplete } = {}) {
   /* ---------------------------------------------------------------- *
@@ -40,15 +66,16 @@ export async function mount(host, { onComplete } = {}) {
   const panel = host.querySelector('[data-water]');
 
   const STEPS = [
-    { key: 'show',  label: 'הראה את הכוס', hint: 'החזק כוס או בקבוק בתוך הפריים' },
+    { key: 'show',  label: 'הראה את הכוס', hint: 'החזק כוס, בקבוק או כוס יין מול המצלמה' },
     { key: 'drink', label: 'שתה',          hint: 'קרב את הכוס לפה והטה' },
     { key: 'done',  label: 'מאושר',        hint: '' },
   ];
 
   let step = 0;
-  let handUpSince = 0;
+  let cupSince = 0;
   let sipMs = 0;
   let finished = false;
+  let cupSeen = false;      // האם כוס מזוהה בפריים הנוכחי
 
   function render() {
     panel.innerHTML = `
@@ -68,6 +95,7 @@ export async function mount(host, { onComplete } = {}) {
   const cam = createCamera({
     host: host.querySelector('[data-cam]'),
     model: 'pose',
+    detectObjects: true,
     onPresence: (s) => {
       if (!s.present) cam.setGuide('חזור לתוך הפריים', 'warn');
     },
@@ -88,28 +116,32 @@ export async function mount(host, { onComplete } = {}) {
 
       const handNearFace = near.d < 0.22;
 
-      if (step === 0) {
-        // "הראה את הכוס" — יד מורמת מעל קו הכתפיים, מוחזקת רגע
-        const raised = near.w.y < shoulders.y + 0.05;
+      // ו6: הכוס חייבת להיות מזוהה באמת, לא רק יד מורמת
+      const cup = findCup(ctx.objects);
+      cupSeen = Boolean(cup);
 
-        if (raised) {
-          if (!handUpSince) handUpSince = ctx.now;
-          cam.setGuide('יפה, מחזיקים…');
-          if (ctx.now - handUpSince > 1200) { step = 1; handUpSince = 0; render(); }
-        } else {
-          handUpSince = 0;
-          cam.setGuide('הרם את הכוס לתוך הפריים');
+      if (step === 0) {
+        if (!cup) {
+          cupSince = 0;
+          cam.setGuide('לא רואים כוס. החזק כוס או בקבוק מול המצלמה', 'warn');
+          return;
         }
+
+        if (!cupSince) cupSince = ctx.now;
+        cam.setGuide(`רואים כוס · ${Math.round(cup.score * 100)}%`);
+
+        if (ctx.now - cupSince > CUP_HOLD_MS) { step = 1; cupSince = 0; render(); }
         return;
       }
 
       if (step === 1) {
-        if (handNearFace) {
+        // גם כאן הכוס חייבת להישאר בפריים — לא מספיק להרים יד ריקה
+        if (handNearFace && cupSeen) {
           sipMs += 40;
           cam.setGuide('ממשיכים…');
         } else {
           sipMs = Math.max(0, sipMs - 25);
-          cam.setGuide('קרב את הכוס לפה');
+          cam.setGuide(cupSeen ? 'קרב את הכוס לפה' : 'הכוס יצאה מהפריים', cupSeen ? '' : 'warn');
         }
 
         render();
@@ -131,6 +163,15 @@ export async function mount(host, { onComplete } = {}) {
   try {
     await cam.start();
   } catch {
+    return;   // createCamera כבר הציג את השגיאה
+  }
+
+  /* מודל שלא נטען = שגיאה ברורה, לא מעבר שקט (ו6) */
+  if (!cam.hasDetector) {
+    cam.stop();
+    host.innerHTML = `
+      <p class="t-sub empty">לא הצלחנו לטעון את מזהה האובייקטים,
+        ובלעדיו אי אפשר לאמת שיש כוס.<br>נסה שוב עם חיבור אינטרנט יציב.</p>`;
     return;
   }
 
