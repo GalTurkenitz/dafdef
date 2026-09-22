@@ -1941,27 +1941,15 @@ p  { margin: 0; }
 
 /* ---------- מסלול הסבב ---------- */
 
-/* הצבע קבוע; רק העוצמה משתנה בין טרם לבוצע */
-.wheel__seg { opacity: .6; transition: opacity var(--t-base) var(--ease),
-                                       stroke-width var(--t-base) var(--ease); }
-.wheel__seg.is-done { opacity: 1; }
-
-.wheel__arrow { opacity: .75; transition: opacity var(--t-base) var(--ease); }
-.wheel__arrow.is-done { opacity: 1; }
+/* הגלגל צבעוני במלואו בכל מצב — בלי עמעום ובלי הבדלי עובי.
+   תג ה-V הוא הסימן היחיד שמבדיל בוצע מטרם. */
 
 /* ---------- תחנה ---------- */
 
 .wheel__frame,
 .wheel__glyph { transition: stroke var(--t-base) var(--ease), stroke-width var(--t-base) var(--ease); }
 
-/* התמונה: טרם בוצע = מושתקת ומוחוורת; בוצע = צבע מלא.
-   זה מה שגורם להתקדמות בסבב להיקרא במבט אחד. */
-.wheel__photo {
-  filter: grayscale(1) brightness(.82) contrast(.95);
-  opacity: .62;
-  transition: filter var(--t-base) var(--ease), opacity var(--t-base) var(--ease);
-}
-.wheel__photo.is-done { filter: none; opacity: 1; }
+/* התמונה בצבע מלא תמיד */
 
 .wheel__halo { rx: inherit; }
 

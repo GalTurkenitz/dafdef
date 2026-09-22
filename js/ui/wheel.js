@@ -74,8 +74,7 @@ function metrics(width, height) {
     iconSize: Math.round(tile * 0.44),
     labelDy,
     ring,
-    ringW: 1.5,
-    doneW: 2.5,
+    segW: 2,
     glow: 5,
     arrow: Math.max(3.4, tile * 0.062),
   };
@@ -208,17 +207,16 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
           [mid + padArrow * DIRECTION, deg + (step - padNode) * DIRECTION],
         ];
 
-        /* הקשת תמיד בצבע הנישה — גם לפני הביצוע. קודם היא הייתה
-           אפורה עד שהמשימה בוצעה, והגלגל נראה דהוי. ההבדל בין
-           בוצע לטרם נשען על עובי הקו, על התמונה ועל ה-V, שהם
-           חזקים ממילא. קשת אחת לכל קטע, לא שתיים בשכבות. */
+        /* הגלגל צבעוני במלואו בכל מצב: אותו צבע, אותו עובי, אותה
+           עוצמה — לפני הביצוע ואחריו. ההבחנה היחידה בין בוצע
+           לטרם היא תג ה-V שעל הריבוע. */
         for (const [from, to] of segs) {
           gTrack.appendChild(el('path', {
-            class: 'wheel__seg' + (niche.done ? ' is-done' : ''),
+            class: 'wheel__seg',
             d: arc(from, to),
             fill: 'none',
             style: `stroke:${color}`,
-            'stroke-width': niche.done ? m.doneW : m.ringW,
+            'stroke-width': m.segW,
             'stroke-linecap': 'round',
           }));
         }
@@ -230,7 +228,7 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
         const tip = point(mid);
         const a = m.arrow;
         gArrows.appendChild(el('path', {
-          class: 'wheel__arrow' + (niche.done ? ' is-done' : ''),
+          class: 'wheel__arrow',
           d: `M ${(-a * 0.8).toFixed(2)} ${(-a).toFixed(2)} `
            + `L ${(a * 1.1).toFixed(2)} 0 `
            + `L ${(-a * 0.8).toFixed(2)} ${a.toFixed(2)} Z`,
@@ -299,7 +297,7 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
             }));
 
         const img = el('image', {
-          class: 'wheel__photo' + (niche.done ? ' is-done' : ''),
+          class: 'wheel__photo',
           x: x0.toFixed(2), y: y0.toFixed(2),
           width: m.tile, height: m.tile,
           preserveAspectRatio: 'xMidYMid slice',
@@ -318,7 +316,7 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
         x: x0.toFixed(2), y: y0.toFixed(2),
         width: m.tile, height: m.tile, rx: m.radius,
         fill: 'none', stroke: color,
-        'stroke-width': niche.current ? 2.5 : 1.75,
+        'stroke-width': niche.current ? 2.5 : 2,
       }));
 
       // אחרי הביצוע — V בפינת הריבוע
