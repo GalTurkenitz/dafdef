@@ -149,8 +149,8 @@ function countPage() {
   showEarned(added);
   renderStrip();
 
-  if (bonus) toast(`הסבב היומי הושלם — ועוד ${bonus} דקות בונוס 🎉`, 3200);
-  else if (roundComplete) toast('הסבב היומי הושלם ✓', 2400);
+  if (bonus) toast(`הסבב היומי הושלם — ועוד ${bonus} דקות בונוס`, 3200);
+  else if (roundComplete) toast('הסבב היומי הושלם', 2400);
 }
 
 function tick() {
@@ -168,7 +168,7 @@ function stopTicker() { clearInterval(ticker); ticker = null; }
 function leavingPage() {
   if (!verifier) return;
   tick();
-  if (!verifier.counted) toast('לאט לאט 🙂 עוד רגע העמוד נספר');
+  if (!verifier.counted) toast('לאט לאט. עוד רגע העמוד נספר');
 }
 
 /* ------------------------------------------------------------------ *
@@ -340,7 +340,7 @@ function finishWork() {
   panel.className = 'finish';
   panel.innerHTML = `
     <div class="confetti" data-confetti></div>
-    <h1>סיימת! 🎉</h1>
+    <h1>סיימת</h1>
     <p class="t-sub">${work.title}${work.author ? ' · ' + work.author : ''}</p>
     <div class="finish__stats">
       <div class="finish__stat"><b>${pages}</b><span class="t-small">עמודים היום</span></div>

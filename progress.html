@@ -4,20 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
-<meta name="description" content="דפדף — זמן מסך לא מקבלים, מרוויחים.">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>דפדף</title>
+<title>התקדמות · דפדף</title>
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
-
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/app.css">
 
-<!-- מחיל את מצב התצוגה לפני הציור הראשון כדי שלא תהיה הבזקה -->
 <script>
 (function () {
   var t;
@@ -31,27 +27,20 @@
 </head>
 
 <body>
-<!-- מסך אחד, בלי גלילה -->
-<main class="screen screen--fixed screen--nav screen-in">
+<main class="screen screen--fixed screen--nav screen-in" data-screen>
 
   <header class="topbar">
     <button data-menu-btn></button>
-    <div data-streak-mount></div>
+    <h1 class="topbar__title" data-title>התקדמות</h1>
     <span class="topbar__spacer"></span>
   </header>
 
-  <!-- גלגל הסבב — הנישות על ההיקף, הדקות במרכז -->
-  <div class="screen__body home__wheel">
-    <div data-wheel-mount></div>
-  </div>
-
-  <!-- המשימה הבאה -->
-  <footer data-next-task></footer>
+  <div class="screen__body" data-body></div>
 
 </main>
 
 <div data-navbar></div>
 
-<script type="module" src="js/ui/home.js"></script>
+<script type="module" src="js/ui/progress.js"></script>
 </body>
 </html>

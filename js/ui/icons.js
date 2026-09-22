@@ -26,6 +26,8 @@ const PATHS = {
   droplet:    '<path d="M12 2.7 6.9 8.3a7 7 0 1 0 10.2 0z"/>',
   footprints: '<path d="M5 15c.3-2 0-3.5-.6-5C3.7 8.4 4.4 6 6.4 6c1.9 0 2.6 2 2.2 4-.3 1.6-.6 3-.3 5z"/><path d="M5.3 18.8c1.4.4 2.7.1 3-1.2H5.1c-.1.5 0 1 .2 1.2z"/><path d="M15.4 11c.3-2 0-3.5-.6-5-.7-1.6 0-4 2-4 1.9 0 2.6 2 2.2 4-.3 1.6-.6 3-.3 5z"/><path d="M15.7 14.8c1.4.4 2.7.1 3-1.2h-3.2c-.1.5 0 1 .2 1.2z"/>',
   moon:       '<path d="M20.5 14.8A8.5 8.5 0 0 1 9.2 3.5a8.5 8.5 0 1 0 11.3 11.3z"/>',
+  menu:       '<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>',
+  flag:       '<path d="M5 21V4"/><path d="M5 4h10l-1.6 3.2L15 10.5H5z"/>',
   target:     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
 };
 

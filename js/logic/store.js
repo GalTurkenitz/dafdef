@@ -12,6 +12,7 @@ import * as bankLogic from './bank.js';
 import * as streakLogic from './streak.js';
 import * as rotation from './rotation.js';
 import * as background from './background.js';
+import * as levels from './progress.js';
 import { earnFor } from './formula.js';
 
 /* ------------------------------------------------------------------ *
@@ -125,18 +126,32 @@ export function setBank(bank) {
  */
 export function earnUnits(nicheId, units = 1, now = Date.now()) {
   const profile = getProfile() || {};
-  const added = earnFor(nicheId, units, profile);
+  return creditMinutes(nicheId, earnFor(nicheId, units, profile), now,
+                       nicheId === 'reading' ? units : 0);
+}
 
-  let bank = bankLogic.earn(getBank(), 1, added, now);   // added כבר בדקות
+/** שווי יחידה — עטיפה כדי ש-completeLevel לא ייבא את formula ישירות */
+function formulaUnitValue(nicheId, profile) {
+  return earnFor(nicheId, 1, profile);
+}
+
+/**
+ * הזיכוי עצמו: מכניס דקות לבנק, מסמן ✓ בסבב, משלם בונוס השלמה
+ * פעם ביום, ומזין סטריק וסטטיסטיקה.
+ *
+ * זו הדלת היחידה לבנק — כל מודול עובר דרכה.
+ */
+function creditMinutes(nicheId, added, now = Date.now(), pagesRead = 0) {
+  let bank = bankLogic.earn(getBank(), 1, added, now);
   const stats = { minutesEarned: added };
-  if (nicheId === 'reading') stats.pagesRead = units;
+  if (pagesRead) stats.pagesRead = pagesRead;
 
-  // סימון בסבב
   const selected = getSelectedNiches();
   const { round, bonusDue } = rotation.markDone(getRound(), selected, nicheId);
 
+  // בונוס ההשלמה — רק על הסבב הראשון של היום (V3, סעיף ג2)
   let bonus = 0;
-  if (bonusDue && ROUND_BONUS_MINUTES > 0) {
+  if (bonusDue && ROUND_BONUS_MINUTES > 0 && !round.bonusGiven) {
     bonus = ROUND_BONUS_MINUTES;
     bank = bankLogic.earn(bank, 1, bonus, now);
     stats.minutesEarned += bonus;
@@ -149,7 +164,6 @@ export function earnUnits(nicheId, units = 1, now = Date.now()) {
   addToday(stats, now);
   addNicheToday(nicheId, added + bonus, now);
 
-  // סטריק = יום שבו הושלם סבב מלא (המפרט, סעיף 3)
   if (round.roundComplete) registerRoundToday(now);
 
   return { bank, added, roundComplete: round.roundComplete, bonus };
@@ -563,6 +577,52 @@ export function devInjectBackground({ steps, sleepHours } = {}) {
   if (sleepHours != null) patch.sleepHours = Math.max(0, sleepHours);
   setBackground(patch);
   return settleBackground();
+}
+
+/* ------------------------------------------------------------------ *
+ * מסלולי ההתקדמות (V3, סעיף ד)
+ *
+ * שלב נוכחי לכל נישה. שורד בין ימים ולא מתאפס בחצות (סעיף ד7).
+ * ------------------------------------------------------------------ */
+
+export function getProgress(nicheId) {
+  return { ...levels.createProgress(), ...(read('progress:' + nicheId) || {}) };
+}
+
+export function setProgress(nicheId, state) {
+  write('progress:' + nicheId, state);
+  return state;
+}
+
+/** כל המסלולים, לתצוגת עמוד ההתקדמות */
+export function allProgress() {
+  return Object.fromEntries(levels.PROGRESS_NICHES.map((id) => [id, getProgress(id)]));
+}
+
+/**
+ * ביצוע דרך מסלול ההתקדמות.
+ *
+ * משלם לפי שווי השלב (כולל מקדם הסקשן והפרמיה), מקדם את השלב,
+ * ומסמן ✓ בסבב היומי — מערכת אחת, לא שתיים (סעיף ד6).
+ *
+ * @returns {{added, leveledUp, level, bonus, roundComplete}}
+ */
+export function completeLevel(nicheId, units = 1, now = Date.now()) {
+  const profile = getProfile() || {};
+  const before = getProgress(nicheId);
+
+  const { progress: after, leveledUp } = levels.advance(before, nicheId, units);
+  setProgress(nicheId, after);
+
+  // משלמים רק על שלב שהושלם; עמודים באמצע שלב נצברים ולא מזכים
+  if (!leveledUp) {
+    return { added: 0, leveledUp: false, level: after.level, bonus: 0, roundComplete: false };
+  }
+
+  const minutes = levels.levelValue(nicheId, before.level, formulaUnitValue(nicheId, profile));
+  const res = creditMinutes(nicheId, minutes, now);
+
+  return { ...res, leveledUp: true, level: after.level };
 }
 
 /* ------------------------------------------------------------------ *

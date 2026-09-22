@@ -55,16 +55,20 @@ const QUESTIONS = [
 
   { key: 'goal', part: 'מי אתה', title: 'מה המטרה שלך?',
     options: [
-      { value: 'reduce',  label: 'לצמצם דרסטית', note: 'צריך לעבוד יותר על כל דקה' },
+      { value: 'wean',    label: 'לגמול את עצמי מהטלפון', note: 'כל דקת מסך עולה ביוקר' },
+      { value: 'reduce',  label: 'לצמצם דרסטית' },
       { value: 'balance', label: 'לאזן' },
+      { value: 'routine', label: 'לבנות שגרה יציבה' },
       { value: 'habits',  label: 'להוסיף הרגלים טובים', note: 'כל פעולה שווה יותר' },
     ] },
 
   { key: 'strictness', part: 'מי אתה', title: 'כמה קשוח שנהיה איתך?',
     options: [
-      { value: 'soft',   label: 'רך' },
-      { value: 'medium', label: 'בינוני' },
-      { value: 'brutal', label: 'אכזרי' },
+      { value: 'soft',    label: 'רך' },
+      { value: 'medium',  label: 'בינוני' },
+      { value: 'tough',   label: 'קשוח' },
+      { value: 'tougher', label: 'קשוח מאוד' },
+      { value: 'brutal',  label: 'אכזרי' },
     ] },
 
   { key: 'resetChoice', part: 'המסגרת', title: 'מה קורה לדקות שצברת?',

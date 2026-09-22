@@ -10,7 +10,7 @@
  */
 
 import { initTheme, setTheme, getTheme } from './theme.js';
-import { renderNavbar, mountBack } from './nav.js';
+import { renderNavbar, mountBack, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES, NICHE_IDS, BACKGROUND_DEFAULTS } from '../config.js';
@@ -28,8 +28,14 @@ let devUnlocked = false;
 
 /* ------------------------------------------------------------------ */
 
-const GOAL_WORDS = { reduce: 'לצמצם דרסטית', balance: 'לאזן', habits: 'להוסיף הרגלים' };
-const STRICT_WORDS = { soft: 'רך', medium: 'בינוני', brutal: 'אכזרי' };
+const GOAL_WORDS = {
+  wean: 'גמילה', reduce: 'לצמצם דרסטית', balance: 'לאזן',
+  routine: 'שגרה יציבה', habits: 'להוסיף הרגלים',
+};
+const STRICT_WORDS = {
+  soft: 'רך', medium: 'בינוני', tough: 'קשוח',
+  tougher: 'קשוח מאוד', brutal: 'אכזרי',
+};
 
 /** תמצית התשובות — בלי השערים עצמם, שלא ניתנים לשינוי כאן */
 function answersSummary() {
@@ -280,5 +286,6 @@ initTheme();
 openDay();
 renderNavbar('settings');
 mountBack('index.html');
+mountMenu();
 render();
 bindDevUnlock();

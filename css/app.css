@@ -268,41 +268,6 @@ p  { margin: 0; }
 }
 .ring.is-flick { animation: ring-flick var(--t-base) var(--ease); }
 
-/* ---------- ניווט תחתון ---------- */
-.navbar {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 20;
-  display: flex;
-  justify-content: center;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.navbar__inner {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  width: 100%;
-  max-width: var(--phone-max);
-}
-
-.navbar__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: var(--nav-h);
-  text-decoration: none;
-  color: var(--text-soft);
-  font-size: var(--fs-small);
-  transition: color var(--t-fast) var(--ease);
-}
-
-.navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
-
 /* ---------- טוסט ---------- */
 .toast {
   position: fixed;
@@ -996,12 +961,6 @@ p  { margin: 0; }
   50%      { opacity: .55; }
 }
 
-/* כפתור הקריאה הצף במסך הבית — תמיד זמין */
-.home__read {
-  position: sticky;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-3));
-  margin-top: var(--sp-6);
-}
 
 /* ============================================================
    דשבורד והגדרות (המפרט, סעיפים 7.6, 7.7)
@@ -1268,56 +1227,6 @@ p  { margin: 0; }
 .empty { text-align: center; padding: var(--sp-8) 0; }
 
 /* ============================================================
-   מסך הבית — ראש בולט ו"הספרים שלי"
-   ============================================================ */
-
-.home__top {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-4);
-  margin-bottom: var(--sp-8);
-}
-
-/* אזור הסטריק — אלמנט מרכזי, לא שבב קטן */
-.streak {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-6);
-  border-radius: var(--r-chip);
-  background: var(--accent-soft);
-}
-
-.streak__flame { font-size: 30px; line-height: 1; }
-
-.streak__num {
-  font-size: 38px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: var(--accent);
-}
-
-.streak__label {
-  font-size: var(--fs-small);
-  line-height: 1.3;
-  color: var(--text-soft);
-  max-width: 11ch;
-}
-
-.home__section {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-3);
-}
-.home__section h2 { font-size: var(--fs-h2); }
-.home__section a { color: var(--primary); font-size: var(--fs-small); text-decoration: none; }
-
-/* ============================================================
    גיליון תחתון צף — נפתח מעל הטקסט, לא מחליף מסך
    ============================================================ */
 
@@ -1545,119 +1454,6 @@ p  { margin: 0; }
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-
-/* ============================================================
-   מסך הבית V2 — משימה, סבב וערוץ חופשי (המפרט, סעיף 9.1)
-   ============================================================ */
-
-/* ---------- כרטיס "המשימה שלי" ---------- */
-.taskcard {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-3);
-  align-items: center;
-  border-color: var(--primary);
-  background: var(--primary-softer);
-}
-
-.taskcard__icon {
-  display: grid;
-  place-items: center;
-  width: 52px; height: 52px;
-  border-radius: var(--r-card);
-  background: var(--primary);
-  color: var(--primary-contrast);
-}
-
-.taskcard__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.taskcard__body > b { font-size: var(--fs-h2); font-weight: 700; line-height: 1.2; }
-.taskcard__body b b { color: var(--primary); }
-
-.taskcard__actions {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-}
-.taskcard__actions .btn { min-height: var(--btn-h); }
-
-.taskcard--done { border-color: var(--border); background: var(--surface); }
-.taskcard--done .taskcard__icon { background: var(--accent); color: #fff; }
-
-/* ---------- מחוון הסבב ---------- */
-.roundbar {
-  display: flex;
-  gap: var(--sp-2);
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin-inline: calc(var(--screen-pad) * -1);
-  padding-inline: var(--screen-pad);
-  padding-block: var(--sp-1);
-}
-.roundbar::-webkit-scrollbar { display: none; }
-
-.roundbar__item {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-1);
-  min-width: 62px;
-}
-
-.roundbar__icon {
-  display: grid;
-  place-items: center;
-  width: 46px; height: 46px;
-  border-radius: var(--r-chip);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-soft);
-  transition: background-color var(--t-fast) var(--ease),
-              color var(--t-fast) var(--ease),
-              border-color var(--t-fast) var(--ease);
-}
-
-.roundbar__name { font-size: 11px; color: var(--text-soft); }
-
-.roundbar__item.is-done .roundbar__icon {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-contrast);
-}
-.roundbar__item.is-current .roundbar__icon {
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-soft);
-}
-.roundbar__item.is-current .roundbar__name { color: var(--primary); font-weight: 500; }
-
-/* ---------- הערוץ החופשי ---------- */
-.freegrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: var(--sp-2);
-}
-
-.freecard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-3) var(--sp-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  color: var(--text);
-  text-decoration: none;
-  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
-}
-.freecard:active { transform: scale(.97); border-color: var(--primary); }
-
-.freecard__icon { color: var(--primary); }
-.freecard__name { font-size: var(--fs-sub); font-weight: 500; }
-.freecard__value { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
 
 /* ============================================================
    מסך המשימה (המפרט, סעיף 9.3)
@@ -2066,3 +1862,418 @@ p  { margin: 0; }
 .cam__loading p { margin: 0; font-size: var(--fs-sub); }
 .cam__loading-note { font-size: var(--fs-small); color: rgba(255, 255, 255, .55); }
 .cam__loading-note:empty { display: none; }
+
+/* ============================================================
+   V3 — מסך קבוע בלי גלילה (סעיף ב5)
+   ============================================================ */
+
+.screen--fixed { height: 100svh; overflow: hidden; }
+.screen--fixed .screen__body {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap-min);
+}
+.topbar__spacer { inline-size: var(--tap-min); flex: none; }
+.topbar > :nth-child(2) { flex: 1; display: flex; justify-content: center; }
+
+/* ---------- רצף השלמת סבבים (סעיף א6) ---------- */
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+}
+.streak__icon { display: grid; place-items: center; color: var(--primary); }
+.streak__num {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.streak__label { font-size: var(--fs-small); color: var(--text-soft); }
+
+/* ============================================================
+   גלגל הסבב (סעיף א4)
+   ============================================================ */
+
+.home__wheel { flex: 1; }
+
+.wheel { position: relative; display: grid; place-items: center; }
+.wheel__svg { position: absolute; inset: 0; }
+.wheel__track { stroke: var(--track); }
+
+.wheel__arc { stroke: transparent; transition: stroke var(--t-base) var(--ease); }
+.wheel__arc.is-done { stroke: var(--primary); }
+.wheel__arc.is-current { stroke: var(--primary-soft); }
+
+.wheel__arrow { stroke: var(--text-soft); opacity: .45; }
+.wheel__arrow.is-done { stroke: var(--primary); opacity: .9; }
+
+.wheel__stops { position: absolute; inset: 0; pointer-events: none; }
+
+.wheel__stop {
+  position: absolute;
+  transform: translate(50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.wheel__stop-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  transition: background-color var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+
+.wheel__stop-name { font-size: 10px; color: var(--text-soft); white-space: nowrap; }
+
+.wheel__stop.is-done .wheel__stop-icon {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.wheel__stop.is-current .wheel__stop-icon {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+.wheel__stop.is-current .wheel__stop-name { color: var(--primary); font-weight: 500; }
+
+.wheel__center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.wheel__num {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.wheel__unit { font-size: var(--fs-small); color: var(--text-soft); }
+.wheel__count {
+  margin-top: var(--sp-2);
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- המשימה הבאה ---------- */
+.nexttask__label { text-align: center; font-size: var(--fs-small); color: var(--text-soft); }
+
+.nexttask__name {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 var(--sp-4);
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  text-align: center;
+}
+.nexttask__name span {
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.nexttask__actions { display: grid; grid-template-columns: 2fr 1fr; gap: var(--sp-2); }
+
+/* ============================================================
+   סרגל תחתון (סעיפים ב2, ב3) — הבית במרכז, מורם מעל קו חום
+   ============================================================ */
+
+.navbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: transparent;
+  pointer-events: none;
+}
+
+.navbar__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  width: 100%;
+  max-width: var(--phone-max);
+  min-height: var(--nav-h);
+  pointer-events: auto;
+}
+
+/* הקו שמתרומם סביב כפתור הבית */
+.navbar__rail {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+  filter: drop-shadow(0 -2px 8px rgba(0, 0, 0, .06));
+}
+
+.navbar__slot { display: block; }
+
+.navbar__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding-bottom: var(--sp-2);
+  min-height: var(--nav-h);
+  text-decoration: none;
+  color: var(--text-soft);
+  font-size: 11px;
+  transition: color var(--t-fast) var(--ease);
+}
+.navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
+.navbar__icon { display: grid; place-items: center; }
+
+.navbar__item--center { justify-content: flex-start; transform: translateY(-18px); }
+.navbar__item--center .navbar__icon {
+  inline-size: 54px;
+  block-size: 54px;
+  margin-bottom: 2px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  box-shadow: 0 4px 14px rgba(111, 78, 55, .35);
+}
+.navbar__item--center .navbar__label { color: var(--primary); font-weight: 500; }
+
+/* ============================================================
+   תפריט המבורגר (סעיף ב1)
+   ============================================================ */
+
+.menu { position: fixed; inset: 0; z-index: 60; }
+.menu[hidden] { display: none; }
+
+.menu__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .34);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease);
+}
+.menu.is-open .menu__scrim { opacity: 1; }
+
+.menu__panel {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: min(74vw, 300px);
+  block-size: 100%;
+  padding: calc(env(safe-area-inset-top) + var(--sp-8)) var(--sp-4) var(--sp-4);
+  background: var(--surface);
+  border-inline-end: 1px solid var(--border);
+  transform: translateX(100%);
+  transition: transform var(--t-base) var(--ease);
+}
+.menu.is-open .menu__panel { transform: translateX(0); }
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--tap-min);
+  padding: var(--sp-3);
+  border-radius: var(--r-btn);
+  color: var(--text);
+  text-decoration: none;
+  font-size: var(--fs-body);
+}
+.menu__item:active { background: var(--primary-soft); }
+.menu__item svg { color: var(--primary); }
+
+/* ============================================================
+   עמוד ההתקדמות (V3, סעיף ד)
+   ============================================================ */
+
+.topbar__title { flex: 1; text-align: center; font-size: var(--fs-h2); }
+
+/* המסלול הוא המקום היחיד שגוללים בו (סעיף ב5) */
+.screen--scroll .screen__body { display: block; overflow: hidden; }
+
+/* ---------- רשת 2×2 ---------- */
+.trackgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-3);
+  width: 100%;
+}
+
+.track-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  aspect-ratio: 1;
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: transform var(--t-fast) var(--ease);
+}
+.track-card:active { transform: scale(.97); }
+.track-card.is-off { opacity: .45; }
+
+.track-card__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 42px;
+  block-size: 42px;
+  margin-bottom: auto;
+  border-radius: var(--r-btn);
+  background: rgba(255, 255, 255, .55);
+}
+
+.track-card__name { font-size: var(--fs-body); font-weight: 700; }
+.track-card__level { font-size: var(--fs-sub); font-weight: 500; }
+.track-card__section,
+.track-card__off { font-size: var(--fs-small); opacity: .72; }
+
+/* לכל נישה גוון משלה — המסלולים לא מרגישים אותו דבר */
+.track-card--reading  { background: #E7EDF6; color: #23364F; }
+.track-card--fitness  { background: #F2E2DC; color: #5B2A1E; }
+.track-card--learning { background: #E6EFE2; color: #2C4526; }
+.track-card--writing  { background: #F2E8D5; color: #56441F; }
+
+:root.theme-dark .track-card--reading  { background: #1B2533; color: #D5E2F2; }
+:root.theme-dark .track-card--fitness  { background: #33211B; color: #F0D6CC; }
+:root.theme-dark .track-card--learning { background: #1F2E1B; color: #D6E8CF; }
+:root.theme-dark .track-card--writing  { background: #332A18; color: #F0E1C0; }
+:root.theme-dark .track-card__icon { background: rgba(0, 0, 0, .3); }
+
+/* ---------- המסלול ---------- */
+.track { display: flex; flex-direction: column; height: 100%; gap: var(--sp-2); }
+
+.track__back { align-self: flex-start; }
+[dir="rtl"] .track__back svg { transform: scaleX(-1); }
+
+.track__into {
+  align-self: center;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.track__path {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-inline: var(--sp-2);
+  /* קו הנתיב עצמו */
+  background:
+    linear-gradient(var(--border), var(--border)) no-repeat
+    calc(100% - 31px) 0 / 2px 100%;
+}
+.track__path::-webkit-scrollbar { display: none; }
+
+.track__section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--sp-6) 0 var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  text-align: center;
+}
+.track__section-name { font-weight: 700; }
+.track__section-range { font-size: var(--fs-small); opacity: .7; font-variant-numeric: tabular-nums; }
+
+/* ארבעה עיצובי סקשן שמתחלפים במחזוריות */
+.track__section--0 { background: var(--primary-soft); color: var(--primary); }
+.track__section--1 { background: var(--accent-soft); color: var(--text); }
+.track__section--2 { background: var(--len-short-bg); color: var(--len-short-ink); }
+.track__section--3 { background: var(--len-long-bg); color: var(--len-long-ink); }
+
+.track__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  opacity: .5;
+}
+.track__row.is-done { opacity: .75; }
+.track__row.is-current { opacity: 1; }
+
+.track__node {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-small);
+}
+
+/* צורת התחנה משתנה לפי הנישה */
+.track__node--page  { border-radius: 4px 12px 12px 4px; }
+.track__node--ring  { border-radius: var(--r-chip); }
+.track__node--card  { border-radius: 8px; }
+.track__node--quill { border-radius: 14px 4px 14px 4px; }
+
+.track__row.is-done .track__node {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.track__row.is-current .track__node {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+.track__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.track__info b { font-size: var(--fs-sub); font-weight: 500; }
+.track__info small { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
+
+.track__go { flex: none; }

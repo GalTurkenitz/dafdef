@@ -95,14 +95,18 @@ export function gateTable(selected = [], profile = DEFAULT_PROFILE) {
  * ------------------------------------------------------------------ */
 
 const GOAL_WORDS = {
+  wean: 'לגמול את עצמך מהטלפון',
   reduce: 'לצמצם דרסטית',
   balance: 'לאזן',
+  routine: 'לבנות שגרה יציבה',
   habits: 'להוסיף הרגלים טובים',
 };
 
 const STRICT_WORDS = {
   soft: 'רך',
   medium: 'בינוני',
+  tough: 'קשוח',
+  tougher: 'קשוח מאוד',
   brutal: 'אכזרי',
 };
 
@@ -115,11 +119,15 @@ export function explainGates({ goal, strictness } = {}) {
   const s = STRICT_WORDS[strictness] || STRICT_WORDS.medium;
 
   let line = `בחרת ${g} במצב ${s}`;
-  if (strictness === 'brutal') line += ' — לכן היחסים מחמירים';
+
+  if (strictness === 'brutal' || strictness === 'tougher') line += ' — לכן היחסים מחמירים';
   else if (strictness === 'soft') line += ' — לכן היחסים נדיבים';
+  else if (strictness === 'tough') line += ' — היחסים מעט מחמירים';
 
   if (goal === 'habits') line += '. כל פעולה שווה יותר, כדי שיהיה כדאי להתחיל';
+  else if (goal === 'routine') line += '. הפעולות שוות מעט יותר, כדי לבסס שגרה';
   else if (goal === 'reduce') line += '. צריך לעבוד יותר על כל דקת מסך';
+  else if (goal === 'wean') line += '. כל דקת מסך עולה ביוקר — זו הנקודה';
 
   return line;
 }

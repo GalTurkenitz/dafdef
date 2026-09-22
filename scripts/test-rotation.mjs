@@ -69,16 +69,24 @@ is('עדיין לא הושלם', res.justCompleted, false);
 res = markDone(r, SEL, 'water'); r = res.round;
 is('הסבב הושלם עכשיו', res.justCompleted, true);
 is('מגיע בונוס', res.bonusDue, true);
-is('אין משימה הבאה', nextTask(r, SEL), null);
-is('isRoundComplete', isRoundComplete(r, SEL), true);
 
-// ביצוע חוזר לא משלם בונוס פעמיים
+// V3 סעיף ג1 — הסבב מחזורי: מיד מתחיל סבב חדש באותו יום
+is('סבב חדש התחיל מיד', nextTask(r, SEL), 'reading');
+eq('המונים אופסו', progress(r, SEL), { done: 0, total: 3 });
+is('נספר סבב אחד היום', r.roundsToday, 1);
+is('היום מסומן כמכיל סבב מלא', r.roundComplete, true);
+
+// בונוס ההשלמה — פעם ביום בלבד (V3 סעיף ג2)
 r = markBonusGiven(r);
-res = markDone(r, SEL, 'water');
-is('בונוס לא ניתן פעמיים', res.bonusDue, false);
-is('ולא "הושלם" שוב', res.justCompleted, false);
+r = markDone(r, SEL, 'reading').round;
+r = markDone(r, SEL, 'fitness').round;
+res = markDone(r, SEL, 'water'); r = res.round;
+is('הסבב השני הושלם', res.justCompleted, true);
+is('אבל בלי בונוס', res.bonusDue, false);
+is('שני סבבים היום', r.roundsToday, 2);
 
 // דילוג על משימה שבוצעה לא עושה כלום
+r = markDone(r, SEL, 'water').round;
 const before = JSON.stringify(r);
 is('דילוג על מה שבוצע — אין שינוי', JSON.stringify(skip(r, 'water')), before);
 
@@ -94,14 +102,14 @@ is('צעדים לא "מבצעים"', canPerform(r, SEL, 'steps').allowed, false)
 is('  והסיבה', canPerform(r, SEL, 'steps').reason, 'background');
 
 r = markDone(r, SEL, 'water').round;
-is('מים חסומים אחרי ביצוע', canPerform(r, SEL, 'water').allowed, false);
-is('  והסיבה', canPerform(r, SEL, 'water').reason, 'done-today');
+is('מים חסומים אחרי ביצוע בסבב', canPerform(r, SEL, 'water').allowed, false);
+is('  והסיבה', canPerform(r, SEL, 'water').reason, 'done-this-round');
 
 r = markDone(r, SEL, 'reading').round;
 is('קריאה פתוחה גם אחרי ביצוע', canPerform(r, SEL, 'reading').allowed, true);
 
 r = markDone(r, SEL, 'fitness').round;
-is('אחרי סבב מלא — מים נפתחים שוב', canPerform(r, SEL, 'water').allowed, true);
+is('סבב חדש — מים חזרו לתור', canPerform(r, SEL, 'water').allowed, true);
 
 /* ================= מחוון הסבב ================= */
 console.log('\n— מחוון —');
@@ -123,12 +131,15 @@ const SOFT = { goal: 'habits', strictness: 'soft' };
 near('מקדם מאוזן', profileFactor(BALANCED), 1);
 near('מקדם אכזרי', profileFactor(BRUTAL), 0.335);
 near('מקדם נדיב', profileFactor(SOFT), 1.6625);
+near('מקדם גמילה + אכזרי', profileFactor({ goal: 'wean', strictness: 'brutal' }), 0.25);
+near('מקדם שגרה + קשוח', profileFactor({ goal: 'routine', strictness: 'tough' }), 0.9775);
+near('מקדם קשוח מאוד', profileFactor({ goal: 'balance', strictness: 'tougher' }), 0.7);
 
-is('עמוד קריאה, מאוזן', unitValue('reading', BALANCED), 10);
-is('סט למידה, מאוזן', unitValue('learning', BALANCED), 15);
+is('עמוד קריאה, מאוזן', unitValue('reading', BALANCED), 5);
+is('סט למידה, מאוזן', unitValue('learning', BALANCED), 5);
 is('כוס מים, מאוזן', unitValue('water', BALANCED), 3);
-near('עמוד קריאה, אכזרי', unitValue('reading', BRUTAL), 3.35);
-near('עמוד קריאה, נדיב', unitValue('reading', SOFT), 16.625);
+near('עמוד קריאה, אכזרי', unitValue('reading', BRUTAL), 1.675);
+near('עמוד קריאה, נדיב', unitValue('reading', SOFT), 8.3125);
 
 // כושר: חזרה בודדת שברית, משימה שלמה שווה משהו אמיתי
 near('חזרת כושר, אכזרי', unitValue('fitness', BRUTAL), 0.335);
@@ -145,13 +156,15 @@ console.log('\n— טבלת השערים —');
 
 const table = gateTable(['reading', 'fitness', 'water'], BALANCED);
 is('שורה לכל נישה', table.length, 3);
-is('קריאה', table[0].minutes, 10);
+is('קריאה', table[0].minutes, 5);
 is('  יחידה', table[0].label, 'עמוד');
 is('כושר מוצג כמשימה', table[1].label, '10 שכיבות');
 is('  ושווה 10', table[1].minutes, 10);
 is('נישה שלא נבחרה לא בטבלה', gateTable(['reading'], BALANCED).length, 1);
 
 is('הסבר מזכיר אכזרי', explainGates(BRUTAL).includes('מחמירים'), true);
+is('הסבר לגמילה', explainGates({ goal: 'wean', strictness: 'medium' }).includes('ביוקר'), true);
+is('הסבר לשגרה', explainGates({ goal: 'routine', strictness: 'medium' }).includes('שגרה'), true);
 is('הסבר מזכיר הרגלים', explainGates(SOFT).includes('כדאי להתחיל'), true);
 
 console.log(fail ? `\n${fail} בדיקות נכשלו` : '\nכל הבדיקות עברו');

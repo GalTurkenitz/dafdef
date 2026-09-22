@@ -13,6 +13,7 @@
 
 import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera, POSE, mid } from '../../camera/camera.js';
+import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
 
 /** כמה זמן צריך להחזיק את היד ליד הפה כדי שזה ייחשב שתייה */
@@ -54,7 +55,7 @@ export async function mount(host, { onComplete } = {}) {
       <div class="water__steps">
         ${STEPS.map((s, i) => `
           <span class="water__step${i < step ? ' is-done' : ''}${i === step ? ' is-current' : ''}">
-            ${i < step ? '✓' : i + 1}
+            ${i < step ? icon('check', 16) : i + 1}
             <small>${s.label}</small>
           </span>`).join('')}
       </div>
@@ -117,7 +118,7 @@ export async function mount(host, { onComplete } = {}) {
           finished = true;
           step = 2;
           render();
-          cam.setGuide('מאושר ✓');
+          cam.setGuide('מאושר');
           setModuleData('water', { lastDrink: Date.now() });
           setTimeout(() => { cam.stop(); onComplete?.(1); }, 900);
         }

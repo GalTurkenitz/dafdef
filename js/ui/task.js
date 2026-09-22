@@ -9,7 +9,7 @@
  */
 
 import { initTheme } from './theme.js';
-import { mountBack } from './nav.js';
+import { mountBack, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES } from '../config.js';
@@ -43,8 +43,8 @@ function complete(units = 1) {
     <div class="taskdone screen-in">
       <div class="taskdone__mark">${icon('check', 40)}</div>
       <p class="taskdone__earn">+${roundMinutes(added)} דק׳</p>
-      <p class="t-sub">${niche.name} · ✓ בסבב היומי</p>
-      ${bonus ? `<p class="taskdone__bonus">ועוד ${bonus} דקות על השלמת הסבב 🎉</p>` : ''}
+      <p class="t-sub">${niche.name} · סומן בסבב היומי</p>
+      ${bonus ? `<p class="taskdone__bonus">ועוד ${bonus} דקות על השלמת הסבב</p>` : ''}
       ${roundComplete && !bonus ? '<p class="t-sub">הסבב הושלם — מכאן הכל פתוח</p>' : ''}
     </div>`;
 
@@ -128,6 +128,7 @@ function init() {
   initTheme();
   openDay();
   mountBack('index.html');
+  mountMenu();
 
   if (!getSettings().onboardingDone) { location.replace('onboarding.html'); return; }
 
@@ -146,8 +147,8 @@ function init() {
 
   const gate = canPerform(nicheId);
   if (!gate.allowed) {
-    const why = gate.reason === 'done-today'
-      ? 'המשימה הזו כבר בוצעה היום. היא תיפתח שוב כשתשלים את הסבב.'
+    const why = gate.reason === 'done-this-round'
+      ? 'המשימה הזו כבר בוצעה בסבב הנוכחי. היא תחזור לתור בסבב הבא.'
       : gate.reason === 'not-selected'
         ? 'הנישה הזו לא נמצאת בסבב שלך.'
         : 'המשימה לא זמינה כרגע.';

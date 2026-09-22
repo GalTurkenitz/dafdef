@@ -75,11 +75,11 @@ export const ROUND_NICHE_IDS = NICHE_IDS.filter((id) => NICHES[id].channel !== '
  * ------------------------------------------------------------------ */
 
 export const GATES = {
-  reading:   { base: 10, taskUnits: 1 },    // עמוד
+  reading:   { base: 5,  taskUnits: 1 },    // עמוד
   fitness:   { base: 1,  taskUnits: 10 },   // חזרה; משימה = 10 חזרות
-  breathing: { base: 10, taskUnits: 1 },    // תרגיל של 2 דקות
-  learning:  { base: 15, taskUnits: 1 },    // סט של 10 שאלות
-  writing:   { base: 15, taskUnits: 1 },    // רישום של 50+ מילים
+  breathing: { base: 5,  taskUnits: 1 },    // תרגיל מדיטציה
+  learning:  { base: 5,  taskUnits: 1 },    // סט של 10 שאלות
+  writing:   { base: 5,  taskUnits: 1 },    // רישום
   water:     { base: 3,  taskUnits: 1 },    // כוס
   steps:     { base: 20, taskUnits: 1 },    // 1,000 צעדים מעל קו הבסיס
   sleep:     { base: 20, taskUnits: 1 },    // עמידה ביעד
@@ -87,14 +87,18 @@ export const GATES = {
 
 /** מקדמים מהשאלון, מוכפלים על כל השערים */
 export const GOAL_FACTOR = {
+  wean: 0.5,      // לגמול את עצמי מהטלפון
   reduce: 0.67,   // לצמצם דרסטית
   balance: 1.0,   // לאזן
+  routine: 1.15,  // לבנות שגרה יציבה
   habits: 1.33,   // להוסיף הרגלים טובים
 };
 
 export const STRICTNESS_FACTOR = {
   soft: 1.25,
   medium: 1.0,
+  tough: 0.85,
+  tougher: 0.7,
   brutal: 0.5,
 };
 

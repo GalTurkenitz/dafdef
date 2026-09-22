@@ -16,7 +16,8 @@
 import { NICHES, ROUND_NICHE_IDS } from '../config.js';
 
 export function createRound(date = null) {
-  return { date, done: {}, skipped: [], roundComplete: false, bonusGiven: false };
+  return { date, done: {}, skipped: [], roundComplete: false,
+           bonusGiven: false, roundsToday: 0 };
 }
 
 /* ------------------------------------------------------------------ *
@@ -94,10 +95,9 @@ export function skip(round, nicheId) {
 /**
  * האם מותר לבצע את הנישה עכשיו.
  *
- * הערוץ החופשי תמיד פתוח. נישות הערוץ המשימתי חסומות אחרי שבוצעו
- * היום — עד שהסבב כולו הושלם, ואז הכל נפתח מחדש.
- *
- * @returns {{allowed: boolean, reason: string|null}}
+ * הערוץ החופשי תמיד פתוח. נישות הערוץ המשימתי זמינות **אך ורק
+ * בתורן בסבב הנוכחי** (V3, סעיף ג1) — השלמת סבב לא פותחת ביצוע
+ * חופשי, אלא מתחילה סבב חדש שבו הן חוזרות לתור.
  */
 export function canPerform(round, selected, nicheId) {
   const niche = NICHES[nicheId];
@@ -111,10 +111,8 @@ export function canPerform(round, selected, nicheId) {
   // הערוץ החופשי לא מוגבל לעולם
   if (niche.channel === 'free') return { allowed: true, reason: null };
 
-  // ערוץ משימות: חסום אחרי ביצוע, עד להשלמת הסבב
-  if (isDone(round, nicheId) && !isRoundComplete(round, selected)) {
-    return { allowed: false, reason: 'done-today' };
-  }
+  // ערוץ משימות: זמין רק כשזו המשימה הנוכחית בסבב
+  if (isDone(round, nicheId)) return { allowed: false, reason: 'done-this-round' };
 
   return { allowed: true, reason: null };
 }
@@ -137,18 +135,26 @@ export function markDone(round, selected, nicheId) {
     return { round, justCompleted: false, bonusDue: false };
   }
 
-  const wasComplete = round.roundComplete;
-  const next = {
+  let next = {
     ...round,
     done: { ...round.done, [nicheId]: true },
     // הנישה בוצעה — אין טעם שתישאר ברשימת המדולגים
     skipped: (round.skipped || []).filter((id) => id !== nicheId),
   };
 
-  next.roundComplete = isRoundComplete(next, selected);
-
-  const justCompleted = next.roundComplete && !wasComplete;
+  const justCompleted = isRoundComplete(next, selected);
   const bonusDue = justCompleted && !next.bonusGiven;
+
+  if (justCompleted) {
+    // הסבב מחזורי: מיד מתחיל סבב חדש באותו יום (V3, סעיף ג1)
+    next = {
+      ...next,
+      done: {},
+      skipped: [],
+      roundComplete: true,          // היום כבר כולל סבב מלא — לסטריק
+      roundsToday: (next.roundsToday || 0) + 1,
+    };
+  }
 
   return { round: next, justCompleted, bonusDue };
 }

@@ -6,7 +6,7 @@
  */
 
 import { initTheme } from './theme.js';
-import { renderNavbar, mountBack } from './nav.js';
+import { renderNavbar, mountBack, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { bookCard } from './bookcard.js';
 import { getBooks } from '../logic/store.js';
@@ -100,6 +100,7 @@ async function init() {
   initTheme();
   renderNavbar('library');
   mountBack('index.html');
+  mountMenu();
 
   try {
     const res = await fetch('content/catalog.json');
