@@ -70,7 +70,7 @@ function metrics(size) {
  * @param {number} opts.minutes     יתרת הבנק
  * @returns {HTMLElement} אלמנט עם update({ niches, minutes })
  */
-export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
+export function createWheel({ size = 300, niches = [], minutes = 0, task = null } = {}) {
   const m = metrics(size);
 
   const wrap = document.createElement('div');
@@ -96,10 +96,16 @@ export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
   const center = document.createElement('div');
   center.className = 'wheel__center';
 
+  // שכבת הפעולה — "בצע"/"דלג" צמודים לתחנה שבתור. HTML ולא SVG,
+  // כדי שיהיו כפתורים אמיתיים (מיקוד, מקלדת, קורא מסך).
+  const action = document.createElement('div');
+  action.className = 'wheel__action';
+  action.hidden = true;
+
   const sr = document.createElement('p');
   sr.className = 'sr-only';
 
-  wrap.append(svg, center, sr);
+  wrap.append(svg, center, action, sr);
 
   /* ---------------------------------------------------------------- *
    * טריגונומטריה
@@ -147,9 +153,11 @@ export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
    * ציור
    * ---------------------------------------------------------------- */
 
-  wrap.update = ({ niches: list = niches, minutes: min = minutes } = {}) => {
+  wrap.update = ({ niches: list = niches, minutes: min = minutes,
+                   task: t = task } = {}) => {
     niches = list;
     minutes = min;
+    task = t;
 
     gTrack.replaceChildren();
     gArcs.replaceChildren();
@@ -259,6 +267,26 @@ export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
         'stroke-linejoin': 'round',
       }, iconBody(niche.icon)));
 
+      // אחרי הביצוע — V על האייקון, בלי להסתיר את זהות הנישה
+      if (niche.done) {
+        const br = m.nodeR * 0.44;
+        const bx = at.x + m.nodeR * 0.70;
+        const by = at.y - m.nodeR * 0.70;
+        stop.appendChild(el('circle', {
+          class: 'wheel__badge',
+          cx: bx.toFixed(2), cy: by.toFixed(2), r: br.toFixed(2),
+          fill: 'var(--surface)', stroke: color, 'stroke-width': 1.5,
+        }));
+        const cs = (br * 1.5) / 24;
+        stop.appendChild(el('g', {
+          class: 'wheel__badge-check',
+          transform: `translate(${(bx - br * 0.75).toFixed(2)} `
+                   + `${(by - br * 0.75).toFixed(2)}) scale(${cs.toFixed(4)})`,
+          fill: 'none', stroke: color, 'stroke-width': 3 / cs,
+          'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+        }, iconBody('check')));
+      }
+
       // השם מתחת לעיגול
       stop.appendChild(el('text', {
         class: 'wheel__name',
@@ -272,6 +300,38 @@ export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
       gStops.appendChild(stop);
     });
 
+    /* ---- "בצע" ו"דלג" מעל התחנה שבתור ---- */
+    const curIndex = niches.findIndex((x) => x.current);
+
+    if (curIndex >= 0 && task) {
+      const at = point(angleOf(curIndex, n));
+      const niche = niches[curIndex];
+
+      action.hidden = false;
+      action.style.setProperty('--c', `var(--niche-${niche.id}, var(--primary))`);
+      action.innerHTML = `
+        <a class="wheel__btn wheel__btn--do" href="${task.href}">בצע</a>
+        <button class="wheel__btn wheel__btn--skip" type="button" data-skip>דלג</button>`;
+
+      if (task.onSkip) {
+        action.querySelector('[data-skip]')
+              .addEventListener('click', () => task.onSkip(niche.id));
+      }
+
+      // המיקום נמדד אחרי הציור: הרוחב של הצמד תלוי בגופן, ואסור
+      // לו לחרוג מהריבוע — תחנה בקצה הצד תדחוף אותו אל מחוץ למסך.
+      requestAnimationFrame(() => {
+        const w = action.offsetWidth || 120;
+        const half = w / 2;
+        const x = Math.min(Math.max(at.x, half + 2), size - half - 2);
+        action.style.left = `${x.toFixed(1)}px`;
+        action.style.top = `${(at.y - m.nodeR - 9).toFixed(1)}px`;
+      });
+    } else {
+      action.hidden = true;
+      action.innerHTML = '';
+    }
+
     const done = niches.filter((x) => x.done);
     const cur = niches.find((x) => x.current);
     sr.textContent = `${Math.floor(minutes)} דקות בבנק. `
@@ -281,6 +341,6 @@ export function createWheel({ size = 300, niches = [], minutes = 0 } = {}) {
     return wrap;
   };
 
-  wrap.update({ niches, minutes });
+  wrap.update({ niches, minutes, task });
   return wrap;
 }

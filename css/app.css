@@ -71,7 +71,7 @@ p  { margin: 0; }
 
 /* מסך עם ניווט תחתון — מפנה מקום כדי שלא יסתיר תוכן */
 .screen--nav {
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--sp-6));
+  padding-bottom: calc(var(--nav-space) + env(safe-area-inset-bottom) + var(--sp-2));
 }
 
 .screen__body { flex: 1; }
@@ -273,7 +273,7 @@ p  { margin: 0; }
   position: fixed;
   inset-inline: 0;
   /* מעל הניווט התחתון וגם מעל כפתור הקריאה הצף */
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--btn-h) + var(--sp-6));
+  bottom: calc(var(--nav-space) + env(safe-area-inset-bottom) + var(--btn-h) + var(--sp-6));
   z-index: 40;
   display: flex;
   justify-content: center;
@@ -1953,6 +1953,47 @@ p  { margin: 0; }
   .wheel__halo { animation: none; opacity: .4; }
 }
 
+/* ---------- "בצע" ו"דלג" מעל התחנה שבתור ---------- */
+
+.wheel__action {
+  position: absolute;
+  /* left/top פיזיים בכוונה — inset-inline מתהפך ב-RTL */
+  transform: translate(-50%, -100%);
+  display: flex;
+  gap: var(--sp-1);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.wheel__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-chip);
+  border: 1.5px solid var(--c, var(--primary));
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+}
+.wheel__btn:active { transform: scale(.96); }
+
+.wheel__btn--do {
+  background: var(--c, var(--primary));
+  color: var(--niche-contrast);
+  box-shadow: var(--shadow-card);
+}
+
+.wheel__btn--skip {
+  background: var(--surface);
+  color: var(--text-soft);
+  border-color: var(--border);
+}
+
 /* ---------- המרכז: יתרת הדקות ---------- */
 
 .wheel__center {
@@ -2062,7 +2103,7 @@ p  { margin: 0; }
 .navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
 .navbar__icon { display: grid; place-items: center; }
 
-.navbar__item--center { justify-content: flex-start; transform: translateY(-18px); }
+.navbar__item--center { justify-content: flex-start; transform: translateY(calc(-1 * var(--nav-rise))); }
 .navbar__item--center .navbar__icon {
   inline-size: 54px;
   block-size: 54px;

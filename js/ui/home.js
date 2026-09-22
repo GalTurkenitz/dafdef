@@ -53,6 +53,12 @@ function renderWheel() {
   const niches = roundStatus();
   const minutes = bank.displayMinutes(getBank());
 
+  // "בצע"/"דלג" יושבים על התחנה שבתור, לא בתחתית המסך
+  const nicheId = currentTask();
+  const task = nicheId
+    ? { href: NICHES[nicheId].href, onSkip: onSkip }
+    : null;
+
   // הגלגל מתאים את עצמו לרוחב **ולגובה**, כדי שהמסך יישאר בלי
   // גלילה גם באייפון נמוך (סעיף א6)
   // הגלגל רשאי לחרוג מריפוד המסך — השמות ממילא יושבים עמוק בתוך
@@ -64,11 +70,19 @@ function renderWheel() {
   ));
 
   if (!wheel) {
-    wheel = createWheel({ size, niches, minutes });
+    wheel = createWheel({ size, niches, minutes, task });
     els.wheel.append(wheel);
   } else {
-    wheel.update({ niches, minutes });
+    wheel.update({ niches, minutes, task });
   }
+}
+
+/** דילוג — דוחה את המשימה לסוף התור (חוקי הרוטציה הקיימים) */
+function onSkip(nicheId) {
+  skipTask(nicheId);
+  renderAll();
+  const next = currentTask();
+  if (next) toast(`נדחה להמשך היום. עכשיו: ${NICHES[next].name}`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -93,18 +107,7 @@ function renderNext() {
 
   els.next.innerHTML = `
     <p class="nexttask__label">המשימה הבאה</p>
-    <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>
-    <div class="nexttask__actions">
-      <a class="btn btn--primary" href="${niche.href}">בצע</a>
-      <button class="btn btn--secondary" data-skip>דלג</button>
-    </div>`;
-
-  els.next.querySelector('[data-skip]').addEventListener('click', () => {
-    skipTask(nicheId);
-    renderAll();
-    const next = currentTask();
-    if (next) toast(`נדחה להמשך היום. עכשיו: ${NICHES[next].name}`);
-  });
+    <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>`;
 }
 
 /* ------------------------------------------------------------------ */
