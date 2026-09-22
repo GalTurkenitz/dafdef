@@ -242,6 +242,14 @@ export function setStreak(streak) {
   return streak;
 }
 
+/**
+ * האם הושלם היום סבב מלא. זה מה שקובע אם היום כבר נזקף לרצף,
+ * ולכן גם אם חיווי הרצף דולק או כבוי.
+ */
+export function roundDoneToday() {
+  return Boolean(getRound().roundComplete);
+}
+
 /** הסטריק נזקף על השלמת סבב מלא, לא על עמוד בודד (המפרט, סעיף 3) */
 function registerRoundToday(now = Date.now()) {
   const day = today(new Date(now));

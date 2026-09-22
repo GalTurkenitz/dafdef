@@ -17,7 +17,7 @@ import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
 import { getSettings, getProfile, getBank, getStreak, openDay,
          currentTask, skipTask, roundStatus, roundProgress,
-         startNewRound } from '../logic/store.js';
+         startNewRound, roundDoneToday } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
 
 const $ = (s) => document.querySelector(s);
@@ -36,13 +36,15 @@ let wheel = null;
 
 function renderStreak() {
   const { current } = getStreak();
-  const label = current === 1 ? 'יום' : 'ימים';
 
-  // קטן ובפינה — הוא חיווי, לא כותרת. כל פיקסל שהוא מוותר עליו
-  // הולך לגלגל.
+  /* החיווי דולק רק אחרי שהושלמו כל משימות היום. עד אז הוא אפור —
+     הרצף עוד לא נזקף היום, והאפור אומר את זה בלי מילים. */
+  const lit = roundDoneToday();
+
   els.streak.innerHTML = `
-    <div class="streak" title="${current} ${label} ברצף">
-      <span class="streak__icon">${icon('flag', 15)}</span>
+    <div class="streak${lit ? ' is-lit' : ''}">
+      <span class="streak__icon">${icon('flame', 16)}</span>
+      <span class="streak__word">רצף</span>
       <span class="streak__num">${current}</span>
     </div>`;
 }

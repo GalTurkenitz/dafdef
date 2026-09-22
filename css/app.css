@@ -1892,21 +1892,39 @@ p  { margin: 0; }
 .topbar > :nth-child(2) { flex: 1; display: flex; justify-content: flex-end; }
 
 /* ---------- רצף השלמת סבבים (סעיף א6) ---------- */
+/* חיווי הרצף — אפור כל עוד לא הושלמו משימות היום, וכתום ברגע
+   שהסבב נסגר. הלהבה היא אייקון SVG ולא אימוג׳י, כדי לשמור על
+   הכלל שאין אימוג׳י באפליקציה (סעיף א6). */
 .streak {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: 3px var(--sp-2);
+  padding: 4px var(--sp-3);
   border-radius: var(--r-chip);
-  background: var(--primary-soft);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  transition: background-color var(--t-base) var(--ease),
+              border-color var(--t-base) var(--ease),
+              color var(--t-base) var(--ease);
 }
-.streak__icon { display: grid; place-items: center; color: var(--primary); }
+
+.streak__icon { display: grid; place-items: center; color: currentColor; }
+
 .streak__num {
   font-size: var(--fs-sub);
   font-weight: 700;
   line-height: 1;
-  color: var(--primary);
   font-variant-numeric: tabular-nums;
+  color: currentColor;
+}
+
+.streak__word { font-size: var(--fs-small); line-height: 1; color: currentColor; }
+
+.streak.is-lit {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ============================================================
