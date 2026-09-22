@@ -9,7 +9,7 @@
  */
 
 import { initTheme } from './theme.js';
-import { mountBack, mountMenu } from './nav.js';
+import { mountBack, mountMenu, mountNavbar } from './nav.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES } from '../config.js';
@@ -129,6 +129,7 @@ function init() {
   openDay();
   mountBack('index.html');
   mountMenu();
+  mountNavbar('task');
 
   if (!getSettings().onboardingDone) { location.replace('onboarding.html'); return; }
 

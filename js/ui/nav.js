@@ -35,19 +35,27 @@ export function renderNavbar(current) {
     const cls = s.center ? 'navbar__item navbar__item--center' : 'navbar__item';
 
     return `<a class="${cls}" href="${s.href}"${active}>
-      <span class="navbar__icon">${icon(s.icon, s.center ? 26 : 22)}</span>
+      <span class="navbar__icon">${icon(s.icon, s.center ? 24 : 22)}</span>
       <span class="navbar__label">${s.label}</span>
     </a>`;
   }).join('');
 
   mount.className = 'navbar';
   mount.innerHTML = `
-    <nav class="navbar__inner" aria-label="ניווט ראשי">
-      <svg class="navbar__rail" viewBox="0 0 390 34" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 14 H139 C152 14 152 0 165 0 H225 C238 0 238 14 251 14 H390 V34 H0 Z"/>
-      </svg>
-      ${items}
-    </nav>`;
+    <nav class="navbar__inner" aria-label="ניווט ראשי">${items}</nav>`;
+}
+
+/**
+ * מזריק סרגל ניווט למסך שאין בו <div data-navbar>, כדי שהסרגל
+ * יופיע בכל מסך באפליקציה בלי לשכפל HTML.
+ */
+export function mountNavbar(current) {
+  if (!document.querySelector('[data-navbar]')) {
+    const host = document.createElement('div');
+    host.setAttribute('data-navbar', '');
+    document.body.appendChild(host);
+  }
+  renderNavbar(current);
 }
 
 /* ------------------------------------------------------------------ *

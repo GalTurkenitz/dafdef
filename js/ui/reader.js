@@ -15,6 +15,7 @@ import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
          getCachedWork, cacheWork, earnUnits, openDay,
          touchBook, getBook } from '../logic/store.js';
+import { mountNavbar } from './nav.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
@@ -673,6 +674,7 @@ function bindChrome() {
 
 async function init() {
   initTheme();
+  mountNavbar('reader');
   openDay();
   markThemeButtons();
   bindChrome();

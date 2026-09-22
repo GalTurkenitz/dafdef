@@ -356,6 +356,9 @@ p  { margin: 0; }
   margin-inline: auto;
   overflow: hidden;
   position: relative;
+  /* מקום לסרגל הניווט, שמופיע גם כאן. בלעדיו פס דפדוף העמודים
+     יושב מתחת לסרגל והדפדוף לא עובד בכלל. */
+  padding-bottom: var(--nav-h);
 }
 
 /* פס עליון — שני שבבים בצבע המותג */
@@ -484,8 +487,7 @@ p  { margin: 0; }
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--screen-pad)
-           calc(var(--sp-2) + env(safe-area-inset-bottom));
+  padding: var(--sp-2) var(--screen-pad);
   border-top: 1px solid var(--border);
   background: var(--bg);
 }
@@ -2074,7 +2076,12 @@ p  { margin: 0; }
 .nexttask__actions .btn { min-height: 46px; }
 
 /* ============================================================
-   סרגל תחתון (סעיפים ב2, ב3) — הבית במרכז, מורם מעל קו חום
+   סרגל תחתון (סעיפים ב2, ב3)
+
+   סרגל שטוח ונקי: רקע מוגבה וקו עליון דק, בלי קשת מצוירת ובלי
+   כפתור שמתרומם מעליו. הבית נבדל מהשאר בעיגול מלא, לא בגובה.
+   הגובה מקובע ל---nav-h, כי ---nav-space נגזר ממנו; סרגל שגדל
+   מעבר לו היה מסתיר תוכן מאחוריו.
    ============================================================ */
 
 .navbar {
@@ -2084,34 +2091,48 @@ p  { margin: 0; }
   z-index: 20;
   display: flex;
   justify-content: center;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
-  background: transparent;
-  pointer-events: none;
 }
 
 .navbar__inner {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  align-items: end;
   width: 100%;
   max-width: var(--phone-max);
-  min-height: var(--nav-h);
-  pointer-events: auto;
+  height: var(--nav-h);
 }
 
-/* הקו שמתרומם סביב כפתור הבית */
-.navbar__rail {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  width: 100%;
+.navbar__slot { display: block; }
+
+.navbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   height: 100%;
-  fill: var(--surface);
-  stroke: var(--primary);
-  stroke-width: 2;
-  filter: drop-shadow(0 -2px 8px rgba(0, 0, 0, .06));
+  text-decoration: none;
+  color: var(--text-soft);
+  font-size: 11px;
+  transition: color var(--t-fast) var(--ease);
 }
+
+.navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
+.navbar__icon { display: grid; place-items: center; }
+.navbar__label { line-height: 1; }
+
+/* הבית — עיגול מלא בצבע המותג. שונה מהשאר, ובאותו גובה */
+.navbar__item--center .navbar__icon {
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.navbar__item--center .navbar__label { color: var(--primary); font-weight: 500; }
 
 .menu__build {
   margin-top: auto;
@@ -2121,39 +2142,6 @@ p  { margin: 0; }
   font-variant-numeric: tabular-nums;
 }
 
-.navbar__slot { display: block; }
-
-.navbar__item {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-  padding-bottom: var(--sp-2);
-  min-height: var(--nav-h);
-  text-decoration: none;
-  color: var(--text-soft);
-  font-size: 11px;
-  transition: color var(--t-fast) var(--ease);
-}
-.navbar__item[aria-current="page"] { color: var(--primary); font-weight: 500; }
-.navbar__icon { display: grid; place-items: center; }
-
-.navbar__item--center { justify-content: flex-start; transform: translateY(calc(-1 * var(--nav-rise))); }
-.navbar__item--center .navbar__icon {
-  inline-size: 54px;
-  block-size: 54px;
-  margin-bottom: 2px;
-  border-radius: var(--r-chip);
-  background: var(--primary);
-  color: var(--primary-contrast);
-  box-shadow: 0 4px 14px rgba(111, 78, 55, .35);
-}
-.navbar__item--center .navbar__label { color: var(--primary); font-weight: 500; }
-
-/* ============================================================
    תפריט המבורגר (סעיף ב1)
    ============================================================ */
 
