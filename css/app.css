@@ -2038,8 +2038,20 @@ p  { margin: 0; }
 }
 
 /* ---------- המשימה הבאה ---------- */
-.nexttask__label { text-align: center; font-size: var(--fs-sub); color: var(--text-soft); }
-.nexttask__label b { color: var(--text); font-weight: 700; }
+/* השורה הזו היא ההוראה המרכזית במסך — מה עושים עכשיו.
+   היא הייתה 15px אפורה ונבלעה; עכשיו היא בולטת. */
+.nexttask__label {
+  text-align: center;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--text-soft);
+  margin-bottom: var(--sp-1);
+}
+.nexttask__label b {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+}
 
 .nexttask__name {
   display: flex;

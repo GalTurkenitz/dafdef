@@ -10,12 +10,21 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# no-store ולא must-revalidate: ספארי באייפון ממשיך להגיש JS ישן
+# מהמטמון גם כשהשרת מבקש אימות מחדש, והמודולים מייבאים זה את זה
+# בנתיבים פנימיים — כך שחותמת גרסה על קובץ הכניסה לא מנקה אותם.
+# בדמו הרוחב-פס זניח, והוודאות שרואים את הגרסה האחרונה שווה יותר.
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-store, max-age=0"
 
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-store, max-age=0"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
