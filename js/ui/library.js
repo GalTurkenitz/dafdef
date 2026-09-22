@@ -6,6 +6,9 @@
  *
  * החיפוש הוא הדרך למצוא ספר; בנוסף יש סינון לפי צבע אורך הקריאה
  * (סעיף ז2). אין סינון לפי מחבר או סוגה.
+ *
+ * המסך אינו גולל (סעיף ב5): הספרים מחולקים לעמודים ומדפדפים
+ * ביניהם בחיצים, כמו בקורא.
  */
 
 import { initTheme } from './theme.js';
@@ -19,6 +22,7 @@ const $ = (s) => document.querySelector(s);
 const els = {
   search: $('[data-library-search]'),
   tones:  $('[data-library-tones]'),
+  pager:  $('[data-library-pager]'),
   list:   $('[data-library-list]'),
   count:  $('[data-library-count]'),
 };
@@ -26,6 +30,23 @@ const els = {
 let books = [];
 let query = '';
 let tone = 'all';        // all | short | medium | long
+let page = 0;
+let remeasured = false;
+
+const COLS = 3;
+const GAP = 12;
+
+/**
+ * כמה ספרים נכנסים בעמוד. הגובה נמדד מכרטיס אמיתי ולא מקבוע —
+ * הערכה קשיחה גרמה לשורה האחרונה להיחתך.
+ */
+function pageSize() {
+  const box = els.list.getBoundingClientRect();
+  const card = els.list.querySelector('.bookcard');
+  const rowH = (card ? card.getBoundingClientRect().height : 140) + GAP;
+  const rows = Math.max(1, Math.floor((box.height + GAP) / rowH));
+  return rows * COLS;
+}
 
 /** שבבי הסינון לפי אורך הקריאה (סעיף ז2) */
 const TONES = [
@@ -73,16 +94,54 @@ function render() {
   if (!found.length) {
     els.list.innerHTML = `<p class="t-sub empty">
       לא מצאנו ספר כזה.<br>אפשר לנסות שם אחר, או לייבא EPUB משלך מתוך הקורא.</p>`;
+    els.pager.innerHTML = '';
     return;
   }
 
+  const size = pageSize();
+  const pages = Math.max(1, Math.ceil(found.length / size));
+  page = Math.min(page, pages - 1);
+  const slice = found.slice(page * size, page * size + size);
+
   els.list.innerHTML = `<div class="bookgrid">${
-    found.map((b) => bookCard(b, { percent: started[b.id]?.percent ?? null })).join('')
+    slice.map((b) => bookCard(b, { percent: started[b.id]?.percent ?? null })).join('')
   }</div>`;
+
+  renderPager(pages);
+
+  /* המדידה הראשונה נעשית לפני שיש כרטיס על המסך, ולכן היא
+     מבוססת על הערכה. אחרי שהכרטיסים קיימים מודדים שוב, ואם
+     המספר השתנה מרעננים פעם אחת בלבד. */
+  if (!remeasured) {
+    const real = pageSize();
+    if (real !== size) { remeasured = true; render(); return; }
+  }
+  remeasured = false;
 
   // בחירה קובעת את הספר הפעיל; הקישור עצמו כבר מוביל לקורא
   els.list.querySelectorAll('[data-book]').forEach((a) => {
     a.addEventListener('click', () => setActiveBookId(a.dataset.book));
+  });
+}
+
+/** דפדוף בין עמודי הספרים — במקום גלילה (סעיף ב5) */
+function renderPager(pages) {
+  if (pages <= 1) { els.pager.innerHTML = ''; return; }
+
+  els.pager.innerHTML = `
+    <div class="pager">
+      <button class="pagebtn" data-page="-1" ${page === 0 ? 'disabled' : ''}
+              aria-label="העמוד הקודם">${icon('arrow', 20)}</button>
+      <span class="pager__pos">${page + 1} מתוך ${pages}</span>
+      <button class="pagebtn is-next" data-page="1" ${page >= pages - 1 ? 'disabled' : ''}
+              aria-label="העמוד הבא">${icon('arrow', 20)}</button>
+    </div>`;
+
+  els.pager.querySelectorAll('[data-page]').forEach((b) => {
+    b.addEventListener('click', () => {
+      page = Math.max(0, Math.min(pages - 1, page + Number(b.dataset.page)));
+      render();
+    });
   });
 }
 
@@ -98,6 +157,7 @@ function renderTones() {
   els.tones.querySelectorAll('[data-tone]').forEach((b) => {
     b.addEventListener('click', () => {
       tone = b.dataset.tone;
+      page = 0;
       renderTones();
       render();
     });
@@ -119,6 +179,7 @@ function renderSearch() {
   input.addEventListener('input', () => {
     query = input.value;
     clear.hidden = !query;
+    page = 0;
     render();
   });
 

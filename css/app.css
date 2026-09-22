@@ -1876,11 +1876,12 @@ p  { margin: 0; }
   overflow: hidden;
   padding-top: max(var(--sp-3), env(safe-area-inset-top));
 }
+/* עמודה כברירת מחדל. המרכוז הוא צורך של הגלגל בלבד, וכשהוא היה
+   כאן הוא מוטט רשימות לגובה אפס. */
 .screen--fixed .screen__body {
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
 .topbar {
@@ -1947,6 +1948,9 @@ p  { margin: 0; }
 .home__wheel {
   flex: 1;
   min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-inline: calc(-1 * var(--screen-pad));
   /* margin ולא padding: הגלגל מודד את תיבת האב, וריפוד היה נכלל
      במדידה. בלי המרווח הזה השם של התחנה התחתונה נוגע בכפתור
@@ -2603,3 +2607,33 @@ p  { margin: 0; }
   color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- דפדוף עמודים בבוחר הספרים (סעיף ב5) ---------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding-block: var(--sp-3);
+}
+.pager__pos { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
+
+/* רשת הספרים לא גולשת — הדפדוף הוא שמחליף עמוד */
+.screen--fixed [data-library-list] { flex: 1; min-height: 0; overflow: hidden; }
+.screen--fixed [data-settings-list] { flex: 1; min-height: 0; overflow: hidden; }
+
+/* ---------- מסך המשימה לא גולל (סעיף ב5) ---------- */
+
+.screen--fixed [data-module] {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* שדה הכתיבה הוא החריג המותר — הוא גולל בתוך עצמו */
+.screen--fixed .writer { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen--fixed .writer__area { flex: 1; min-height: 0; resize: none; }
+.screen--fixed .writer__past { flex: none; }

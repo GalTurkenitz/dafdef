@@ -19,6 +19,11 @@ import { getSettings, setSettings, getBlockedApps, getProfile,
          devInjectBackground, clearAll, devJumpDay, openDay } from '../logic/store.js';
 
 const list = document.querySelector('[data-settings-list]');
+const pagerHost = document.querySelector('[data-settings-pager]');
+
+/* המסך אינו גולל (סעיף ב5): ההגדרות מחולקות לעמודים ומדפדפים
+   ביניהם, כמו בבוחר הספרים ובטבלת השערים. */
+let page = 0;
 
 const FONT_MIN = 15;
 const FONT_MAX = 26;
@@ -59,91 +64,130 @@ function render() {
   const niches = getNiches();
   const selected = new Set(niches.selected);
 
-  list.innerHTML = `
-    <div class="stack">
+  /* כל עמוד הוא קבוצת הגדרות שקשורות זו לזו */
+  const PAGES = [
+    {
+      name: 'אני',
+      html: `
+        <a class="card card--choice" href="onboarding.html?edit=1">
+          <span class="stack-2" style="gap:2px; text-align:start;">
+            <span>השאלון שלי</span>
+            <span class="t-small">${answersSummary()}</span>
+          </span>
+          ${icon('arrow', 20)}
+        </a>
 
-      <a class="card card--choice" href="onboarding.html?edit=1">
-        <span class="stack-2" style="gap:2px; text-align:start;">
-          <span>השאלון שלי</span>
-          <span class="t-small">${answersSummary()}</span>
-        </span>
-        ${icon('arrow', 20)}
-      </a>
+        ${card('הנישות שלי', {
+          head: `<span class="chip">${selected.size}</span>`,
+          main: `<div class="nichetoggles">
+            ${NICHE_IDS.map((id) => `
+              <button class="nichetoggle" data-toggle="${id}" aria-pressed="${selected.has(id)}">
+                ${icon(NICHES[id].icon, 18)}<span>${NICHES[id].name}</span>
+              </button>`).join('')}
+          </div>`,
+        }, 'הוספה או הסרה משנה את הסבב היומי')}`,
+    },
 
-      ${card('הנישות שלי', {
-        head: `<span class="chip">${selected.size}</span>`,
-        main: `<div class="nichetoggles">
-          ${NICHE_IDS.map((id) => `
-            <button class="nichetoggle" data-toggle="${id}" aria-pressed="${selected.has(id)}">
-              ${icon(NICHES[id].icon, 18)}<span>${NICHES[id].name}</span>
-            </button>`).join('')}
-        </div>`,
-      }, 'הוספה או הסרה משנה את הסבב היומי')}
+    {
+      name: 'הנישות',
+      html: `
+        ${card('רמת האנגלית', {
+          main: `<div class="seg" role="radiogroup" aria-label="רמת אנגלית">
+            ${[['beginner', 'מתחיל'], ['intermediate', 'בינוני'],
+               ['advanced', 'מתקדם'], ['native', 'שפת אם']].map(([v, l]) => `
+              <button class="seg__item" data-level="${v}" role="radio"
+                      aria-checked="${(niches.settings.learning?.level || 'beginner') === v}">${l}</button>`).join('')}
+          </div>`,
+        }, 'נשאלת מכולם, גם בלי נישת למידה')}
 
-      ${selected.has('steps') ? card('קו בסיס צעדים', {
-        head: `<span class="chip" data-out="steps">${(niches.settings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline).toLocaleString('he')}</span>`,
-        main: `<input class="slider" type="range" min="1000" max="15000" step="500"
-                      value="${niches.settings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline}"
-                      data-set="steps" aria-label="קו בסיס צעדים">`,
-      }, 'רק צעדים מעל הקו מזכים בדקות') : ''}
+        ${selected.has('steps') ? card('קו בסיס צעדים', {
+          head: `<span class="chip" data-out="steps">${(niches.settings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline).toLocaleString('he')}</span>`,
+          main: `<input class="slider" type="range" min="1000" max="15000" step="500"
+                        value="${niches.settings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline}"
+                        data-set="steps" aria-label="קו בסיס צעדים">`,
+        }, 'רק צעדים מעל הקו מזכים בדקות') : ''}
 
-      ${selected.has('sleep') ? card('יעד שעות שינה', {
-        head: `<span class="chip" data-out="sleep">${niches.settings.sleep?.targetHours ?? BACKGROUND_DEFAULTS.sleep.targetHours}</span>`,
-        main: `<input class="slider" type="range" min="5" max="10" step="0.5"
-                      value="${niches.settings.sleep?.targetHours ?? BACKGROUND_DEFAULTS.sleep.targetHours}"
-                      data-set="sleep" aria-label="יעד שעות שינה">`,
-      }) : ''}
+        ${selected.has('sleep') ? card('יעד שעות שינה', {
+          head: `<span class="chip" data-out="sleep">${niches.settings.sleep?.targetHours ?? BACKGROUND_DEFAULTS.sleep.targetHours}</span>`,
+          main: `<input class="slider" type="range" min="5" max="10" step="0.5"
+                        value="${niches.settings.sleep?.targetHours ?? BACKGROUND_DEFAULTS.sleep.targetHours}"
+                        data-set="sleep" aria-label="יעד שעות שינה">`,
+        }) : ''}`,
+    },
 
-      ${card('רמת האנגלית', {
-        main: `<div class="seg" role="radiogroup" aria-label="רמת אנגלית">
-          ${[['beginner', 'מתחיל'], ['intermediate', 'בינוני'],
-             ['advanced', 'מתקדם'], ['native', 'שפת אם']].map(([v, l]) => `
-            <button class="seg__item" data-level="${v}" role="radio"
-                    aria-checked="${(niches.settings.learning?.level || 'beginner') === v}">${l}</button>`).join('')}
-        </div>`,
-      })}
+    {
+      name: 'המסגרת',
+      html: `
+        ${card('מה קורה לדקות בחצות', {
+          main: `<div class="seg" role="radiogroup" aria-label="מצב איפוס">
+            <button class="seg__item" data-reset="midnight" role="radio"
+                    aria-checked="${settings.resetMode === 'midnight'}">מתאפסות</button>
+            <button class="seg__item" data-reset="keep" role="radio"
+                    aria-checked="${settings.resetMode === 'keep'}">נשמרות</button>
+          </div>`,
+        })}
 
-      ${card('מה קורה לדקות בחצות', {
-        main: `<div class="seg" role="radiogroup" aria-label="מצב איפוס">
-          <button class="seg__item" data-reset="midnight" role="radio"
-                  aria-checked="${settings.resetMode === 'midnight'}">מתאפסות</button>
-          <button class="seg__item" data-reset="keep" role="radio"
-                  aria-checked="${settings.resetMode === 'keep'}">נשמרות</button>
-        </div>`,
-      })}
+        ${card('מצב תצוגה', {
+          main: `<div class="seg" role="radiogroup" aria-label="מצב תצוגה">
+            <button class="seg__item" data-theme="light" role="radio" aria-checked="${theme === 'light'}">בהיר</button>
+            <button class="seg__item" data-theme="dark" role="radio" aria-checked="${theme === 'dark'}">כהה</button>
+          </div>`,
+        })}
 
-      ${card('מצב תצוגה', {
-        main: `<div class="seg" role="radiogroup" aria-label="מצב תצוגה">
-          <button class="seg__item" data-theme="light" role="radio" aria-checked="${theme === 'light'}">בהיר</button>
-          <button class="seg__item" data-theme="dark" role="radio" aria-checked="${theme === 'dark'}">כהה</button>
-        </div>`,
-      })}
+        ${card('גודל טקסט בקורא', {
+          head: `<span class="chip" data-font-out>${settings.fontSize}</span>`,
+          main: `<input class="slider" type="range" min="${FONT_MIN}" max="${FONT_MAX}" step="1"
+                        value="${settings.fontSize}" data-font aria-label="גודל טקסט">`,
+        })}
 
-      ${card('גודל טקסט בקורא', {
-        head: `<span class="chip" data-font-out>${settings.fontSize}</span>`,
-        main: `<input class="slider" type="range" min="${FONT_MIN}" max="${FONT_MAX}" step="1"
-                      value="${settings.fontSize}" data-font aria-label="גודל טקסט">`,
-      })}
+        <a class="card card--choice" href="onboarding.html?step=apps">
+          <span class="stack-2" style="gap:2px; text-align:start;">
+            <span>אפליקציות חסומות</span>
+            <span class="t-small">${apps.length ? apps.map((a) => a.name).join(' · ') : 'לא נבחרו'}</span>
+          </span>
+          ${icon('arrow', 20)}
+        </a>`,
+    },
 
-      <a class="card card--choice" href="onboarding.html?step=apps">
-        <span class="stack-2" style="gap:2px; text-align:start;">
-          <span>אפליקציות חסומות</span>
-          <span class="t-small">${apps.length ? apps.map((a) => a.name).join(' · ') : 'לא נבחרו'}</span>
-        </span>
-        ${icon('arrow', 20)}
-      </a>
+    {
+      name: 'ניהול',
+      html: `
+        <div data-dev hidden></div>
+        <button class="btn btn--danger btn--block" data-reset-all>אפס הכל</button>
+        <p class="credit">הטקסטים באדיבות
+          <a href="https://benyehuda.org" target="_blank" rel="noopener">פרויקט בן-יהודה</a></p>`,
+    },
+  ].filter((p) => p.html.trim());
 
-      <div data-dev hidden></div>
+  page = Math.min(page, PAGES.length - 1);
 
-      <button class="btn btn--danger btn--block" data-reset-all>אפס הכל</button>
-
-      <p class="credit">הטקסטים באדיבות <a href="https://benyehuda.org" target="_blank" rel="noopener">פרויקט בן-יהודה</a></p>
-    </div>`;
+  list.innerHTML = `<div class="stack">${PAGES[page].html}</div>`;
+  renderPager(PAGES);
 
   bind();
 }
 
 /* ------------------------------------------------------------------ */
+
+function renderPager(PAGES) {
+  if (!pagerHost) return;
+
+  pagerHost.innerHTML = `
+    <div class="pager">
+      <button class="pagebtn" data-page="-1" ${page === 0 ? 'disabled' : ''}
+              aria-label="הקודם">${icon('arrow', 20)}</button>
+      <span class="pager__pos">${PAGES[page].name} · ${page + 1}/${PAGES.length}</span>
+      <button class="pagebtn is-next" data-page="1" ${page >= PAGES.length - 1 ? 'disabled' : ''}
+              aria-label="הבא">${icon('arrow', 20)}</button>
+    </div>`;
+
+  pagerHost.querySelectorAll('[data-page]').forEach((b) => {
+    b.addEventListener('click', () => {
+      page = Math.max(0, Math.min(PAGES.length - 1, page + Number(b.dataset.page)));
+      render();
+    });
+  });
+}
 
 function bind() {
   // נישות
@@ -183,11 +227,13 @@ function bind() {
     });
   });
 
-  // גודל טקסט
+  // גודל טקסט — קיים רק בעמוד "המסגרת"
   const font = list.querySelector('[data-font]');
   const fontOut = list.querySelector('[data-font-out]');
-  font.addEventListener('input', () => { fontOut.textContent = font.value; });
-  font.addEventListener('change', () => { settings = setSettings({ fontSize: Number(font.value) }); });
+  if (font && fontOut) {
+    font.addEventListener('input', () => { fontOut.textContent = font.value; });
+    font.addEventListener('change', () => { settings = setSettings({ fontSize: Number(font.value) }); });
+  }
 
   // מצב איפוס
   list.querySelectorAll('[data-reset]').forEach((btn) => {
@@ -208,7 +254,7 @@ function bind() {
   });
 
   // אפס הכל
-  list.querySelector('[data-reset-all]').addEventListener('click', () => {
+  list.querySelector('[data-reset-all]')?.addEventListener('click', () => {
     if (!confirm('לאפס הכל? הבנק, הרצף, הסבב, ההתקדמות בספרים והתשובות לשאלון יימחקו.')) return;
     clearAll();
     location.href = 'onboarding.html';
@@ -223,6 +269,7 @@ function bind() {
 
 function renderDev() {
   const host = list.querySelector('[data-dev]');
+  if (!host) return;
   const bg = getBackground();
 
   host.hidden = false;
