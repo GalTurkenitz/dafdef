@@ -2,11 +2,20 @@
  * progress.js — עמוד ההתקדמות (V3, סעיף ד).
  *
  * שני מצבים על אותו מסך:
- *   רשת — ארבע הנישות החופשיות בריבוע 2×2
- *   מסלול — נתיב השלבים של נישה אחת
+ *   רשת   — ארבע הנישות החופשיות בריבוע 2×2, ממורכז במסך.
+ *   מסלול — נתיב שלבים אנכי ומתפתל, בסגנון מפת שלבים של משחק.
  *
- * המסלול הוא המקום היחיד באפליקציה שגוללים בו (סעיף ב5), והוא
- * נפתח על השלב הנוכחי כך שהמשתמש רואה מיד איפה הוא.
+ * ── המסלול ────────────────────────────────────────────────────
+ * השלבים הם עיגולים על נתיב מתפתל — זיגזג עדין שמאלה-ימינה ולא
+ * קו ישר. בתוך כל עיגול יש **רק את מספר השלב**: בלי שמות, בלי
+ * תיאורים ובלי אייקונים. כל המידע על השלב נפתח בהקשה עליו.
+ *
+ * הנתיב עצמו מצויר ב-SVG והעיגולים הם כפתורי HTML מעליו, כך
+ * שהם נשארים נגישים למקלדת ולקורא מסך. המיקום מחושב ב-left
+ * פיזי ולא ב-inset-inline — הזיגזג חייב להיראות זהה ב-RTL.
+ *
+ * זה המסך היחיד באפליקציה שגוללים בו (סעיף ב5). הוא נפתח על
+ * השלב הנוכחי; גלילה מטה חושפת שלבים שהושלמו, מעלה — הבאים.
  */
 
 import { initTheme } from './theme.js';
@@ -14,31 +23,39 @@ import { renderNavbar, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { NICHES } from '../config.js';
 import { unitValue } from '../logic/formula.js';
-import { LEVELS_PER_SECTION, PROGRESS_NICHES, sectionOf, levelInSection,
-         sectionRange, levelLabel, levelValue, unitsForLevel } from '../logic/progress.js';
+import { LEVELS_PER_SECTION, PROGRESS_NICHES, sectionOf,
+         levelLabel, levelValue, unitsForLevel } from '../logic/progress.js';
 import { getSettings, getProfile, getSelectedNiches, allProgress,
          getProgress, openDay } from '../logic/store.js';
 
 const $ = (s) => document.querySelector(s);
 
 const els = {
-  title: $('[data-title]'),
-  body:  $('[data-body]'),
+  title:  $('[data-title]'),
+  body:   $('[data-body]'),
   screen: $('[data-screen]'),
 };
 
-/** כמה שלבים קדימה מציגים מעבר לנוכחי */
-const LOOK_AHEAD = 14;
+/** כמה שלבים קדימה ואחורה נמצאים במסלול */
+const LOOK_AHEAD = 24;
+const LOOK_BACK = 20;
+
+/** מידות הנתיב */
+const ROW_H = 86;        // מרחק אנכי בין שלבים
+const NODE = 52;         // קוטר עיגול רגיל
+const NODE_CURRENT = 66; // קוטר השלב הנוכחי
 
 /**
- * לכל נישה עיצוב מסלול משלה (סעיף ד2) — צורת התחנה, הגוון
- * והכינוי לסקשן. זה מה שגורם למסלולים להרגיש שונים.
+ * לכל נישה מסלול בעל אופי משלה (סעיף ד2):
+ * amp   — עומק הזיגזג ביחס לרוחב
+ * beat  — כל כמה שלבים הנתיב חוזר על עצמו
+ * curve — כמה הפנייה מעוגלת (0 = שבירה חדה, 1 = גל רך)
  */
 const TRACKS = {
-  reading:  { tone: 'reading',  shape: 'page',   sectionWord: 'פרק' },
-  fitness:  { tone: 'fitness',  shape: 'ring',   sectionWord: 'מחזור' },
-  learning: { tone: 'learning', shape: 'card',   sectionWord: 'יחידה' },
-  writing:  { tone: 'writing',  shape: 'quill',  sectionWord: 'מחברת' },
+  reading:  { tone: 'reading',  amp: 0.16, beat: 4, curve: 1.0 },  // גל שקט
+  fitness:  { tone: 'fitness',  amp: 0.30, beat: 2, curve: 0.15 }, // זיגזג חד
+  learning: { tone: 'learning', amp: 0.22, beat: 3, curve: 0.55 }, // מדרגות
+  writing:  { tone: 'writing',  amp: 0.26, beat: 6, curve: 1.0 },  // גל רחב
 };
 
 /* ------------------------------------------------------------------ *
@@ -56,15 +73,16 @@ function renderGrid() {
     const niche = NICHES[id];
     const st = states[id];
     const on = selected.has(id);
-    const track = TRACKS[id];
 
-    return `<a class="track-card track-card--${track.tone}${on ? '' : ' is-off'}"
-               href="?niche=${id}" data-open="${id}">
-      <span class="track-card__icon">${icon(niche.icon, 24)}</span>
+    /* הרקע הוא תמונת הנישה עם שכבת צבע מעליה, כדי שהטקסט יישאר
+       קריא בלי להסתיר את התמונה. הנתיב מהשורש בכוונה: url()
+       בתוך משתנה CSS נפתר ביחס לקובץ ה-CSS ולא ל-HTML. */
+    return `<a class="track-card track-card--${id}${on ? '' : ' is-off'}"
+               href="?niche=${id}" data-open="${id}"
+               style="--photo:url('/content/img/niches/${id}.webp')">
       <span class="track-card__name">${niche.name}</span>
       ${on
-        ? `<span class="track-card__level">שלב ${st.level}</span>
-           <span class="track-card__section">${track.sectionWord} ${sectionOf(st.level) + 1}</span>`
+        ? `<span class="track-card__level">שלב ${st.level}</span>`
         : '<span class="track-card__off">לא בסבב שלך</span>'}
     </a>`;
   }).join('');
@@ -83,6 +101,22 @@ function renderGrid() {
 }
 
 /* ------------------------------------------------------------------ *
+ * גיאומטריית הנתיב
+ * ------------------------------------------------------------------ */
+
+/**
+ * המיקום האופקי של שלב, כשבר מרוחב הנתיב (0..1).
+ * משולש מרוכך: עולה ויורד לפי beat, ו-curve מרכך את הפינות.
+ */
+function xFraction(level, track) {
+  const phase = ((level - 1) % track.beat) / track.beat;   // 0..1
+  const tri = 1 - Math.abs(phase * 2 - 1);                 // 0..1..0
+  const soft = track.curve * (0.5 - 0.5 * Math.cos(phase * 2 * Math.PI))
+             + (1 - track.curve) * tri;
+  return 0.5 + (soft - 0.5) * 2 * track.amp;
+}
+
+/* ------------------------------------------------------------------ *
  * מסלול השלבים
  * ------------------------------------------------------------------ */
 
@@ -90,64 +124,22 @@ function renderTrack(nicheId) {
   const niche = NICHES[nicheId];
   const track = TRACKS[nicheId];
   const st = getProgress(nicheId);
-  const profile = getProfile() || {};
-  const unit = unitValue(nicheId, profile);
 
   els.title.textContent = niche.name;
   els.screen.classList.add('screen--scroll');
 
-  // בונים מהשלב הרחוק כלפי מטה, כדי שהנתיב יעלה כלפי מעלה
-  const top = st.level + LOOK_AHEAD;
-  const bottom = Math.max(1, st.level - LOOK_AHEAD);
-
-  const rows = [];
-  for (let lvl = top; lvl >= bottom; lvl--) {
-    const inSection = levelInSection(lvl);
-
-    // כותרת סקשן מעל השלב הראשון שלו
-    if (inSection === LEVELS_PER_SECTION) {
-      const sec = sectionOf(lvl);
-      const range = sectionRange(sec);
-      rows.push(`
-        <div class="track__section track__section--${sec % 4}">
-          <span class="track__section-name">${track.sectionWord} ${sec + 1}</span>
-          <span class="track__section-range">שלבים ${range.from}-${range.to}</span>
-        </div>`);
-    }
-
-    const done = lvl < st.level;
-    const current = lvl === st.level;
-    const minutes = Math.round(levelValue(nicheId, lvl, unit));
-
-    rows.push(`
-      <div class="track__row${done ? ' is-done' : ''}${current ? ' is-current' : ''}"
-           ${current ? 'data-current' : ''}>
-        <span class="track__node track__node--${track.shape}">
-          ${done ? icon('check', 16) : lvl}
-        </span>
-        <span class="track__info">
-          <b>${levelLabel(nicheId, lvl)}</b>
-          <small>שלב ${lvl} · ${minutes} דק׳</small>
-        </span>
-      </div>`);
-  }
-
-  // בקריאה השלב מתקדם לפי עמודים, אז מראים כמה נצברו בתוכו
-  const need = unitsForLevel(nicheId, st.level);
-  const intoLevel = nicheId === 'reading' && need > 1
-    ? `<div class="track__into">${st.pagesIntoLevel}/${need} עמודים בשלב הנוכחי</div>`
-    : '';
+  const top = st.level + LOOK_AHEAD;                 // השלב הגבוה ביותר
+  const bottom = Math.max(1, st.level - LOOK_BACK);  // הנמוך ביותר
+  const count = top - bottom + 1;
 
   els.body.innerHTML = `
     <div class="track track--${track.tone}">
       <button class="btn btn--ghost track__back" data-back-grid>
         ${icon('arrow', 18)} כל המסלולים
       </button>
-      ${intoLevel}
-      <div class="track__path" data-path>${rows.join('')}</div>
-      <a class="btn btn--primary btn--block track__go" href="${niche.href}">
-        ${levelLabel(nicheId, st.level)} — לשלב ${st.level}
-      </a>
+      <div class="track__path" data-path>
+        <div class="track__map" data-map style="height:${count * ROW_H}px"></div>
+      </div>
     </div>`;
 
   els.body.querySelector('[data-back-grid]').addEventListener('click', () => {
@@ -155,10 +147,145 @@ function renderTrack(nicheId) {
     renderGrid();
   });
 
-  // נפתח על השלב הנוכחי
   const path = els.body.querySelector('[data-path]');
-  const cur = path.querySelector('[data-current]');
-  if (cur) path.scrollTop = cur.offsetTop - path.clientHeight / 2 + cur.clientHeight / 2;
+  const map = els.body.querySelector('[data-map]');
+
+  // הרוחב ידוע רק אחרי שהמסלול על המסך
+  requestAnimationFrame(() => {
+    drawMap(map, nicheId, track, st, { top, bottom, count });
+
+    const current = map.querySelector('[data-current]');
+    if (current) {
+      path.scrollTop = current.offsetTop - path.clientHeight / 2 + NODE_CURRENT / 2;
+    }
+  });
+}
+
+/** מצייר את הנתיב ואת עיגולי השלבים */
+function drawMap(map, nicheId, track, st, { top, bottom, count }) {
+  const w = map.clientWidth || 340;
+  const h = count * ROW_H;
+
+  /* מיקום כל שלב. השלב הגבוה יושב למעלה, כך שגלילה מטה חושפת
+     את מה שכבר הושלם וגלילה מעלה את הבאים (סעיף ד5). */
+  const points = [];
+  for (let i = 0; i < count; i++) {
+    const level = top - i;
+    points.push({
+      level,
+      x: xFraction(level, track) * w,
+      y: i * ROW_H + ROW_H / 2,
+    });
+  }
+
+  /* הנתיב עצמו — עקומה רכה דרך כל הנקודות. מצויר לפי סקשנים,
+     כך שלכל סקשן של עשרה שלבים יש גוון משלו (סעיף ד4). */
+  const segments = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    const my = (a.y + b.y) / 2;
+    segments.push({
+      section: sectionOf(b.level),
+      d: `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} `
+       + `C ${a.x.toFixed(1)} ${my.toFixed(1)}, ${b.x.toFixed(1)} ${my.toFixed(1)}, `
+       + `${b.x.toFixed(1)} ${b.y.toFixed(1)}`,
+    });
+  }
+
+  const svg = `
+    <svg class="track__line" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"
+         aria-hidden="true">
+      ${segments.map((s) => `
+        <path class="track__seg track__seg--s${s.section % 4}" d="${s.d}"
+              fill="none" stroke-linecap="round"/>`).join('')}
+    </svg>`;
+
+  const nodes = points.map((p) => {
+    const done = p.level < st.level;
+    const current = p.level === st.level;
+    const locked = p.level > st.level;
+    const size = current ? NODE_CURRENT : NODE;
+
+    const cls = ['track__node', `track__node--s${sectionOf(p.level) % 4}`];
+    if (done) cls.push('is-done');
+    if (current) cls.push('is-current');
+    if (locked) cls.push('is-locked');
+
+    return `<button class="${cls.join(' ')}" type="button"
+              ${locked ? 'disabled aria-disabled="true"' : ''}
+              ${current ? 'data-current' : ''}
+              data-level="${p.level}"
+              aria-label="שלב ${p.level}"
+              style="left:${(p.x - size / 2).toFixed(1)}px;
+                     top:${(p.y - size / 2).toFixed(1)}px;
+                     width:${size}px; height:${size}px;">${p.level}</button>`;
+  }).join('');
+
+  map.innerHTML = svg + nodes;
+
+  map.querySelectorAll('[data-level]').forEach((b) => {
+    b.addEventListener('click', () => {
+      if (b.disabled) return;                 // שלב נעול לא עושה כלום
+      openLevelSheet(nicheId, Number(b.dataset.level));
+    });
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * דף השלב (סעיף ד6)
+ * ------------------------------------------------------------------ */
+
+function openLevelSheet(nicheId, level) {
+  const niche = NICHES[nicheId];
+  const profile = getProfile() || {};
+  const unit = unitValue(nicheId, profile);
+  const minutes = Math.round(levelValue(nicheId, level, unit));
+  const section = sectionOf(level) + 1;
+  const st = getProgress(nicheId);
+
+  const sheet = document.createElement('div');
+  sheet.className = 'levelsheet';
+  sheet.innerHTML = `
+    <div class="levelsheet__scrim" data-close></div>
+    <div class="levelsheet__panel track--${nicheId}" role="dialog" aria-modal="true"
+         aria-label="שלב ${level}">
+      <span class="levelsheet__badge">${level}</span>
+      <h2 class="levelsheet__title">${levelLabel(nicheId, level)}</h2>
+      <p class="levelsheet__sub">${niche.name} · קבוצה ${section}</p>
+
+      <div class="levelsheet__rows">
+        <div class="levelsheet__row">
+          <span>המשימה</span>
+          <b>${levelLabel(nicheId, level)}</b>
+        </div>
+        <div class="levelsheet__row">
+          <span>שווה</span>
+          <b>${minutes} דק׳</b>
+        </div>
+        ${nicheId === 'reading' && unitsForLevel(nicheId, level) > 1 && level === st.level
+          ? `<div class="levelsheet__row">
+               <span>נצבר בשלב</span>
+               <b>${st.pagesIntoLevel}/${unitsForLevel(nicheId, level)}</b>
+             </div>`
+          : ''}
+      </div>
+
+      <a class="btn btn--primary btn--block" href="${niche.href}">צא לדרך</a>
+      <button class="btn btn--ghost btn--block" type="button" data-close>סגירה</button>
+    </div>`;
+
+  document.body.appendChild(sheet);
+  requestAnimationFrame(() => sheet.classList.add('is-open'));
+
+  const close = () => {
+    sheet.classList.remove('is-open');
+    setTimeout(() => sheet.remove(), 200);
+  };
+  sheet.querySelectorAll('[data-close]').forEach((e) => e.addEventListener('click', close));
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+  });
 }
 
 /* ------------------------------------------------------------------ */

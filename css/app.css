@@ -1891,8 +1891,11 @@ p  { margin: 0; }
   min-height: 40px;
 }
 .topbar__spacer { inline-size: var(--tap-min); flex: none; }
-/* הרצף נדחף לקצה הרחוק מההמבורגר — שמאל למעלה ב-RTL */
-.topbar > :nth-child(2) { flex: 1; display: flex; justify-content: flex-end; }
+/* הרצף נדחף לקצה הרחוק מההמבורגר — שמאל למעלה ב-RTL.
+   ממוקד ל-data-streak-mount בלבד: כשזה היה :nth-child(2) הוא
+   תפס גם את הכותרת של עמוד ההתקדמות ודחף אותה מהמרכז. */
+.topbar > [data-streak-mount] { flex: 1; display: flex; justify-content: flex-end; }
+.topbar > .topbar__title { flex: 1; text-align: center; }
 
 /* ---------- רצף השלמת סבבים (סעיף א6) ---------- */
 /* חיווי הרצף — אפור כל עוד לא הושלמו משימות היום, וכתום ברגע
@@ -2213,179 +2216,215 @@ p  { margin: 0; }
 /* המסלול הוא המקום היחיד שגוללים בו (סעיף ב5) */
 .screen--scroll .screen__body { display: block; overflow: hidden; }
 
-/* ---------- רשת 2×2 ---------- */
-.trackgrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--sp-3);
-  width: 100%;
+/* ---------- רשת 2×2, ממורכזת במסך ---------- */
+
+.screen--fixed .screen__body:has(.trackgrid) {
+  justify-content: center;
 }
 
+.trackgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  align-content: center;
+}
+
+/* הרקע הוא תמונת הנישה; שכבת צבע מעליה שומרת על קריאות הטקסט */
 .track-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--sp-1);
+  justify-content: flex-end;
+  gap: 2px;
   aspect-ratio: 1;
-  padding: var(--sp-4);
+  padding: var(--sp-3);
   border-radius: var(--r-card);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--c, var(--primary));
+  overflow: hidden;
   text-decoration: none;
-  color: var(--text);
+  color: #fff;
+  background-image: var(--photo);
+  background-size: cover;
+  background-position: center;
   transition: transform var(--t-fast) var(--ease);
 }
+.track-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+              rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, .35) 45%, rgba(0, 0, 0, .12) 100%);
+}
+.track-card > * { position: relative; z-index: 1; }
 .track-card:active { transform: scale(.97); }
-.track-card.is-off { opacity: .45; }
+.track-card.is-off { opacity: .5; }
 
-.track-card__icon {
-  display: grid;
-  place-items: center;
-  inline-size: 42px;
-  block-size: 42px;
-  margin-bottom: auto;
-  border-radius: var(--r-btn);
-  background: rgba(255, 255, 255, .55);
-}
+.track-card__name  { font-size: var(--fs-body); font-weight: 700; }
+.track-card__level { font-size: var(--fs-sub); font-weight: 500; opacity: .92; }
+.track-card__off   { font-size: var(--fs-small); opacity: .8; }
 
-.track-card__name { font-size: var(--fs-body); font-weight: 700; }
-.track-card__level { font-size: var(--fs-sub); font-weight: 500; }
-.track-card__section,
-.track-card__off { font-size: var(--fs-small); opacity: .72; }
+/* המסגרת נושאת את צבע הנישה, כך שהזהות נשמרת מעל כל תמונה */
+.track-card--reading  { --c: var(--niche-reading); }
+.track-card--fitness  { --c: var(--niche-fitness); }
+.track-card--learning { --c: var(--niche-learning); }
+.track-card--writing  { --c: var(--niche-writing); }
 
-/* לכל נישה גוון משלה — המסלולים לא מרגישים אותו דבר */
-.track-card--reading  { background: #E7EDF6; color: #23364F; }
-.track-card--fitness  { background: #F2E2DC; color: #5B2A1E; }
-.track-card--learning { background: #E6EFE2; color: #2C4526; }
-.track-card--writing  { background: #F2E8D5; color: #56441F; }
+/* ============================================================
+   מסלול השלבים — נתיב מתפתל בסגנון מפת שלבים
 
-:root.theme-dark .track-card--reading  { background: #1B2533; color: #D5E2F2; }
-:root.theme-dark .track-card--fitness  { background: #33211B; color: #F0D6CC; }
-:root.theme-dark .track-card--learning { background: #1F2E1B; color: #D6E8CF; }
-:root.theme-dark .track-card--writing  { background: #332A18; color: #F0E1C0; }
-:root.theme-dark .track-card__icon { background: rgba(0, 0, 0, .3); }
+   העיגולים הם כפתורי HTML מעל SVG שמצייר את הנתיב, כדי שיישארו
+   נגישים למקלדת. המיקום ב-left פיזי ולא ב-inset-inline: הזיגזג
+   חייב להיראות זהה ב-RTL.
+   ============================================================ */
 
-/* ---------- המסלול ---------- */
-.track { display: flex; flex-direction: column; height: 100%; gap: var(--sp-2); }
-
-.track__back { align-self: flex-start; }
-[dir="rtl"] .track__back svg { transform: scaleX(-1); }
-
-.track__into {
-  align-self: center;
-  padding: var(--sp-1) var(--sp-3);
-  border-radius: var(--r-chip);
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: var(--fs-small);
-  font-variant-numeric: tabular-nums;
-}
+.track { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.track__back { align-self: flex-start; flex: none; }
 
 .track__path {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
-  padding-inline: var(--sp-2);
-  /* קו הנתיב עצמו */
-  background:
-    linear-gradient(var(--border), var(--border)) no-repeat
-    calc(100% - 31px) 0 / 2px 100%;
 }
 .track__path::-webkit-scrollbar { display: none; }
 
-.track__section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: var(--sp-6) 0 var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-card);
-  text-align: center;
-}
-.track__section-name { font-weight: 700; }
-.track__section-range { font-size: var(--fs-small); opacity: .7; font-variant-numeric: tabular-nums; }
+.track__map { position: relative; width: 100%; }
 
-/* ארבעה עיצובי סקשן שמתחלפים במחזוריות */
-.track__section--0 { background: var(--primary-soft); color: var(--primary); }
-.track__section--1 { background: var(--accent-soft); color: var(--text); }
-.track__section--2 { background: var(--len-short-bg); color: var(--len-short-ink); }
-.track__section--3 { background: var(--len-long-bg); color: var(--len-long-ink); }
+.track__line { position: absolute; inset: 0; }
 
-.track__row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) 0;
-  opacity: .5;
-}
-.track__row.is-done { opacity: .75; }
-.track__row.is-current { opacity: 1; }
+/* לכל קבוצה של עשרה שלבים גוון משלה */
+.track__seg { stroke: var(--c, var(--primary)); stroke-width: 3; opacity: .30; }
+.track__seg--s0 { stroke-width: 3;   opacity: .34; }
+.track__seg--s1 { stroke-width: 3.5; opacity: .26; stroke-dasharray: 10 7; }
+.track__seg--s2 { stroke-width: 4;   opacity: .38; }
+.track__seg--s3 { stroke-width: 3;   opacity: .22; stroke-dasharray: 3 7; }
+
+/* ---------- עיגול שלב ---------- */
 
 .track__node {
-  flex: none;
+  position: absolute;
   display: grid;
   place-items: center;
-  inline-size: 40px;
-  block-size: 40px;
-  border: 2px solid var(--border);
+  border-radius: var(--r-chip);
+  border: 2px solid var(--c, var(--primary));
+  background: var(--surface);
+  color: var(--c, var(--primary));
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-sub);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease);
+}
+.track__node:active:not([disabled]) { transform: scale(.94); }
+
+/* הושלם — מלא בצבע הנישה */
+.track__node.is-done {
+  background: var(--c, var(--primary));
+  color: var(--niche-contrast);
+}
+
+/* הנוכחי — גדול יותר ועם טבעת */
+.track__node.is-current {
+  background: var(--c, var(--primary));
+  color: var(--niche-contrast);
+  border-width: 3px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--c, var(--primary)) 22%, transparent),
+              0 4px 14px rgba(0, 0, 0, .18);
+  font-size: var(--fs-h2);
+}
+
+/* עתידי — עמום ונעול */
+.track__node.is-locked {
+  border-color: var(--border);
   background: var(--surface);
   color: var(--text-soft);
+  opacity: .45;
+  cursor: default;
+}
+
+/* הקבוצות נבדלות בגוון ובעובי המסגרת — העיגול נשאר עיגול */
+.track__node--s1 { border-width: 2.5px; }
+.track__node--s2 { border-style: dashed; }
+.track__node--s3 { border-width: 3px; border-style: double; }
+
+/* צבע הנישה על המסלול כולו */
+.track--reading  { --c: var(--niche-reading); }
+.track--fitness  { --c: var(--niche-fitness); }
+.track--learning { --c: var(--niche-learning); }
+.track--writing  { --c: var(--niche-writing); }
+
+/* ============================================================
+   דף השלב (סעיף ד6)
+   ============================================================ */
+
+.levelsheet { position: fixed; inset: 0; z-index: 70; }
+
+.levelsheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease);
+}
+.levelsheet.is-open .levelsheet__scrim { opacity: 1; }
+
+.levelsheet__panel {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--screen-pad)
+           calc(var(--sp-6) + env(safe-area-inset-bottom));
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-sheet);
+  transform: translateY(100%);
+  transition: transform var(--t-base) var(--ease);
+  text-align: center;
+}
+.levelsheet.is-open .levelsheet__panel { transform: translateY(0); }
+
+.levelsheet__badge {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: var(--r-chip);
+  background: var(--c, var(--primary));
+  color: var(--niche-contrast);
+  font-size: var(--fs-h2);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: var(--fs-small);
 }
 
-/* צורת התחנה משתנה לפי הנישה */
-.track__node--page  { border-radius: 4px 12px 12px 4px; }
-.track__node--ring  { border-radius: var(--r-chip); }
-.track__node--card  { border-radius: 8px; }
-.track__node--quill { border-radius: 14px 4px 14px 4px; }
+.levelsheet__title { margin: var(--sp-2) 0 0; font-size: var(--fs-h2); }
+.levelsheet__sub { color: var(--text-soft); font-size: var(--fs-small); }
 
-.track__row.is-done .track__node {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-contrast);
+.levelsheet__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin: var(--sp-4) 0;
 }
-.track__row.is-current .track__node {
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-soft);
+.levelsheet__row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-btn);
+  background: var(--primary-softer);
+  font-size: var(--fs-sub);
 }
+.levelsheet__row span { color: var(--text-soft); }
 
-.track__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.track__info b { font-size: var(--fs-sub); font-weight: 500; }
-.track__info small { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
-
-.track__go { flex: none; }
-
-/* ---------- שבבי סינון לפי אורך הקריאה (סעיף ז2) ---------- */
-
-.tonefilter { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
-
-.tonechip {
-  padding: 6px var(--sp-4);
-  border-radius: var(--r-chip);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-soft);
-  font-family: var(--font-ui);
-  font-size: var(--fs-small);
-  cursor: pointer;
-  transition: background-color var(--t-fast) var(--ease),
-              border-color var(--t-fast) var(--ease),
-              color var(--t-fast) var(--ease);
+@media (prefers-reduced-motion: reduce) {
+  .levelsheet__panel, .levelsheet__scrim { transition: none; }
 }
-.tonechip[aria-pressed="true"] {
-  background: var(--primary-soft);
-  border-color: var(--primary);
-  color: var(--primary);
-  font-weight: 500;
-}
-
-/* כל שבב נושא את צבע האורך שהוא מסנן, כך שהקשר לכרטיסים מיידי */
-.tonechip--short[aria-pressed="true"]  { background: var(--len-short-bg);  border-color: var(--len-short-ink);  color: var(--len-short-ink); }
-.tonechip--medium[aria-pressed="true"] { background: var(--len-medium-bg); border-color: var(--len-medium-ink); color: var(--len-medium-ink); }
-.tonechip--long[aria-pressed="true"]   { background: var(--len-long-bg);   border-color: var(--len-long-ink);   color: var(--len-long-ink); }
 
 /* ============================================================
    שאלון: דף לכל שאלה (V3, סעיף ח5)
