@@ -16,7 +16,8 @@ import { toast } from './toast.js';
 import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
 import { getSettings, getProfile, getBank, getStreak, openDay,
-         currentTask, skipTask, roundStatus, roundProgress } from '../logic/store.js';
+         currentTask, skipTask, roundStatus, roundProgress,
+         startNewRound } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
 
 const $ = (s) => document.querySelector(s);
@@ -90,8 +91,25 @@ function renderNext() {
     return;
   }
 
-  // הסבב מחזורי — תמיד יש משימה הבאה (סעיף ג1)
-  if (!nicheId) { els.next.innerHTML = ''; return; }
+  /* הסבב מחזורי ולכן תמיד יש משימה הבאה (סעיף ג1), ו-normalize
+     מרפא מצב סבב תקוע. אם בכל זאת הגענו לכאן — לא משאירים מסך
+     בלי מוצא: זו בדיוק התקלה שבה המשתמש ראה גלגל בלי כפתורים
+     ובלי שום דרך להמשיך. */
+  if (!nicheId) {
+    els.next.className = 'nexttask';
+    els.next.innerHTML = `
+      <p class="nexttask__label">סיימת את הסבב של היום</p>
+      <div class="nexttask__actions">
+        <button class="btn btn--primary btn--block" type="button" data-new-round>
+          התחל סבב חדש
+        </button>
+      </div>`;
+    els.next.querySelector('[data-new-round]').addEventListener('click', () => {
+      startNewRound();
+      renderAll();
+    });
+    return;
+  }
 
   const niche = NICHES[nicheId];
   const minutes = roundMinutes(taskValue(nicheId, getProfile() || {}));

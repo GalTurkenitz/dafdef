@@ -443,7 +443,12 @@ export function getRound() {
   const raw = read('dailyRound');
   const now = today();
   if (!raw || raw.date !== now) return rotation.createRound(now);
-  return { ...rotation.createRound(now), ...raw };
+
+  // normalize מרפא סבב שנתקע עם כל הנישות מסומנות — מצב שנוצר
+  // כשרשימת הנישות השתנתה אחרי שסומנו, ומשאיר את המסך בלי
+  // משימה הבאה עד חצות
+  return rotation.normalize({ ...rotation.createRound(now), ...raw },
+                            getSelectedNiches());
 }
 
 export function setRound(round) {
@@ -467,6 +472,16 @@ export function canPerform(nicheId) {
 }
 
 /** מחוון הסבב לתצוגה */
+/**
+ * פותח סבב חדש ידנית. הסבב נפתח מעצמו בכל השלמה, וזו רשת
+ * ביטחון למקרה שהמצב נתקע בכל זאת — כדי שלמשתמש תהיה תמיד דרך
+ * להמשיך בלי לחכות לחצות.
+ */
+export function startNewRound() {
+  const round = getRound();
+  return setRound({ ...round, done: {}, skipped: [] });
+}
+
 export function roundStatus() {
   return rotation.roundStatus(getRound(), getSelectedNiches());
 }

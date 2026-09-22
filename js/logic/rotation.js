@@ -159,6 +159,26 @@ export function markDone(round, selected, nicheId) {
   return { round: next, justCompleted, bonusDue };
 }
 
+/**
+ * מרפא מצב סבב שנתקע כשכל הנישות מסומנות כבוצעו.
+ *
+ * הסבב מחזורי, ולכן המצב הזה לא אמור להתקיים: markDone מאפס
+ * אותו ברגע שהסבב נסגר. הוא כן נוצר כשרשימת הנישות משתנה
+ * *אחרי* שסומנו — למשל כשמסירים בהגדרות את הנישה היחידה שטרם
+ * בוצעה, וכל מה שנשאר כבר מסומן. אז nextTask מחזיר null, המסך
+ * נשאר בלי משימה הבאה, ואין דרך לצאת מזה עד חצות.
+ *
+ * הריפוי נעשה בקריאה ולא בכתיבה, כדי שגם מצב שכבר נשמר בעבר
+ * יתוקן. roundComplete ו-bonusGiven נשמרים — היום עדיין נחשב
+ * כמלא לרצף, והבונוס לא יינתן פעמיים.
+ *
+ * @returns {object} הסבב עצמו, או סבב חדש כשהוא היה תקוע
+ */
+export function normalize(round, selected = []) {
+  if (!round || !isRoundComplete(round, selected)) return round;
+  return { ...round, done: {}, skipped: [], roundComplete: true };
+}
+
 /** מסמן שבונוס ההשלמה כבר שולם, כדי שלא יינתן פעמיים */
 export function markBonusGiven(round) {
   return { ...round, bonusGiven: true };

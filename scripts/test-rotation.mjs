@@ -3,7 +3,7 @@
  * הרצה: node scripts/test-rotation.mjs
  */
 
-import { createRound, roundNiches, nextTask, skip, markDone, canPerform,
+import { createRound, roundNiches, nextTask, skip, markDone, canPerform, normalize,
          isRoundComplete, progress, roundStatus, freeNiches,
          markBonusGiven } from '../js/logic/rotation.js';
 import { unitValue, taskValue, earnFor, gateTable, explainGates,
@@ -166,6 +166,45 @@ is('הסבר מזכיר אכזרי', explainGates(BRUTAL).includes('מחמירי
 is('הסבר לגמילה', explainGates({ goal: 'wean', strictness: 'medium' }).includes('ביוקר'), true);
 is('הסבר לשגרה', explainGates({ goal: 'routine', strictness: 'medium' }).includes('שגרה'), true);
 is('הסבר מזכיר הרגלים', explainGates(SOFT).includes('כדאי להתחיל'), true);
+
+/* ------------------------------------------------------------------ *
+ * ריפוי סבב תקוע (רגרסיה)
+ *
+ * המצב נוצר כשרשימת הנישות משתנה אחרי שהן כבר סומנו — למשל
+ * כשמסירים בהגדרות את הנישה היחידה שטרם בוצעה. אז כל מה שנשאר
+ * מסומן, nextTask מחזיר null, והמסך נשאר בלי משימה הבאה ובלי
+ * כפתורים עד חצות. זה מה שקרה אצל המשתמש בפועל.
+ * ------------------------------------------------------------------ */
+console.log('\n— ריפוי סבב תקוע —');
+{
+  const sel = ['reading', 'fitness', 'learning', 'writing', 'breathing', 'water'];
+  const stuck = {
+    date: '2026-01-01',
+    done: { reading: true, fitness: true, learning: true,
+            writing: true, breathing: true, water: true },
+    skipped: [], roundComplete: true, bonusGiven: true, roundsToday: 1,
+  };
+
+  is('אין משימה הבאה לפני הריפוי', nextTask(stuck, sel), null);
+
+  const healed = normalize(stuck, sel);
+  is('אחרי הריפוי', nextTask(healed, sel), 'reading');
+  is('  ושום נישה לא מסומנת', Object.keys(healed.done).length, 0);
+  is('  היום עדיין נחשב מלא לרצף', healed.roundComplete, true);
+  is('  והבונוס לא יינתן שוב', healed.bonusGiven, true);
+
+  // הוסרה בהגדרות הנישה היחידה שטרם בוצעה
+  const shrunk = ['reading', 'fitness', 'learning', 'writing', 'breathing'];
+  const partial = { ...stuck, done: { reading: true, fitness: true,
+                                      learning: true, writing: true, breathing: true } };
+  is('הסרת נישה יוצרת את אותו מצב', nextTask(partial, shrunk), null);
+  is('  וגם הוא נרפא', nextTask(normalize(partial, shrunk), shrunk), 'reading');
+
+  // סבב באמצע לא נוגעים בו
+  const mid = normalize({ ...stuck, done: { reading: true, fitness: true } }, sel);
+  is('סבב באמצע לא נגע', nextTask(mid, sel), 'learning');
+  is('  והסימון נשמר', mid.done.reading, true);
+}
 
 console.log(fail ? `\n${fail} בדיקות נכשלו` : '\nכל הבדיקות עברו');
 process.exit(fail ? 1 : 0);
