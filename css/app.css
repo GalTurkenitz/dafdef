@@ -2353,3 +2353,32 @@ p  { margin: 0; }
 .track__info small { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
 
 .track__go { flex: none; }
+
+/* ---------- שבבי סינון לפי אורך הקריאה (סעיף ז2) ---------- */
+
+.tonefilter { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+.tonechip {
+  padding: 6px var(--sp-4);
+  border-radius: var(--r-chip);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.tonechip[aria-pressed="true"] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* כל שבב נושא את צבע האורך שהוא מסנן, כך שהקשר לכרטיסים מיידי */
+.tonechip--short[aria-pressed="true"]  { background: var(--len-short-bg);  border-color: var(--len-short-ink);  color: var(--len-short-ink); }
+.tonechip--medium[aria-pressed="true"] { background: var(--len-medium-bg); border-color: var(--len-medium-ink); color: var(--len-medium-ink); }
+.tonechip--long[aria-pressed="true"]   { background: var(--len-long-bg);   border-color: var(--len-long-ink);   color: var(--len-long-ink); }

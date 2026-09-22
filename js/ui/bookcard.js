@@ -38,7 +38,8 @@ export function bookCard(book, { percent = null } = {}) {
   const tone = lengthClass(book.estMinutes);
   const pct = percent == null ? null : Math.round(percent * 100);
 
-  return `<a class="bookcard bookcard--${tone}" href="reader.html?work=${encodeURIComponent(book.id)}">
+  return `<a class="bookcard bookcard--${tone}" href="reader.html?work=${encodeURIComponent(book.id)}"
+             data-book="${esc(book.id)}">
     <span class="bookcard__face">
       <span class="bookcard__title">${esc(book.title)}</span>
       <span class="bookcard__author">${esc(book.author)}</span>

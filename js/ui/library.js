@@ -1,26 +1,39 @@
 /**
- * library.js — מסך הספרייה.
+ * library.js — בוחר הספרים (V3, סעיף ז).
  *
- * החיפוש הוא הדרך למצוא ספר; אין סינון לפי מחבר או סוגה.
- * הספרים מוצגים ברשת של שלושה בשורה, כל אחד בצבע לפי אורך הקריאה.
+ * זה כבר לא יעד ניווט אלא מסך בחירה: נפתח מ"החלף ספר" שבקורא או
+ * בסיום ספר, ובחירה בספר קובעת אותו כ**ספר הפעיל** ומחזירה לקורא.
+ *
+ * החיפוש הוא הדרך למצוא ספר; בנוסף יש סינון לפי צבע אורך הקריאה
+ * (סעיף ז2). אין סינון לפי מחבר או סוגה.
  */
 
 import { initTheme } from './theme.js';
 import { renderNavbar, mountBack, mountMenu } from './nav.js';
 import { icon } from './icons.js';
-import { bookCard } from './bookcard.js';
-import { getBooks } from '../logic/store.js';
+import { bookCard, lengthClass } from './bookcard.js';
+import { getBooks, setActiveBookId } from '../logic/store.js';
 
 const $ = (s) => document.querySelector(s);
 
 const els = {
   search: $('[data-library-search]'),
+  tones:  $('[data-library-tones]'),
   list:   $('[data-library-list]'),
   count:  $('[data-library-count]'),
 };
 
 let books = [];
 let query = '';
+let tone = 'all';        // all | short | medium | long
+
+/** שבבי הסינון לפי אורך הקריאה (סעיף ז2) */
+const TONES = [
+  { id: 'all',    label: 'הכל' },
+  { id: 'short',  label: 'קצר' },
+  { id: 'medium', label: 'בינוני' },
+  { id: 'long',   label: 'ארוך' },
+];
 
 /* ------------------------------------------------------------------ *
  * חיפוש
@@ -39,6 +52,7 @@ function norm(s) {
 }
 
 function matches(book, q) {
+  if (tone !== 'all' && lengthClass(book.estMinutes) !== tone) return false;
   if (!q) return true;
   const hay = norm(`${book.title} ${book.author} ${book.genre}`);
   return norm(q).split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
@@ -65,6 +79,29 @@ function render() {
   els.list.innerHTML = `<div class="bookgrid">${
     found.map((b) => bookCard(b, { percent: started[b.id]?.percent ?? null })).join('')
   }</div>`;
+
+  // בחירה קובעת את הספר הפעיל; הקישור עצמו כבר מוביל לקורא
+  els.list.querySelectorAll('[data-book]').forEach((a) => {
+    a.addEventListener('click', () => setActiveBookId(a.dataset.book));
+  });
+}
+
+/** שבבי הסינון לפי צבע האורך */
+function renderTones() {
+  if (!els.tones) return;
+  els.tones.innerHTML = `<div class="tonefilter" role="group" aria-label="סינון לפי אורך">
+    ${TONES.map((t) => `
+      <button class="tonechip tonechip--${t.id}" data-tone="${t.id}"
+              aria-pressed="${tone === t.id}">${t.label}</button>`).join('')}
+  </div>`;
+
+  els.tones.querySelectorAll('[data-tone]').forEach((b) => {
+    b.addEventListener('click', () => {
+      tone = b.dataset.tone;
+      renderTones();
+      render();
+    });
+  });
 }
 
 function renderSearch() {
@@ -115,6 +152,7 @@ async function init() {
   books.sort((a, b) => a.title.localeCompare(b.title, 'he'));
 
   renderSearch();
+  renderTones();
   render();
 }
 

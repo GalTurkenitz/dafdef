@@ -14,7 +14,7 @@ import { createPaginator } from './paginator.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
          getCachedWork, cacheWork, earnUnits, openDay,
-         touchBook, getBook } from '../logic/store.js';
+         touchBook, getBook, getActiveBookId, setActiveBookId } from '../logic/store.js';
 import { mountNavbar } from './nav.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
@@ -631,6 +631,15 @@ function bindChrome() {
   // חזרה ישירה לדף הבית, לא להיסטוריית הדפדפן
   els.home.addEventListener('click', () => { location.href = 'index.html'; });
 
+  // החלפת ספר פותחת את בוחר הספרים (סעיף ז1)
+  const swap = document.querySelector('[data-swap-book]');
+  if (swap) {
+    swap.classList.add('toolbtn');
+    swap.setAttribute('aria-label', 'החלף ספר');
+    swap.innerHTML = icon('library', 20);
+    swap.addEventListener('click', () => { location.href = 'library.html'; });
+  }
+
   // כפתורי דפדוף קבועים — ב-RTL "הבא" מצביע שמאלה
   document.querySelectorAll('[data-turn]').forEach((btn) => {
     btn.innerHTML = icon('arrow', 22);
@@ -689,9 +698,17 @@ async function init() {
     resizeTimer = setTimeout(relayout, 150);
   });
 
-  const wanted = new URLSearchParams(location.search).get('work')
+  /* סדר העדיפויות: מה שביקשו בכתובת, אחר כך הספר הפעיל (סעיף ז1),
+     ורק אחר כך הספר האחרון או ברירת המחדל. */
+  const asked = new URLSearchParams(location.search).get('work');
+  if (asked) setActiveBookId(asked);
+
+  const wanted = asked
+    || getActiveBookId()
     || (reading.lastWorkId && !reading.lastWorkId.startsWith('epub:') ? reading.lastWorkId : null)
     || DEFAULT_WORK;
+
+  if (!getActiveBookId() && wanted) setActiveBookId(wanted);
 
   showLoading(true);
   try {

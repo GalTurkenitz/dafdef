@@ -656,6 +656,23 @@ export function completeLevel(nicheId, units = 1, now = Date.now()) {
  * נשארים גלובליים.
  * ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ *
+ * הספר הפעיל (V3, סעיף ז1)
+ *
+ * הקריאה צמודה לספר אחד בכל רגע. הספרייה כבר אינה יעד ניווט אלא
+ * בוחר שנפתח מ"החלף ספר" או בסיום ספר, ומחזיר לקורא.
+ * ------------------------------------------------------------------ */
+
+export function getActiveBookId() {
+  const raw = read('activeBook');
+  return raw && typeof raw.id === 'string' ? raw.id : null;
+}
+
+export function setActiveBookId(id) {
+  write('activeBook', { id, since: Date.now() });
+  return id;
+}
+
 export function getBooks() {
   const raw = read('books');
   return raw && typeof raw === 'object' ? raw : {};
