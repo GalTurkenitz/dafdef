@@ -16,7 +16,7 @@
  * בעברית.
  *
  * הגלגל הוא תצוגה בלבד. לחיצה על נישה שלא בתורה לא פותחת כלום
- * (סעיף א5) — הכניסה למשימה היא דרך "בצע" שמתחתיו.
+ * (סעיף א5) — "בצע" ו"דלג" יושבים בראש המסך, מתחת לרצף.
  */
 
 import { iconBody } from './icons.js';
@@ -50,25 +50,34 @@ const el = (name, attrs = {}, children = '') => {
  * מידות — נגזרות מגודל הגלגל כדי שיתכווץ יפה במסכים קטנים
  * ------------------------------------------------------------------ */
 
-function metrics(size) {
-  // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע, כך שכל
-  // שאר הגיאומטריה (מרווחים, הילה, תג, מיקום הכפתורים) לא משתנה.
-  const tile = Math.max(52, Math.min(72, Math.round(size * 0.20)));
+function metrics(width, height) {
+  // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע.
+  const tile = Math.max(52, Math.min(72, Math.round(Math.min(width, height) * 0.20)));
   const nodeR = tile / 2;
-  const label = 21;                       // labelDy + חצי גובה השורה
+
+  /* הרדיוס נדחף עד הקצה: אופקית עוצר הריבוע עצמו, אנכית עוצר
+     השם שמתחת לריבוע התחתון. בלוח לא-ריבועי הרוחב הוא שקובע,
+     ולכן הטבעת יוצאת רחוקה יותר ממספר הדקות שבמרכז. */
+  const labelDy = nodeR + 14;
+  const labelPad = labelDy + 7 - nodeR;
+  const ring = Math.max(60, Math.min(
+    width / 2 - nodeR - 2,
+    height / 2 - nodeR - labelPad - 2,
+  ));
+
   return {
-    cx: size / 2,
-    cy: size / 2,
+    cx: width / 2,
+    cy: height / 2,
     tile,
     nodeR,
-    radius: Math.round(tile * 0.28),      // עיגול הפינות
-    iconSize: Math.round(tile * 0.44),    // גודל האייקון בנפילה לאחור
-    labelDy: nodeR + 14,
-    ring: size / 2 - nodeR - label,       // רדיוס מסלול הסבב
+    radius: Math.round(tile * 0.28),
+    iconSize: Math.round(tile * 0.44),
+    labelDy,
+    ring,
     ringW: 1.5,
     doneW: 2.5,
     glow: 5,
-    arrow: Math.max(3.4, tile * 0.062),   // ראש החץ — קטן בכוונה
+    arrow: Math.max(3.4, tile * 0.062),
   };
 }
 
@@ -76,25 +85,26 @@ function metrics(size) {
 
 /**
  * @param {object} opts
- * @param {number} [opts.size=300]  צלע הריבוע בפיקסלים
+ * @param {number} [opts.width]   רוחב הלוח בפיקסלים
+ * @param {number} [opts.height]  גובה הלוח — לא בהכרח שווה לרוחב
  * @param {Array}  opts.niches      [{ id, name, icon, done, current }]
  * @param {number} opts.minutes     יתרת הבנק
  * @returns {HTMLElement} אלמנט עם update({ niches, minutes })
  */
-export function createWheel({ size = 300, niches = [], minutes = 0, task = null } = {}) {
-  const m = metrics(size);
+export function createWheel({ width = 300, height = 300, niches = [], minutes = 0 } = {}) {
+  const m = metrics(width, height);
   const uid = ++wheelSeq;
 
   const wrap = document.createElement('div');
   wrap.className = 'wheel';
-  wrap.style.width = `${size}px`;
-  wrap.style.height = `${size}px`;
+  wrap.style.width = `${width}px`;
+  wrap.style.height = `${height}px`;
 
   const svg = el('svg', {
     class: 'wheel__svg',
-    viewBox: `0 0 ${size} ${size}`,
-    width: size,
-    height: size,
+    viewBox: `0 0 ${width} ${height}`,
+    width,
+    height,
     'aria-hidden': 'true',
   });
 
@@ -109,16 +119,11 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
   const center = document.createElement('div');
   center.className = 'wheel__center';
 
-  // שכבת הפעולה — "בצע"/"דלג" צמודים לתחנה שבתור. HTML ולא SVG,
-  // כדי שיהיו כפתורים אמיתיים (מיקוד, מקלדת, קורא מסך).
-  const action = document.createElement('div');
-  action.className = 'wheel__action';
-  action.hidden = true;
-
+  // סיכום מילולי לקורא מסך — ה-SVG עצמו מוסתר ממנו
   const sr = document.createElement('p');
   sr.className = 'sr-only';
 
-  wrap.append(svg, center, action, sr);
+  wrap.append(svg, center, sr);
 
   /* ---------------------------------------------------------------- *
    * טריגונומטריה
@@ -166,11 +171,9 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
    * ציור
    * ---------------------------------------------------------------- */
 
-  wrap.update = ({ niches: list = niches, minutes: min = minutes,
-                   task: t = task } = {}) => {
+  wrap.update = ({ niches: list = niches, minutes: min = minutes } = {}) => {
     niches = list;
     minutes = min;
-    task = t;
 
     defs.replaceChildren();
     gTrack.replaceChildren();
@@ -358,46 +361,6 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
       gStops.appendChild(stop);
     });
 
-    /* ---- "בצע" ו"דלג" מעל התחנה שבתור ---- */
-    const curIndex = niches.findIndex((x) => x.current);
-
-    if (curIndex >= 0 && task) {
-      const at = point(angleOf(curIndex, n));
-      const niche = niches[curIndex];
-
-      action.hidden = false;
-      action.style.setProperty('--c', `var(--niche-${niche.id}, var(--primary))`);
-      action.innerHTML = `
-        <a class="wheel__btn wheel__btn--do" href="${task.href}">בצע</a>
-        <button class="wheel__btn wheel__btn--skip" type="button" data-skip>דלג</button>`;
-
-      if (task.onSkip) {
-        action.querySelector('[data-skip]')
-              .addEventListener('click', () => task.onSkip(niche.id));
-      }
-
-      /* הצמד תמיד יוצא אל **מחוץ** למעגל: תחנה בחצי העליון מקבלת
-         אותו מעליה, תחנה בחצי התחתון — מתחתיה, אחרי השם. אחרת הוא
-         נוחת בדיוק על השם של התחנה השכנה שמעבר לקשת. */
-      const below = at.y > m.cy;
-      action.classList.toggle('is-below', below);
-
-      // המיקום נמדד אחרי הציור: רוחב הצמד תלוי בגופן, ואסור לו
-      // לחרוג מהריבוע — תחנה בקצה הצד תדחוף אותו אל מחוץ למסך.
-      requestAnimationFrame(() => {
-        const w = action.offsetWidth || 120;
-        const half = w / 2;
-        const x = Math.min(Math.max(at.x, half + 2), size - half - 2);
-        action.style.left = `${x.toFixed(1)}px`;
-        action.style.top = below
-          ? `${(at.y + m.labelDy + 11).toFixed(1)}px`
-          : `${(at.y - m.nodeR - 9).toFixed(1)}px`;
-      });
-    } else {
-      action.hidden = true;
-      action.innerHTML = '';
-    }
-
     const done = niches.filter((x) => x.done);
     const cur = niches.find((x) => x.current);
     sr.textContent = `${Math.floor(minutes)} דקות בבנק. `
@@ -407,6 +370,6 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
     return wrap;
   };
 
-  wrap.update({ niches, minutes, task });
+  wrap.update({ niches, minutes });
   return wrap;
 }

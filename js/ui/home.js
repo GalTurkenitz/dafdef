@@ -53,27 +53,17 @@ function renderWheel() {
   const niches = roundStatus();
   const minutes = bank.displayMinutes(getBank());
 
-  // "בצע"/"דלג" יושבים על התחנה שבתור, לא בתחתית המסך
-  const nicheId = currentTask();
-  const task = nicheId
-    ? { href: NICHES[nicheId].href, onSkip: onSkip }
-    : null;
-
-  // הגלגל מתאים את עצמו לרוחב **ולגובה**, כדי שהמסך יישאר בלי
-  // גלילה גם באייפון נמוך (סעיף א6)
-  // הגלגל רשאי לחרוג מריפוד המסך — השמות ממילא יושבים עמוק בתוך
-  // הריבוע, ולכן ניצול הרוחב המלא רק מגדיל את העיגול
-  const size = Math.max(230, Math.min(
-    392,
-    window.innerWidth,
-    Math.round(window.innerHeight * 0.50),
-  ));
+  // הגלגל ממלא את כל השטח שנשאר לו. הלוח אינו ריבועי בכוונה:
+  // כך הטבעת נדחפת עד רוחב המסך ומתרחקת ממספר הדקות שבמרכז.
+  const box = els.wheel.parentElement.getBoundingClientRect();
+  const width = Math.max(240, Math.round(box.width));
+  const height = Math.max(200, Math.round(box.height));
 
   if (!wheel) {
-    wheel = createWheel({ size, niches, minutes, task });
+    wheel = createWheel({ width, height, niches, minutes });
     els.wheel.append(wheel);
   } else {
-    wheel.update({ niches, minutes, task });
+    wheel.update({ niches, minutes });
   }
 }
 
@@ -94,6 +84,7 @@ function renderNext() {
   const { total } = roundProgress();
 
   if (!total) {
+    els.next.className = 'nexttask';
     els.next.innerHTML = `
       <a class="btn btn--primary btn--block" href="onboarding.html?edit=1">בחר נישות</a>`;
     return;
@@ -105,18 +96,26 @@ function renderNext() {
   const niche = NICHES[nicheId];
   const minutes = roundMinutes(taskValue(nicheId, getProfile() || {}));
 
-  // שם הנישה הוא מה שמופיע כאן (סעיף א4.5), והפירוט מתחתיו
+  // שם הנישה, ומיד מתחתיו שני הכפתורים
+  els.next.className = 'nexttask';
   els.next.innerHTML = `
     <p class="nexttask__label">המשימה הבאה: <b>${niche.name}</b></p>
-    <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>`;
+    <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>
+    <div class="nexttask__actions">
+      <a class="btn btn--primary" href="${niche.href}">בצע</a>
+      <button class="btn btn--secondary" type="button" data-skip>דלג</button>
+    </div>`;
+
+  els.next.querySelector('[data-skip]').addEventListener('click', () => onSkip(nicheId));
 }
 
 /* ------------------------------------------------------------------ */
 
 function renderAll() {
   renderStreak();
-  renderWheel();
   renderNext();
+  // הגלגל אחרון: הוא מודד את השטח שנותר אחרי שני האחרים
+  renderWheel();
 }
 
 function init() {
