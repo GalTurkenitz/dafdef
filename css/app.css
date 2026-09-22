@@ -2164,6 +2164,7 @@ p  { margin: 0; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ============================================================
    תפריט המבורגר (סעיף ב1)
    ============================================================ */
 
@@ -2339,7 +2340,7 @@ p  { margin: 0; }
   place-items: center;
   border-radius: var(--r-chip);
   border: 2px solid var(--c, var(--primary));
-  background: var(--surface);
+  background: #1A1A20;
   color: var(--c, var(--primary));
   font-family: var(--font-ui);
   font-weight: 700;
@@ -2355,59 +2356,56 @@ p  { margin: 0; }
   color: var(--niche-contrast);
 }
 
+/* השלב שאפשר לבצע עכשיו — בוהק בהרבה משאר העיגולים, כי הוא
+   הדבר היחיד במסך שדורש פעולה. */
 .track__node.is-current {
   background: var(--c, var(--primary));
   color: var(--niche-contrast);
   border-width: 3px;
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--c, var(--primary)) 22%, transparent),
-              0 4px 14px rgba(0, 0, 0, .18);
+  border-color: #fff;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--c, var(--primary)) 55%, transparent),
+              0 0 22px 6px color-mix(in srgb, var(--c, var(--primary)) 45%, transparent),
+              0 6px 18px rgba(0, 0, 0, .45);
   font-size: var(--fs-h2);
+  animation: track-pulse 2.4s var(--ease) infinite;
+}
+
+@keyframes track-pulse {
+  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 55%, transparent),
+                         0 0 22px 6px color-mix(in srgb, var(--c) 45%, transparent),
+                         0 6px 18px rgba(0, 0, 0, .45); }
+  50%      { box-shadow: 0 0 0 9px color-mix(in srgb, var(--c) 28%, transparent),
+                         0 0 30px 10px color-mix(in srgb, var(--c) 30%, transparent),
+                         0 6px 18px rgba(0, 0, 0, .45); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track__node.is-current { animation: none; }
 }
 
 .track__node.is-locked {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text-soft);
-  opacity: .5;
-  cursor: default;
+  /* אפור מלא, לא רקע המסך: שלב שטרם בוצע צריך להיראות כמו
+     מקום שקיים ומחכה, ולא כמו חור שחור ברקע.
+     הוא לחיץ — נפתח כדי להראות מה הוא, בלי אפשרות לבצע. */
+  border-color: #4A4A52;
+  background: #3A3A42;
+  color: #9C9CA6;
+  opacity: 1;
 }
 
 /* ============================================================
-   חמשת מראות הקבוצות
+   רקעי הקבוצות
 
-   כל מראה משנה את הרקע, את גוון העיגול ואת הטיפול במסגרת, כך
-   שהמעבר בין קבוצה לקבוצה נראה כמו שינוי סביבה ולא כמו גוון.
-   הגוון נגזר מצבע הנישה, ולכן כל נישה מקבלת סדרה משלה.
+   המסלול תמיד במצב כהה, ולכן הרקעים הם גוונים של שחור-אפרפר.
+   כל קבוצה מקבלת גוון מעט אחר, וקו מפריד סוגר אותה — זה כל
+   ההבדל. בלי דוגמאות, פסים או נקודות.
    ============================================================ */
 
-/* 0 — נקי: רקע המסך, עיגול מלא */
-.track__band--s0 { background: transparent; }
-
-/* 1 — שדה רך בגוון הנישה, עיגול עם מסגרת כפולה */
-.track__band--s1 { background: color-mix(in srgb, var(--c) 9%, transparent); }
-.track__node--s1 { border-width: 3px; border-style: double; }
-
-/* 2 — פסים אלכסוניים עדינים, עיגול מקווקו */
-.track__band--s2 {
-  background: repeating-linear-gradient(135deg,
-    color-mix(in srgb, var(--c) 10%, transparent) 0 10px,
-    transparent 10px 22px);
-}
-.track__node--s2 { border-style: dashed; }
-
-/* 3 — שכבה כהה יותר, עיגול עם הילה */
-.track__band--s3 { background: color-mix(in srgb, var(--c) 18%, transparent); }
-.track__node--s3 {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 14%, transparent);
-}
-
-/* 4 — נקודות, עיגול דק וגדול יותר */
-.track__band--s4 {
-  background: radial-gradient(color-mix(in srgb, var(--c) 26%, transparent) 1.5px,
-                              transparent 1.6px);
-  background-size: 18px 18px;
-}
-.track__node--s4 { border-width: 1.5px; }
+.track__band--s0 { background: #0D0D10; }
+.track__band--s1 { background: #17171C; }
+.track__band--s2 { background: #101014; }
+.track__band--s3 { background: #1C1C22; }
+.track__band--s4 { background: #131318; }
 
 /* צבע הנישה על המסלול כולו */
 .track--reading  { --c: var(--niche-reading); }
@@ -2465,6 +2463,16 @@ p  { margin: 0; }
 .levelsheet__title { margin: var(--sp-2) 0 0; font-size: var(--fs-h2); }
 .levelsheet__sub { color: var(--text-soft); font-size: var(--fs-small); }
 
+/* הפעולה היחידה בדף — גדולה ובוהקת */
+.levelsheet__panel .btn--primary {
+  min-height: 56px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  background: var(--c, var(--primary));
+  color: var(--niche-contrast);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--c, var(--primary)) 45%, transparent);
+}
+
 .levelsheet__rows {
   display: flex;
   flex-direction: column;
@@ -2480,6 +2488,21 @@ p  { margin: 0; }
   font-size: var(--fs-sub);
 }
 .levelsheet__row span { color: var(--text-soft); }
+
+/* שלב נעול — הבז'ר באפור, ורק הסבר קצר במקום פרטי המשימה */
+.levelsheet__panel.is-locked .levelsheet__badge {
+  background: #3A3A42;
+  color: #9C9CA6;
+}
+.levelsheet__locked {
+  margin: var(--sp-4) 0;
+  padding: var(--sp-4);
+  border-radius: var(--r-btn);
+  background: var(--primary-softer);
+  color: var(--text-soft);
+  font-size: var(--fs-sub);
+  line-height: 1.6;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .levelsheet__panel, .levelsheet__scrim { transition: none; }

@@ -10,9 +10,12 @@
  * קו מחבר** ביניהם — רק העיגולים עצמם. בתוך כל עיגול יש רק את
  * מספר השלב: בלי שמות, תיאורים או אייקונים.
  *
- * כל עשרה שלבים הם **קבוצה**, ולכל קבוצה עיצוב שונה לגמרי: רקע
- * משלה, גוון משלה, וטיפול משלה בעיגולים. קו מפריד סוגר כל קבוצה
- * כדי שהמעבר יהיה חד.
+ * כל עשרה שלבים הם **קבוצה**, וכל קבוצה יושבת על גוון אחר של
+ * שחור-אפרפר עם קו מפריד שסוגר אותה.
+ *
+ * המסלול נכנס אוטומטית למצב כהה, גם כשהמשתמש בחר בהיר. זו
+ * החלה זמנית בלבד (applyTheme ולא setTheme): ההעדפה השמורה לא
+ * משתנה, ויציאה מהמסלול מחזירה אותה.
  *
  * המיקום מחושב ב-left פיזי ולא ב-inset-inline — הזיגזג חייב
  * להיראות זהה ב-RTL.
@@ -21,7 +24,7 @@
  * השלב הנוכחי; גלילה מטה חושפת שלבים שהושלמו, מעלה — הבאים.
  */
 
-import { initTheme } from './theme.js';
+import { initTheme, applyTheme, getTheme } from './theme.js';
 import { renderNavbar, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { NICHES } from '../config.js';
@@ -70,6 +73,10 @@ const TRACKS = {
 function renderGrid() {
   els.title.textContent = 'התקדמות';
   els.screen.classList.remove('screen--scroll');
+  els.screen.classList.remove('screen--dark');
+
+  // יוצאים מהמסלול — חוזרים למצב התצוגה שהמשתמש בחר
+  applyTheme(getTheme());
 
   const selected = new Set(getSelectedNiches());
   const states = allProgress();
@@ -132,6 +139,10 @@ function renderTrack(nicheId) {
 
   els.title.textContent = niche.name;
   els.screen.classList.add('screen--scroll');
+  els.screen.classList.add('screen--dark');
+
+  // המסלול תמיד כהה. זמנית בלבד — ההעדפה השמורה לא נוגעת.
+  applyTheme('dark');
 
   els.body.innerHTML = `
     <div class="track track--${track.tone}">
@@ -213,8 +224,9 @@ function drawMap(map, nicheId, track, st) {
     if (current) cls.push('is-current');
     if (locked) cls.push('is-locked');
 
+    /* גם שלב נעול לחיץ — הוא נפתח כדי להראות מה הוא, אבל בלי
+       פרטי המשימה ובלי אפשרות לצאת לדרך. */
     nodes.push(`<button class="${cls.join(' ')}" type="button"
-        ${locked ? 'disabled aria-disabled="true"' : ''}
         ${current ? 'data-current' : ''}
         data-level="${level}"
         aria-label="שלב ${level}"
@@ -227,8 +239,8 @@ function drawMap(map, nicheId, track, st) {
 
   map.querySelectorAll('[data-level]').forEach((b) => {
     b.addEventListener('click', () => {
-      if (b.disabled) return;                 // שלב נעול לא עושה כלום
-      openLevelSheet(nicheId, Number(b.dataset.level));
+      openLevelSheet(nicheId, Number(b.dataset.level),
+                     b.classList.contains('is-locked'));
     });
   });
 }
@@ -237,7 +249,14 @@ function drawMap(map, nicheId, track, st) {
  * דף השלב (סעיף ד6)
  * ------------------------------------------------------------------ */
 
-function openLevelSheet(nicheId, level) {
+/**
+ * דף השלב.
+ *
+ * שלב פתוח מציג את המשימה, כמה דקות היא שווה, וכפתור "צא לדרך".
+ * שלב נעול נפתח גם הוא — אבל מראה רק **מה השלב**: המספר והקבוצה
+ * שלו. בלי המשימה, בלי השווי ובלי דרך לבצע אותו.
+ */
+function openLevelSheet(nicheId, level, locked = false) {
   const niche = NICHES[nicheId];
   const profile = getProfile() || {};
   const unit = unitValue(nicheId, profile);
@@ -249,30 +268,39 @@ function openLevelSheet(nicheId, level) {
   sheet.className = 'levelsheet';
   sheet.innerHTML = `
     <div class="levelsheet__scrim" data-close></div>
-    <div class="levelsheet__panel track--${nicheId}" role="dialog" aria-modal="true"
-         aria-label="שלב ${level}">
+    <div class="levelsheet__panel track--${nicheId}${locked ? ' is-locked' : ''}"
+         role="dialog" aria-modal="true" aria-label="שלב ${level}">
       <span class="levelsheet__badge">${level}</span>
-      <h2 class="levelsheet__title">${levelLabel(nicheId, level)}</h2>
-      <p class="levelsheet__sub">${niche.name} · קבוצה ${section}</p>
 
-      <div class="levelsheet__rows">
-        <div class="levelsheet__row">
-          <span>המשימה</span>
-          <b>${levelLabel(nicheId, level)}</b>
-        </div>
-        <div class="levelsheet__row">
-          <span>שווה</span>
-          <b>${minutes} דק׳</b>
-        </div>
-        ${nicheId === 'reading' && unitsForLevel(nicheId, level) > 1 && level === st.level
-          ? `<div class="levelsheet__row">
-               <span>נצבר בשלב</span>
-               <b>${st.pagesIntoLevel}/${unitsForLevel(nicheId, level)}</b>
-             </div>`
-          : ''}
-      </div>
+      ${locked
+        ? `<h2 class="levelsheet__title">שלב ${level}</h2>
+           <p class="levelsheet__sub">${niche.name} · קבוצה ${section}</p>
+           <p class="levelsheet__locked">
+             השלב הזה עוד לא נפתח.<br>
+             הוא יחכה לך אחרי שלב ${st.level}.
+           </p>`
+        : `<h2 class="levelsheet__title">${levelLabel(nicheId, level)}</h2>
+           <p class="levelsheet__sub">${niche.name} · קבוצה ${section}</p>
 
-      <a class="btn btn--primary btn--block" href="${niche.href}">צא לדרך</a>
+           <div class="levelsheet__rows">
+             <div class="levelsheet__row">
+               <span>המשימה</span>
+               <b>${levelLabel(nicheId, level)}</b>
+             </div>
+             <div class="levelsheet__row">
+               <span>שווה</span>
+               <b>${minutes} דק׳</b>
+             </div>
+             ${nicheId === 'reading' && unitsForLevel(nicheId, level) > 1 && level === st.level
+               ? `<div class="levelsheet__row">
+                    <span>נצבר בשלב</span>
+                    <b>${st.pagesIntoLevel}/${unitsForLevel(nicheId, level)}</b>
+                  </div>`
+               : ''}
+           </div>
+
+           <a class="btn btn--primary btn--block" href="${niche.href}">צא לדרך</a>`}
+
       <button class="btn btn--ghost btn--block" type="button" data-close>סגירה</button>
     </div>`;
 
