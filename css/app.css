@@ -2382,3 +2382,144 @@ p  { margin: 0; }
 .tonechip--short[aria-pressed="true"]  { background: var(--len-short-bg);  border-color: var(--len-short-ink);  color: var(--len-short-ink); }
 .tonechip--medium[aria-pressed="true"] { background: var(--len-medium-bg); border-color: var(--len-medium-ink); color: var(--len-medium-ink); }
 .tonechip--long[aria-pressed="true"]   { background: var(--len-long-bg);   border-color: var(--len-long-ink);   color: var(--len-long-ink); }
+
+/* ============================================================
+   שאלון: דף לכל שאלה (V3, סעיף ח5)
+
+   כל דף ממלא את הגובה ולא גולל. הכותרת למעלה, התוכן ממורכז
+   במה שנשאר, והכפתור יושב בפוטר הקיים של המסך.
+   ============================================================ */
+
+.onepage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 0;
+  height: 100%;
+}
+.onepage__head { flex: none; }
+.onepage__head h1 { margin: 0; }
+.onepage__head .t-sub { margin-top: var(--sp-2); }
+
+.onepage__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+
+/* ---------- ערך גדול לשאלות מספריות ---------- */
+
+.bigvalue { text-align: center; }
+.bigvalue__num {
+  display: block;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.bigvalue__unit { display: block; margin-top: var(--sp-2); color: var(--text-soft); font-size: var(--fs-sub); }
+
+/* ---------- רמות אנגלית (ח1, ו1) ---------- */
+
+.levelstack { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.levelcard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-card);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+.levelcard__name { font-weight: 500; color: var(--text); }
+.levelcard__blurb { font-size: var(--fs-small); color: var(--text-soft); }
+.levelcard[aria-checked="true"] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.levelcard[aria-checked="true"] .levelcard__name { color: var(--primary); }
+
+/* ---------- בחירת ספר בתוך השאלון (ח5) ---------- */
+
+.bookpick { min-height: 0; overflow: hidden; }
+.bookgrid--pick { max-height: 100%; }
+.bookcard.is-chosen { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ============================================================
+   מה קורה לדקות שצברת — שני כרטיסים גדולים (V3, סעיף ח6)
+   ============================================================ */
+
+.resetpick {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.resetcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+.resetcard__art { color: var(--text-soft); transition: color var(--t-fast) var(--ease); }
+.resetcard__name { font-size: var(--fs-h2); font-weight: 700; color: var(--text); }
+.resetcard__note { font-size: var(--fs-small); color: var(--text-soft); max-inline-size: 26ch; }
+.resetcard__mark {
+  position: absolute;
+  inset-block-start: var(--sp-3);
+  inset-inline-end: var(--sp-3);
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.resetcard[aria-checked="true"] .resetcard__mark { opacity: 1; transform: scale(1); }
+
+/* כל כרטיס בגוון שמבטא את אופיו: מתאפס = קריר, נצבר = חמים */
+.resetcard--reset[aria-checked="true"] {
+  border-color: var(--niche-sleep);
+  background: color-mix(in srgb, var(--niche-sleep) 10%, var(--surface));
+}
+.resetcard--reset[aria-checked="true"] .resetcard__art { color: var(--niche-sleep); }
+
+.resetcard--keep[aria-checked="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.resetcard--keep[aria-checked="true"] .resetcard__art { color: var(--accent); }
+
+/* גוף השאלון: עמודה שממלאת את הגובה, כדי ש-.onepage יוכל למתוח
+   את עצמו בתוכה. screen--fixed כבר מונע גלילה. */
+.screen__body--onb {
+  padding-top: var(--sp-4);
+  display: block;
+  min-height: 0;
+}
+.screen__body--onb > [data-step] { height: 100%; display: block; }

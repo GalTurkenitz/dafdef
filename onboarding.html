@@ -28,11 +28,12 @@
 
 <body>
 <!-- אין ניווט תחתון בשאלון — מסלול לינארי עד מסך הבית -->
-<main class="screen screen-in">
-  <!-- פס התקדמות עליון (1/5…) — שלב 5 -->
+<!-- מסך קבוע: כל שאלה נכנסת בדף אחד בלי גלילה (סעיף ח5) -->
+<main class="screen screen--fixed screen-in">
+  <!-- פס התקדמות עליון -->
   <header data-progress></header>
 
-  <div class="screen__body" style="padding-top: var(--sp-6);">
+  <div class="screen__body screen__body--onb">
     <section data-step role="radiogroup"></section>
   </div>
 

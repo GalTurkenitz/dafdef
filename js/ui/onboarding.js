@@ -14,11 +14,12 @@
 
 import { initTheme } from './theme.js';
 import { icon } from './icons.js';
+import { bookCard } from './bookcard.js';
 import { APPS, appIcon, defaultApps } from './apps.js';
 import { NICHES, NICHE_IDS, BACKGROUND_DEFAULTS } from '../config.js';
 import { gateTable, explainGates } from '../logic/formula.js';
 import { setProfile, getProfile, setSettings, setNiches, getNiches,
-         setBlockedApps, getBlockedApps } from '../logic/store.js';
+         setBlockedApps, getBlockedApps, getActiveBookId, setActiveBookId } from '../logic/store.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -79,6 +80,14 @@ const QUESTIONS = [
 ];
 
 /** הנישות, בסדר שבו הן מוצגות בכרטיסים */
+/* ארבע רמות אנגלית (V3, סעיף ו1) */
+export const ENGLISH_LEVELS = [
+  { id: 'beginner',     name: 'מתחיל',        blurb: 'מילים בודדות ומשפטים קצרים' },
+  { id: 'intermediate', name: 'בינוני',       blurb: 'שיחה יומיומית בלי מילון' },
+  { id: 'advanced',     name: 'מתקדם',        blurb: 'טקסטים ארוכים ומורכבים' },
+  { id: 'native',       name: 'דובר שפת אם',  blurb: 'ניואנסים, ביטויים וסלנג' },
+];
+
 const NICHE_BLURB = {
   reading:   'עמוד בספר',
   fitness:   'שכיבות וסקוואטים',
@@ -114,21 +123,31 @@ let selectedApps = new Set(getBlockedApps().map((a) => a.id));
  * מסך הגדרות הנישות מדלג על עצמו כשאין מה להגדיר.
  * ------------------------------------------------------------------ */
 
+/* דף אחד לכל שאלה, בלי גלילה (V3, סעיף ח5). מסכים שאינם רלוונטיים
+   לבחירה של המשתמש מדולגים ב-go(). */
 const SCREENS = ['age', 'screenTime', 'goal', 'strictness',
-                 'niches', 'nicheSettings', 'resetChoice', 'gates', 'apps'];
+                 'niches', 'steps', 'sleep', 'english', 'book',
+                 'resetChoice', 'gates1', 'gates2', 'apps'];
+
+/** אילו מסכים מותנים בבחירת נישה */
+const SCREEN_NEEDS = {
+  steps: () => selectedNiches.has('steps'),
+  sleep: () => selectedNiches.has('sleep'),
+  book:  () => selectedNiches.has('reading'),
+  // ח1: רמת האנגלית נשאלת מכולם, גם בלי נישת למידה
+  english: () => true,
+  // הדף השני של הטבלה מדולג כשאין בו מה להציג
+  gates2: () => ['learning', 'writing'].some((id) => selectedNiches.has(id)),
+};
 
 let index = params.get('step') === 'apps' ? SCREENS.indexOf('apps') : 0;
-
-/** האם יש בכלל מה להגדיר במסך הגדרות הנישות */
-function needsNicheSettings() {
-  return ['steps', 'sleep', 'learning'].some((id) => selectedNiches.has(id));
-}
 
 function go(delta) {
   let next = index + delta;
 
   while (next > 0 && next < SCREENS.length) {
-    if (SCREENS[next] === 'nicheSettings' && !needsNicheSettings()) { next += delta; continue; }
+    const need = SCREEN_NEEDS[SCREENS[next]];
+    if (need && !need()) { next += delta; continue; }
     break;
   }
 
@@ -142,13 +161,16 @@ function go(delta) {
 
 const PART_OF = {
   age: 'מי אתה', screenTime: 'מי אתה', goal: 'מי אתה', strictness: 'מי אתה',
-  niches: 'הנישות שלך', nicheSettings: 'הנישות שלך',
-  resetChoice: 'המסגרת', gates: 'המסגרת', apps: 'המסגרת',
+  niches: 'הנישות שלך', steps: 'הנישות שלך', sleep: 'הנישות שלך',
+  english: 'הנישות שלך', book: 'הנישות שלך',
+  resetChoice: 'המסגרת', gates1: 'המסגרת', gates2: 'המסגרת', apps: 'המסגרת',
 };
 
 function renderProgress() {
   const screen = SCREENS[index];
-  if (screen === 'gates' || screen === 'apps') { els.progress.innerHTML = ''; return; }
+  if (screen === 'gates1' || screen === 'gates2' || screen === 'apps') {
+    els.progress.innerHTML = ''; return;
+  }
 
   const n = index + 1;
   const pct = (n / SCREENS.length) * 100;
@@ -174,6 +196,48 @@ function renderProgress() {
 /* ------------------------------------------------------------------ *
  * שאלה רגילה
  * ------------------------------------------------------------------ */
+
+/**
+ * ח6 — "מה קורה לדקות שצברת" מקבל עיצוב משלו: שני כרטיסים גדולים
+ * שממלאים את המסך, כל אחד בגוון ובאיור שמבטאים את אופיו.
+ */
+function renderResetChoice() {
+  const key = 'resetChoice';
+  const CARDS = [
+    { value: 'midnight', name: 'מתאפסות בחצות', note: 'כל יום מתחיל מאפס. מה שלא ניצלת — נעלם.',
+      tone: 'reset', art: 'moon' },
+    { value: 'keep', name: 'נשמרות', note: 'הדקות נצברות בלי תפוגה ומחכות לך.',
+      tone: 'keep', art: 'flame' },
+  ];
+
+  els.step.innerHTML = `
+    <div class="onepage">
+      <div class="onepage__head"><h1>מה קורה לדקות שצברת?</h1></div>
+      <div class="resetpick">
+        ${CARDS.map((c) => `
+          <button class="resetcard resetcard--${c.tone}" role="radio" data-value="${c.value}"
+                  aria-checked="${answers[key] === c.value}">
+            <span class="resetcard__art" aria-hidden="true">${icon(c.art, 34)}</span>
+            <span class="resetcard__name">${c.name}</span>
+            <span class="resetcard__note">${c.note}</span>
+            <span class="resetcard__mark">${icon('check', 16)}</span>
+          </button>`).join('')}
+      </div>
+    </div>`;
+
+  els.step.querySelectorAll('[data-value]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      answers[key] = btn.dataset.value;
+      els.step.querySelectorAll('[data-value]').forEach((b) =>
+        b.setAttribute('aria-checked', String(b === btn)));
+      setTimeout(() => go(1), AUTO_ADVANCE_MS);
+    });
+  });
+
+  els.actions.innerHTML = answers[key]
+    ? '<button class="btn btn--ghost btn--block" data-next>הבא</button>' : '';
+  els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
+}
 
 function renderQuestion(key) {
   const q = QUESTIONS.find((x) => x.key === key);
@@ -216,9 +280,9 @@ function renderQuestion(key) {
 
 function renderNiches() {
   els.step.innerHTML = `
-    <h1>במה תרוויח דקות?</h1>
+    <h1>איך תרוויח דקות?</h1>
     <p class="t-sub" style="margin: var(--sp-2) 0 var(--sp-6);">
-      בחר כמה שתרצה. אלה יהיו הסבב היומי שלך.</p>
+      מומלץ לבחור בין 3 ל-5. אלה יהיו הסבב היומי שלך.</p>
 
     <div class="nichegrid">
       ${NICHE_IDS.map((id) => {
@@ -262,85 +326,136 @@ function renderNichesFooter() {
  * הגדרות הנישות שצריכות (המפרט, סעיף 8ב6)
  * ------------------------------------------------------------------ */
 
-function renderNicheSettings() {
-  const blocks = [];
+/* ------------------------------------------------------------------ *
+ * דף לכל שאלה (V3, סעיף ח5)
+ *
+ * כל מסך כאן שואל דבר אחד, ממלא את הגובה ולא גולל. המבנה
+ * המשותף יושב ב-settingPage כדי שהדפים יישארו זהים בצורתם.
+ * ------------------------------------------------------------------ */
 
-  if (selectedNiches.has('steps')) {
-    const v = nicheSettings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline;
-    blocks.push(`
-      <div class="card stack-2">
-        <div class="row-between"><span>${icon('footprints', 20)} קו הבסיס היומי שלך</span>
-          <span class="chip" data-out="steps">${v.toLocaleString('he')}</span></div>
-        <input class="slider" type="range" min="1000" max="15000" step="500" value="${v}"
-               data-set="steps" aria-label="קו בסיס צעדים">
-        <p class="t-small">רק צעדים מעל הקו הזה מזכים בדקות</p>
-      </div>`);
-  }
-
-  if (selectedNiches.has('sleep')) {
-    const s = { ...BACKGROUND_DEFAULTS.sleep, ...(nicheSettings.sleep || {}) };
-    blocks.push(`
-      <div class="card stack-2">
-        <div class="row-between"><span>${icon('moon', 20)} יעד שעות שינה</span>
-          <span class="chip" data-out="sleep">${s.targetHours}</span></div>
-        <input class="slider" type="range" min="5" max="10" step="0.5" value="${s.targetHours}"
-               data-set="sleep" aria-label="יעד שעות שינה">
-        <div class="row-between" style="margin-top: var(--sp-2);">
-          <label class="t-small">מתי הולך לישון
-            <input class="timeinput" type="time" value="${s.windowStart}" data-sleep="windowStart"></label>
-          <label class="t-small">מתי קם
-            <input class="timeinput" type="time" value="${s.windowEnd}" data-sleep="windowEnd"></label>
-        </div>
-      </div>`);
-  }
-
-  if (selectedNiches.has('learning')) {
-    const level = nicheSettings.learning?.level || 'beginner';
-    blocks.push(`
-      <div class="card stack-2">
-        <span>${icon('brain', 20)} רמת האנגלית שלך</span>
-        <div class="seg" role="radiogroup" aria-label="רמת אנגלית">
-          <button class="seg__item" data-level="beginner" aria-checked="${level === 'beginner'}" role="radio">מתחיל</button>
-          <button class="seg__item" data-level="intermediate" aria-checked="${level === 'intermediate'}" role="radio">בינוני</button>
-          <button class="seg__item" data-level="advanced" aria-checked="${level === 'advanced'}" role="radio">מתקדם</button>
-        </div>
-      </div>`);
-  }
-
+function settingPage({ title, sub = '', body }) {
   els.step.innerHTML = `
-    <h1>כמה הגדרות</h1>
-    <p class="t-sub" style="margin: var(--sp-2) 0 var(--sp-6);">
-      רק לנישות שצריכות אותן.</p>
-    <div class="stack">${blocks.join('')}</div>`;
+    <div class="onepage">
+      <div class="onepage__head">
+        <h1>${title}</h1>
+        ${sub ? `<p class="t-sub">${sub}</p>` : ''}
+      </div>
+      <div class="onepage__body">${body}</div>
+    </div>`;
 
-  els.step.querySelector('[data-set="steps"]')?.addEventListener('input', (e) => {
-    const v = Number(e.target.value);
-    nicheSettings.steps = { ...nicheSettings.steps, baseline: v };
-    els.step.querySelector('[data-out="steps"]').textContent = v.toLocaleString('he');
+  els.actions.innerHTML = '<button class="btn btn--primary btn--block" data-next>המשך</button>';
+  els.actions.querySelector('[data-next]').addEventListener('click', () => go(1));
+}
+
+function renderSteps() {
+  const v = nicheSettings.steps?.baseline ?? BACKGROUND_DEFAULTS.steps.baseline;
+  settingPage({
+    title: 'כמה צעדים אתה הולך בממוצע ביום?',
+    sub: 'רק צעדים מעל הקו הזה יזכו אותך בדקות.',
+    body: `<div class="bigvalue">
+        <span class="bigvalue__num" data-out="steps">${v.toLocaleString('he')}</span>
+        <span class="bigvalue__unit">צעדים ביום</span>
+      </div>
+      <input class="slider" type="range" min="1000" max="15000" step="500" value="${v}"
+             data-set="steps" aria-label="קו בסיס צעדים">`,
   });
 
-  els.step.querySelector('[data-set="sleep"]')?.addEventListener('input', (e) => {
-    const v = Number(e.target.value);
-    nicheSettings.sleep = { ...nicheSettings.sleep, targetHours: v };
-    els.step.querySelector('[data-out="sleep"]').textContent = v;
+  const input = els.step.querySelector('[data-set="steps"]');
+  input.addEventListener('input', () => {
+    const n = Number(input.value);
+    nicheSettings.steps = { ...nicheSettings.steps, baseline: n };
+    els.step.querySelector('[data-out="steps"]').textContent = n.toLocaleString('he');
+  });
+}
+
+function renderSleep() {
+  const s = { ...BACKGROUND_DEFAULTS.sleep, ...(nicheSettings.sleep || {}) };
+  settingPage({
+    title: 'כמה שעות שינה אתה ישן ביום?',
+    sub: 'עמידה ביעד מזכה בדקות.',
+    body: `<div class="bigvalue">
+        <span class="bigvalue__num" data-out="sleep">${s.targetHours}</span>
+        <span class="bigvalue__unit">שעות</span>
+      </div>
+      <input class="slider" type="range" min="5" max="10" step="0.5" value="${s.targetHours}"
+             data-set="sleep" aria-label="יעד שעות שינה">
+      <div class="row-between" style="margin-top: var(--sp-6);">
+        <label class="t-small">מתי הולך לישון
+          <input class="timeinput" type="time" value="${s.windowStart}" data-sleep="windowStart"></label>
+        <label class="t-small">מתי קם
+          <input class="timeinput" type="time" value="${s.windowEnd}" data-sleep="windowEnd"></label>
+      </div>`,
   });
 
-  els.step.querySelectorAll('[data-sleep]').forEach((input) => {
-    input.addEventListener('change', () => {
-      nicheSettings.sleep = { ...nicheSettings.sleep, [input.dataset.sleep]: input.value };
+  const input = els.step.querySelector('[data-set="sleep"]');
+  input.addEventListener('input', () => {
+    const n = Number(input.value);
+    nicheSettings.sleep = { ...nicheSettings.sleep, targetHours: n };
+    els.step.querySelector('[data-out="sleep"]').textContent = n;
+  });
+  els.step.querySelectorAll('[data-sleep]').forEach((i) => {
+    i.addEventListener('change', () => {
+      nicheSettings.sleep = { ...nicheSettings.sleep, [i.dataset.sleep]: i.value };
     });
+  });
+}
+
+/* ח1 + ו1: נשאל מכולם, וארבע רמות כולל דובר שפת אם */
+function renderEnglish() {
+  const level = nicheSettings.learning?.level || 'beginner';
+  settingPage({
+    title: 'מה רמת האנגלית שלך?',
+    sub: 'גם אם לא בחרת למידה — אם תוסיף אותה בהמשך, נדע מאיפה להתחיל.',
+    body: `<div class="levelstack" role="radiogroup" aria-label="רמת אנגלית">
+      ${ENGLISH_LEVELS.map((l) => `
+        <button class="levelcard" data-level="${l.id}" role="radio"
+                aria-checked="${level === l.id}">
+          <span class="levelcard__name">${l.name}</span>
+          <span class="levelcard__blurb">${l.blurb}</span>
+        </button>`).join('')}
+    </div>`,
   });
 
   els.step.querySelectorAll('[data-level]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      nicheSettings.learning = { level: btn.dataset.level };
+      nicheSettings.learning = { ...nicheSettings.learning, level: btn.dataset.level };
       els.step.querySelectorAll('[data-level]').forEach((b) =>
         b.setAttribute('aria-checked', String(b === btn)));
     });
   });
+}
 
-  els.actions.innerHTML = '<button class="btn btn--primary btn--block" data-next>המשך</button>';
-  els.actions.querySelector('[data-next]').addEventListener('click', () => go(1));
+/* ח5: מי שבחר קריאה בוחר כאן את הספר הפעיל הראשון */
+function renderBook() {
+  const chosen = getActiveBookId();
+  settingPage({
+    title: 'איזה ספר תרצה לקרוא?',
+    sub: 'אפשר להחליף בכל רגע מתוך הקורא.',
+    body: `<div class="bookpick" data-book-pick>
+        <p class="t-sub empty">טוען ספרים…</p>
+      </div>`,
+  });
+
+  const host = els.step.querySelector('[data-book-pick]');
+
+  fetch('content/catalog.json')
+    .then((r) => r.json())
+    .then((list) => {
+      list.sort((a, b) => a.estMinutes - b.estMinutes);
+      host.innerHTML = `<div class="bookgrid bookgrid--pick">${
+        list.map((b) => bookCard(b)).join('')}</div>`;
+
+      host.querySelectorAll('[data-book]').forEach((a) => {
+        a.classList.toggle('is-chosen', a.dataset.book === chosen);
+        a.addEventListener('click', (e) => {
+          e.preventDefault();               // הבחירה לא יוצאת מהשאלון
+          setActiveBookId(a.dataset.book);
+          host.querySelectorAll('[data-book]').forEach((x) =>
+            x.classList.toggle('is-chosen', x === a));
+        });
+      });
+    })
+    .catch(() => { host.innerHTML = '<p class="t-sub">לא הצלחנו לטעון את הקטלוג.</p>'; });
 }
 
 /* ------------------------------------------------------------------ *
@@ -357,34 +472,51 @@ function persist() {
   return profile;
 }
 
-function renderGates() {
+/* ח7 — הטבלה נפרסת על שני דפים כדי שאף אחד מהם לא יגלול.
+   דף ראשון: קריאה, כושר, מדיטציה, מים, צעדים, שינה.
+   דף שני: למידה וכתיבה. */
+const GATE_PAGES = [
+  ['reading', 'fitness', 'breathing', 'water', 'steps', 'sleep'],
+  ['learning', 'writing'],
+];
+
+function renderGates(page = 1) {
   const profile = persist();
-  const rows = gateTable([...selectedNiches], profile);
+  const wanted = GATE_PAGES[page - 1];
+  const rows = gateTable([...selectedNiches], profile)
+    .filter((r) => wanted.includes(r.id));
 
   els.step.innerHTML = `
-    <div class="screen-in">
-      <h1 style="text-align:center;">השערים שלך</h1>
-      <p class="t-sub" style="text-align:center; margin: var(--sp-2) 0 var(--sp-6);">
-        ${explainGates(profile)}</p>
-
-      <div class="stack-2">
-        ${rows.map((r) => `
-          <div class="gaterow">
-            <span class="gaterow__icon">${icon(r.icon, 20)}</span>
-            <span class="gaterow__name">${r.name}<small>${r.label}</small></span>
-            <span class="gaterow__value"><b>${r.minutes}</b> דק׳</span>
-          </div>`).join('')}
+    <div class="onepage screen-in">
+      <div class="onepage__head">
+        <h1>השערים שלך</h1>
+        ${page === 1
+          ? `<p class="t-sub">${explainGates(profile)}</p>`
+          : '<p class="t-sub">המשך הטבלה</p>'}
       </div>
-
-      <p class="t-small" style="text-align:center; margin-top: var(--sp-6);">
-        השערים נקבעים מהתשובות שלך. רוצה אחרים? ענה על השאלון שוב.</p>
+      <div class="onepage__body">
+        <div class="stack-2">
+          ${rows.length ? rows.map((r) => `
+            <div class="gaterow">
+              <span class="gaterow__icon">${icon(r.icon, 20)}</span>
+              <span class="gaterow__name">${r.name}<small>${r.label}</small></span>
+              <span class="gaterow__value"><b>${r.minutes}</b> דק׳</span>
+            </div>`).join('')
+          : '<p class="t-sub empty">לא בחרת נישות מהקבוצה הזו.</p>'}
+        </div>
+        ${page === 2 ? `<p class="t-small" style="text-align:center; margin-top: var(--sp-6);">
+          השערים נקבעים מהתשובות שלך. רוצה אחרים? ענה על השאלון שוב.</p>` : ''}
+      </div>
     </div>`;
 
-  els.actions.innerHTML = isEdit
-    ? `<a class="btn btn--primary btn--block" href="settings.html">שמירה</a>
-       <button class="btn btn--ghost btn--block" data-next>שינוי האפליקציות החסומות</button>`
-    : '<button class="btn btn--primary btn--block" data-next>בחירת האפליקציות לחסימה</button>';
-
+  if (page === 1) {
+    els.actions.innerHTML = '<button class="btn btn--primary btn--block" data-next>המשך</button>';
+  } else {
+    els.actions.innerHTML = isEdit
+      ? `<a class="btn btn--primary btn--block" href="settings.html">שמירה</a>
+         <button class="btn btn--ghost btn--block" data-next>שינוי האפליקציות החסומות</button>`
+      : '<button class="btn btn--primary btn--block" data-next>בחירת האפליקציות לחסימה</button>';
+  }
   els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
 }
 
@@ -469,10 +601,15 @@ function render() {
   renderProgress();
 
   switch (SCREENS[index]) {
-    case 'niches':        renderNiches(); break;
-    case 'nicheSettings': renderNicheSettings(); break;
-    case 'gates':         renderGates(); break;
-    case 'apps':          renderApps(); break;
+    case 'niches':      renderNiches(); break;
+    case 'resetChoice': renderResetChoice(); break;
+    case 'steps':   renderSteps(); break;
+    case 'sleep':   renderSleep(); break;
+    case 'english': renderEnglish(); break;
+    case 'book':    renderBook(); break;
+    case 'gates1':  renderGates(1); break;
+    case 'gates2':  renderGates(2); break;
+    case 'apps':    renderApps(); break;
     default:              renderQuestion(SCREENS[index]);
   }
 
