@@ -74,6 +74,8 @@ export function mountMenu() {
   const panel = document.createElement('div');
   panel.className = 'menu';
   panel.hidden = true;
+  // חותמת הגרסה מוצגת כאן כדי שאפשר יהיה לדעת בוודאות איזו
+  // גרסה רצה במכשיר, במקום לנחש מול מטמון
   panel.innerHTML = `
     <div class="menu__scrim" data-menu-close></div>
     <nav class="menu__panel" aria-label="תפריט">
@@ -81,6 +83,7 @@ export function mountMenu() {
         <a class="menu__item" href="${m.href}">
           ${icon(m.icon, 20)}<span>${m.label}</span>
         </a>`).join('')}
+      <p class="menu__build" data-build>גרסה ${window.DAFDEF_BUILD || '—'}</p>
     </nav>`;
   document.body.appendChild(panel);
 

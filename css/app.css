@@ -2082,6 +2082,14 @@ p  { margin: 0; }
   filter: drop-shadow(0 -2px 8px rgba(0, 0, 0, .06));
 }
 
+.menu__build {
+  margin-top: auto;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .navbar__slot { display: block; }
 
 .navbar__item {

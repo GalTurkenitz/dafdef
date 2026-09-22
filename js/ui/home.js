@@ -111,11 +111,26 @@ function renderNext() {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * כל אזור מרונדר בנפרד. קודם, נפילה ב-renderNext הייתה מוחקת
+ * את הכפתורים בשקט והמסך היה נראה תקין חוץ מהם — בדיוק סוג
+ * התקלה שאי אפשר לאבחן מרחוק. עכשיו כל אזור עומד בפני עצמו,
+ * וכישלון מגיע למסך במקום להיעלם.
+ */
+function safely(what, fn) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(what, err);
+    if (window.DAFDEF_FAIL) window.DAFDEF_FAIL(what, err && err.message ? err.message : String(err));
+  }
+}
+
 function renderAll() {
-  renderStreak();
-  renderNext();
+  safely('רצף', renderStreak);
+  safely('המשימה הבאה', renderNext);
   // הגלגל אחרון: הוא מודד את השטח שנותר אחרי שני האחרים
-  renderWheel();
+  safely('גלגל', renderWheel);
 }
 
 function init() {
