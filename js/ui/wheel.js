@@ -22,6 +22,12 @@
 import { iconBody } from './icons.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** הנישות שיש להן תמונה; השאר נופלות לאייקון */
+const IMAGE_BASE = 'content/img/niches/';
+const IMAGE_NICHES = new Set(['reading', 'fitness', 'learning', 'writing', 'breathing', 'water']);
+
+let wheelSeq = 0;
 const RAD = Math.PI / 180;
 const DEG = 180 / Math.PI;
 
@@ -45,19 +51,24 @@ const el = (name, attrs = {}, children = '') => {
  * ------------------------------------------------------------------ */
 
 function metrics(size) {
-  const nodeR = Math.max(17, Math.min(23, Math.round(size * 0.068)));
+  // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע, כך שכל
+  // שאר הגיאומטריה (מרווחים, הילה, תג, מיקום הכפתורים) לא משתנה.
+  const tile = Math.max(52, Math.min(72, Math.round(size * 0.20)));
+  const nodeR = tile / 2;
   const label = 21;                       // labelDy + חצי גובה השורה
   return {
     cx: size / 2,
     cy: size / 2,
+    tile,
     nodeR,
-    iconSize: Math.round(nodeR * 1.0),
-    labelDy: nodeR + 13,
+    radius: Math.round(tile * 0.28),      // עיגול הפינות
+    iconSize: Math.round(tile * 0.44),    // גודל האייקון בנפילה לאחור
+    labelDy: nodeR + 14,
     ring: size / 2 - nodeR - label,       // רדיוס מסלול הסבב
     ringW: 1.5,
     doneW: 2.5,
     glow: 5,
-    chevron: Math.max(3.5, nodeR * 0.2),
+    chevron: Math.max(3.5, tile * 0.10),
   };
 }
 
@@ -72,6 +83,7 @@ function metrics(size) {
  */
 export function createWheel({ size = 300, niches = [], minutes = 0, task = null } = {}) {
   const m = metrics(size);
+  const uid = ++wheelSeq;
 
   const wrap = document.createElement('div');
   wrap.className = 'wheel';
@@ -87,11 +99,12 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
   });
 
   // סדר השכבות: מסלול · קשתות שהושלמו · חיצים · תחנות
+  const defs    = el('defs');
   const gTrack  = el('g', { class: 'wheel__track-g' });
   const gArcs   = el('g', { class: 'wheel__arcs' });
   const gArrows = el('g', { class: 'wheel__arrows' });
   const gStops  = el('g', { class: 'wheel__stops' });
-  svg.append(gTrack, gArcs, gArrows, gStops);
+  svg.append(defs, gTrack, gArcs, gArrows, gStops);
 
   const center = document.createElement('div');
   center.className = 'wheel__center';
@@ -159,6 +172,7 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
     minutes = min;
     task = t;
 
+    defs.replaceChildren();
     gTrack.replaceChildren();
     gArcs.replaceChildren();
     gArrows.replaceChildren();
@@ -237,57 +251,97 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
         style: `--c:${color}`,
       });
 
+      const half = m.nodeR;
+      const x0 = at.x - half;
+      const y0 = at.y - half;
+
       // טבעת זוהרת למשימה הבאה בתור (סעיף א4.4)
       if (niche.current) {
-        stop.appendChild(el('circle', {
+        stop.appendChild(el('rect', {
           class: 'wheel__halo',
-          cx: at.x.toFixed(2), cy: at.y.toFixed(2), r: m.nodeR + m.glow,
+          x: (x0 - m.glow).toFixed(2), y: (y0 - m.glow).toFixed(2),
+          width: m.tile + m.glow * 2, height: m.tile + m.glow * 2,
+          rx: m.radius + m.glow,
           fill: 'none', stroke: color, 'stroke-width': 2,
         }));
       }
 
-      stop.appendChild(el('circle', {
-        class: 'wheel__disc',
-        cx: at.x.toFixed(2), cy: at.y.toFixed(2), r: m.nodeR,
-        fill: niche.done ? color : 'var(--surface)',
-        stroke: color,
+      // רקע מתחת לתמונה — נראה רק אם היא איטית או חסרה
+      stop.appendChild(el('rect', {
+        class: 'wheel__plate',
+        x: x0.toFixed(2), y: y0.toFixed(2),
+        width: m.tile, height: m.tile, rx: m.radius,
+        fill: 'var(--surface)',
+      }));
+
+      /* התמונה, חתוכה לריבוע מעוגל. אם אין תמונה לנישה או שהיא
+         נכשלת בטעינה — נופלים לאייקון, כדי שהתחנה לא תישאר ריקה. */
+      const clipId = `tile-${uid}-${niche.id}`;
+      const showIcon = () => {
+        const sc = m.iconSize / 24;
+        stop.appendChild(el('g', {
+          class: 'wheel__glyph',
+          transform: `translate(${(at.x - m.iconSize / 2).toFixed(2)} `
+                   + `${(at.y - m.iconSize / 2).toFixed(2)}) scale(${sc.toFixed(4)})`,
+          fill: 'none',
+          stroke: color,
+          'stroke-width': 1.75 / sc,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+        }, iconBody(niche.icon)));
+      };
+
+      if (IMAGE_NICHES.has(niche.id)) {
+        defs.appendChild(el('clipPath', { id: clipId }, ''))
+            .appendChild(el('rect', {
+              x: x0.toFixed(2), y: y0.toFixed(2),
+              width: m.tile, height: m.tile, rx: m.radius,
+            }));
+
+        const img = el('image', {
+          class: 'wheel__photo' + (niche.done ? ' is-done' : ''),
+          x: x0.toFixed(2), y: y0.toFixed(2),
+          width: m.tile, height: m.tile,
+          preserveAspectRatio: 'xMidYMid slice',
+          'clip-path': `url(#${clipId})`,
+        });
+        img.setAttribute('href', `${IMAGE_BASE}${niche.id}.webp`);
+        img.addEventListener('error', () => { img.remove(); showIcon(); }, { once: true });
+        stop.appendChild(img);
+      } else {
+        showIcon();
+      }
+
+      // מסגרת בצבע הנישה — הזהות לא תלויה בתמונה
+      stop.appendChild(el('rect', {
+        class: 'wheel__frame',
+        x: x0.toFixed(2), y: y0.toFixed(2),
+        width: m.tile, height: m.tile, rx: m.radius,
+        fill: 'none', stroke: color,
         'stroke-width': niche.current ? 2.5 : 1.75,
       }));
 
-      // האייקון בלבד — בלי טקסט בתוך העיגול
-      const s = m.iconSize / 24;
-      stop.appendChild(el('g', {
-        class: 'wheel__glyph',
-        transform: `translate(${(at.x - m.iconSize / 2).toFixed(2)} `
-                 + `${(at.y - m.iconSize / 2).toFixed(2)}) scale(${s.toFixed(4)})`,
-        fill: 'none',
-        stroke: niche.done ? 'var(--niche-contrast)' : color,
-        'stroke-width': 1.75 / s,
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-      }, iconBody(niche.icon)));
-
-      // אחרי הביצוע — V על האייקון, בלי להסתיר את זהות הנישה
+      // אחרי הביצוע — V בפינת הריבוע
       if (niche.done) {
-        const br = m.nodeR * 0.44;
-        const bx = at.x + m.nodeR * 0.70;
-        const by = at.y - m.nodeR * 0.70;
+        const br = m.nodeR * 0.34;
+        const bx = at.x + half - br * 0.55;
+        const by = at.y - half + br * 0.55;
         stop.appendChild(el('circle', {
           class: 'wheel__badge',
           cx: bx.toFixed(2), cy: by.toFixed(2), r: br.toFixed(2),
-          fill: 'var(--surface)', stroke: color, 'stroke-width': 1.5,
+          fill: color, stroke: 'var(--bg)', 'stroke-width': 2,
         }));
         const cs = (br * 1.5) / 24;
         stop.appendChild(el('g', {
           class: 'wheel__badge-check',
           transform: `translate(${(bx - br * 0.75).toFixed(2)} `
                    + `${(by - br * 0.75).toFixed(2)}) scale(${cs.toFixed(4)})`,
-          fill: 'none', stroke: color, 'stroke-width': 3 / cs,
+          fill: 'none', stroke: 'var(--niche-contrast)', 'stroke-width': 3.2 / cs,
           'stroke-linecap': 'round', 'stroke-linejoin': 'round',
         }, iconBody('check')));
       }
 
-      // השם מתחת לעיגול
+      // השם מתחת לריבוע
       stop.appendChild(el('text', {
         class: 'wheel__name',
         x: at.x.toFixed(2),
@@ -318,14 +372,22 @@ export function createWheel({ size = 300, niches = [], minutes = 0, task = null 
               .addEventListener('click', () => task.onSkip(niche.id));
       }
 
-      // המיקום נמדד אחרי הציור: הרוחב של הצמד תלוי בגופן, ואסור
-      // לו לחרוג מהריבוע — תחנה בקצה הצד תדחוף אותו אל מחוץ למסך.
+      /* הצמד תמיד יוצא אל **מחוץ** למעגל: תחנה בחצי העליון מקבלת
+         אותו מעליה, תחנה בחצי התחתון — מתחתיה, אחרי השם. אחרת הוא
+         נוחת בדיוק על השם של התחנה השכנה שמעבר לקשת. */
+      const below = at.y > m.cy;
+      action.classList.toggle('is-below', below);
+
+      // המיקום נמדד אחרי הציור: רוחב הצמד תלוי בגופן, ואסור לו
+      // לחרוג מהריבוע — תחנה בקצה הצד תדחוף אותו אל מחוץ למסך.
       requestAnimationFrame(() => {
         const w = action.offsetWidth || 120;
         const half = w / 2;
         const x = Math.min(Math.max(at.x, half + 2), size - half - 2);
         action.style.left = `${x.toFixed(1)}px`;
-        action.style.top = `${(at.y - m.nodeR - 9).toFixed(1)}px`;
+        action.style.top = below
+          ? `${(at.y + m.labelDy + 11).toFixed(1)}px`
+          : `${(at.y - m.nodeR - 9).toFixed(1)}px`;
       });
     } else {
       action.hidden = true;
