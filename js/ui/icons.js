@@ -29,6 +29,7 @@ const PATHS = {
   menu:       '<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>',
   flag:       '<path d="M5 21V4"/><path d="M5 4h10l-1.6 3.2L15 10.5H5z"/>',
   target:     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
+  trending:   '<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
 };
 
 /**

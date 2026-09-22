@@ -2106,6 +2106,21 @@ p  { margin: 0; }
 
 .navbar__slot { display: block; }
 
+/* קו מפריד בין כל שני מקומות. ממוקם בקצה הפותח של כל מקום חוץ
+   מהראשון, כך שיוצא קו אחד בין כל זוג ולא קו בקצוות. הוא נמוך
+   מגובה הסרגל בכוונה — מפריד בלי לחתוך אותו. */
+.navbar__inner > * { position: relative; }
+.navbar__inner > * + *::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  inline-size: 1px;
+  block-size: 58%;
+  background: var(--border);
+}
+
 .navbar__item {
   display: flex;
   flex-direction: column;

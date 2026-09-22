@@ -17,7 +17,7 @@ import { icon } from './icons.js';
  */
 const SLOTS = [
   { id: 'slot-a',   placeholder: true },
-  { id: 'progress', href: 'progress.html', label: 'התקדמות', icon: 'target' },
+  { id: 'progress', href: 'progress.html', label: 'התקדמות', icon: 'trending' },
   { id: 'home',     href: 'index.html',    label: 'בית',      icon: 'home', center: true },
   { id: 'slot-d',   placeholder: true },
   { id: 'slot-e',   placeholder: true },
