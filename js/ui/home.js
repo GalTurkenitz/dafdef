@@ -36,13 +36,14 @@ let wheel = null;
 
 function renderStreak() {
   const { current } = getStreak();
-  const label = current === 1 ? 'יום ברצף' : 'ימים ברצף';
+  const label = current === 1 ? 'יום' : 'ימים';
 
+  // קטן ובפינה — הוא חיווי, לא כותרת. כל פיקסל שהוא מוותר עליו
+  // הולך לגלגל.
   els.streak.innerHTML = `
-    <div class="streak">
-      <span class="streak__icon">${icon('flag', 22)}</span>
+    <div class="streak" title="${current} ${label} ברצף">
+      <span class="streak__icon">${icon('flag', 15)}</span>
       <span class="streak__num">${current}</span>
-      <span class="streak__label">${current === 0 ? 'מתחילים רצף' : label}</span>
     </div>`;
 }
 
@@ -117,8 +118,10 @@ function renderNext() {
   // שם הנישה, ומיד מתחתיו שני הכפתורים
   els.next.className = 'nexttask';
   els.next.innerHTML = `
-    <p class="nexttask__label">המשימה הבאה: <b>${niche.name}</b></p>
-    <p class="nexttask__name">${niche.taskLabel}<span>${minutes} דק׳</span></p>
+    <p class="nexttask__label">
+      המשימה הבאה: <b>${niche.name}</b>
+      <span class="nexttask__detail">${niche.taskLabel} · ${minutes} דק׳</span>
+    </p>
     <div class="nexttask__actions">
       <a class="btn btn--primary" href="${niche.href}">בצע</a>
       <button class="btn btn--secondary" type="button" data-skip>דלג</button>
