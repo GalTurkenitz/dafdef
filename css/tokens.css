@@ -26,6 +26,20 @@
   --primary-softer: rgba(111, 78, 55, 0.05);
   --track: rgba(111, 78, 55, 0.14);   /* מסלול ריק בטבעת ההתקדמות */
 
+  /* ---------- צבע נישה (סעיף א4) ----------
+     לכל נישה גוון משלה, מכוילים לחיות עם החום של המותג:
+     רוויה בינונית, ערך טונאלי דומה, וכולם עוברים 3:1 מול הרקע
+     כדי שאייקון בתוך עיגול מלא יישאר קריא. */
+  --niche-reading:   #B4552F;   /* טרקוטה */
+  --niche-fitness:   #A83B4C;   /* גרנט */
+  --niche-learning:  #2F6F6B;   /* טורקיז עמוק */
+  --niche-writing:   #5B5296;   /* אינדיגו רך */
+  --niche-breathing: #56703F;   /* מרווה */
+  --niche-water:     #2E7BA6;   /* תכלת עמוק */
+  --niche-steps:     #A3711F;   /* ענבר */
+  --niche-sleep:     #474470;   /* סגול־לילה */
+  --niche-contrast:  #FFFFFF;   /* הדיו בתוך עיגול מלא */
+
   /* ---------- צבע ספר לפי אורך הקריאה ---------- */
   --len-short-bg: #D9E7D2;   --len-short-ink: #2C4526;
   --len-medium-bg: #F1E3C3;  --len-medium-ink: #5A4520;
@@ -92,6 +106,17 @@
   --primary-soft: rgba(176, 137, 104, 0.16);
   --primary-softer: rgba(176, 137, 104, 0.08);
   --track: rgba(176, 137, 104, 0.22);
+
+  /* צבעי הנישות מתבהרים על שחור, והדיו שבתוכם מתהפך */
+  --niche-reading:   #E09A6B;
+  --niche-fitness:   #E38392;
+  --niche-learning:  #6FC3BC;
+  --niche-writing:   #A69EE4;
+  --niche-breathing: #A3C489;
+  --niche-water:     #74B9E0;
+  --niche-steps:     #E0B463;
+  --niche-sleep:     #9A97D4;
+  --niche-contrast:  #17130F;
 
   --len-short-bg: #2A3A26;   --len-short-ink: #D6E8CF;
   --len-medium-bg: #3D3220;  --len-medium-ink: #F0E1C0;

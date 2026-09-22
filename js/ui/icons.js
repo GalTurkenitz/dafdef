@@ -42,4 +42,16 @@ export function icon(name, size = 24) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }
 
+/**
+ * גוף האייקון בלבד, במערכת הצירים המקורית 24×24.
+ * מיועד להטמעה בתוך SVG אחר (הגלגל), שם צריך למקם אותו
+ * ב-transform ולא באלמנט <svg> עצמאי.
+ *
+ * @param {keyof PATHS} name
+ * @returns {string}
+ */
+export function iconBody(name) {
+  return PATHS[name] || '';
+}
+
 export const iconNames = Object.keys(PATHS);

@@ -1889,19 +1889,19 @@ p  { margin: 0; }
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-6);
   border-radius: var(--r-chip);
   background: var(--primary-soft);
 }
 .streak__icon { display: grid; place-items: center; color: var(--primary); }
 .streak__num {
-  font-size: 26px;
+  font-size: 34px;
   font-weight: 700;
   line-height: 1;
   color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
-.streak__label { font-size: var(--fs-small); color: var(--text-soft); }
+.streak__label { font-size: var(--fs-sub); color: var(--text-soft); }
 
 /* ============================================================
    גלגל הסבב (סעיף א4)
@@ -1909,81 +1909,75 @@ p  { margin: 0; }
 
 .home__wheel { flex: 1; }
 
-.wheel { position: relative; display: grid; place-items: center; }
-.wheel__svg { position: absolute; inset: 0; }
-.wheel__track { stroke: var(--track); }
+.wheel { position: relative; display: grid; place-items: center; flex: none; }
 
-.wheel__arc { stroke: transparent; transition: stroke var(--t-base) var(--ease); }
-.wheel__arc.is-done { stroke: var(--primary); }
-.wheel__arc.is-current { stroke: var(--primary-soft); }
+.wheel__svg { position: absolute; inset: 0; overflow: visible; }
 
-.wheel__arrow { stroke: var(--text-soft); opacity: .45; }
-.wheel__arrow.is-done { stroke: var(--primary); opacity: .9; }
+/* ---------- מסלול הסבב ---------- */
 
-.wheel__stops { position: absolute; inset: 0; pointer-events: none; }
+.wheel__seg { stroke: var(--border); }
+.wheel__seg-done { transition: stroke var(--t-base) var(--ease); }
 
-.wheel__stop {
-  position: absolute;
-  transform: translate(50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+.wheel__arrow { stroke: var(--text-soft); opacity: .4; }
+.wheel__arrow.is-done { opacity: .85; }
+
+/* ---------- תחנה ---------- */
+
+.wheel__disc,
+.wheel__glyph { transition: fill var(--t-base) var(--ease), stroke var(--t-base) var(--ease); }
+
+.wheel__name {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  transition: fill var(--t-fast) var(--ease);
+
+  /* השם יושב מתחת לעיגול, ולכן בתחנות הצדדיות המסלול עובר מאחוריו.
+     קו מתאר בצבע הרקע שנצבע *לפני* המילוי חותך חלון נקי בקו. */
+  stroke: var(--bg);
+  stroke-width: 4px;
+  paint-order: stroke fill;
+  stroke-linejoin: round;
+}
+.wheel__stop.is-current .wheel__name { font-weight: 500; }
+
+/* הטבעת הזוהרת של המשימה הבאה — נושמת, ומכבדת "פחות תנועה" */
+.wheel__halo { opacity: .4; transform-origin: center; animation: wheel-halo 2.6s var(--ease) infinite; }
+
+@keyframes wheel-halo {
+  0%, 100% { opacity: .40; stroke-width: 2; }
+  50%      { opacity: .15; stroke-width: 5; }
 }
 
-.wheel__stop-icon {
-  display: grid;
-  place-items: center;
-  inline-size: 34px;
-  block-size: 34px;
-  border-radius: var(--r-chip);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-soft);
-  transition: background-color var(--t-fast) var(--ease),
-              border-color var(--t-fast) var(--ease),
-              color var(--t-fast) var(--ease);
+@media (prefers-reduced-motion: reduce) {
+  .wheel__halo { animation: none; opacity: .4; }
 }
 
-.wheel__stop-name { font-size: 10px; color: var(--text-soft); white-space: nowrap; }
-
-.wheel__stop.is-done .wheel__stop-icon {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-contrast);
-}
-.wheel__stop.is-current .wheel__stop-icon {
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-soft);
-}
-.wheel__stop.is-current .wheel__stop-name { color: var(--primary); font-weight: 500; }
+/* ---------- המרכז: יתרת הדקות ---------- */
 
 .wheel__center {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   text-align: center;
+  pointer-events: none;
 }
 
 .wheel__num {
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  line-height: .95;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
-.wheel__unit { font-size: var(--fs-small); color: var(--text-soft); }
-.wheel__count {
-  margin-top: var(--sp-2);
-  padding: 2px var(--sp-3);
-  border-radius: var(--r-chip);
-  background: var(--primary-soft);
-  color: var(--primary);
+
+.wheel__unit {
   font-size: var(--fs-small);
-  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+  letter-spacing: .02em;
 }
 
 /* ---------- המשימה הבאה ---------- */

@@ -53,8 +53,15 @@ function renderWheel() {
   const niches = roundStatus();
   const minutes = bank.displayMinutes(getBank());
 
-  // הגלגל מתאים את עצמו למסך, כדי שהמסך יישאר בלי גלילה
-  const size = Math.min(320, Math.round(window.innerWidth * 0.82));
+  // הגלגל מתאים את עצמו לרוחב **ולגובה**, כדי שהמסך יישאר בלי
+  // גלילה גם באייפון נמוך (סעיף א6)
+  // הגלגל רשאי לחרוג מריפוד המסך — השמות ממילא יושבים עמוק בתוך
+  // הריבוע, ולכן ניצול הרוחב המלא רק מגדיל את העיגול
+  const size = Math.max(230, Math.min(
+    376,
+    Math.round(window.innerWidth * 0.96),
+    Math.round(window.innerHeight * 0.48),
+  ));
 
   if (!wheel) {
     wheel = createWheel({ size, niches, minutes });
