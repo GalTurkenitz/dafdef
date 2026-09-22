@@ -6,13 +6,16 @@
  *   מסלול — נתיב שלבים אנכי ומתפתל, בסגנון מפת שלבים של משחק.
  *
  * ── המסלול ────────────────────────────────────────────────────
- * השלבים הם עיגולים על נתיב מתפתל — זיגזג עדין שמאלה-ימינה ולא
- * קו ישר. בתוך כל עיגול יש **רק את מספר השלב**: בלי שמות, בלי
- * תיאורים ובלי אייקונים. כל המידע על השלב נפתח בהקשה עליו.
+ * השלבים הם עיגולים בלבד, מפוזרים בזיגזג עדין שמאלה-ימינה. **אין
+ * קו מחבר** ביניהם — רק העיגולים עצמם. בתוך כל עיגול יש רק את
+ * מספר השלב: בלי שמות, תיאורים או אייקונים.
  *
- * הנתיב עצמו מצויר ב-SVG והעיגולים הם כפתורי HTML מעליו, כך
- * שהם נשארים נגישים למקלדת ולקורא מסך. המיקום מחושב ב-left
- * פיזי ולא ב-inset-inline — הזיגזג חייב להיראות זהה ב-RTL.
+ * כל עשרה שלבים הם **קבוצה**, ולכל קבוצה עיצוב שונה לגמרי: רקע
+ * משלה, גוון משלה, וטיפול משלה בעיגולים. קו מפריד סוגר כל קבוצה
+ * כדי שהמעבר יהיה חד.
+ *
+ * המיקום מחושב ב-left פיזי ולא ב-inset-inline — הזיגזג חייב
+ * להיראות זהה ב-RTL.
  *
  * זה המסך היחיד באפליקציה שגוללים בו (סעיף ב5). הוא נפתח על
  * השלב הנוכחי; גלילה מטה חושפת שלבים שהושלמו, מעלה — הבאים.
@@ -36,9 +39,8 @@ const els = {
   screen: $('[data-screen]'),
 };
 
-/** כמה שלבים קדימה ואחורה נמצאים במסלול */
-const LOOK_AHEAD = 24;
-const LOOK_BACK = 20;
+/** המסלול מלא מהשלב הראשון ועד לתקרה — לא חלון סביב הנוכחי */
+const MAX_LEVEL = 150;
 
 /** מידות הנתיב */
 const ROW_H = 86;        // מרחק אנכי בין שלבים
@@ -51,6 +53,9 @@ const NODE_CURRENT = 66; // קוטר השלב הנוכחי
  * beat  — כל כמה שלבים הנתיב חוזר על עצמו
  * curve — כמה הפנייה מעוגלת (0 = שבירה חדה, 1 = גל רך)
  */
+/** כמה מראות שונים יש לקבוצות לפני שהמחזור חוזר */
+const SECTION_LOOKS = 5;
+
 const TRACKS = {
   reading:  { tone: 'reading',  amp: 0.16, beat: 4, curve: 1.0 },  // גל שקט
   fitness:  { tone: 'fitness',  amp: 0.30, beat: 2, curve: 0.15 }, // זיגזג חד
@@ -128,17 +133,13 @@ function renderTrack(nicheId) {
   els.title.textContent = niche.name;
   els.screen.classList.add('screen--scroll');
 
-  const top = st.level + LOOK_AHEAD;                 // השלב הגבוה ביותר
-  const bottom = Math.max(1, st.level - LOOK_BACK);  // הנמוך ביותר
-  const count = top - bottom + 1;
-
   els.body.innerHTML = `
     <div class="track track--${track.tone}">
       <button class="btn btn--ghost track__back" data-back-grid>
         ${icon('arrow', 18)} כל המסלולים
       </button>
       <div class="track__path" data-path>
-        <div class="track__map" data-map style="height:${count * ROW_H}px"></div>
+        <div class="track__map" data-map style="height:${MAX_LEVEL * ROW_H}px"></div>
       </div>
     </div>`;
 
@@ -152,7 +153,7 @@ function renderTrack(nicheId) {
 
   // הרוחב ידוע רק אחרי שהמסלול על המסך
   requestAnimationFrame(() => {
-    drawMap(map, nicheId, track, st, { top, bottom, count });
+    drawMap(map, nicheId, track, st);
 
     const current = map.querySelector('[data-current]');
     if (current) {
@@ -161,68 +162,68 @@ function renderTrack(nicheId) {
   });
 }
 
-/** מצייר את הנתיב ואת עיגולי השלבים */
-function drawMap(map, nicheId, track, st, { top, bottom, count }) {
+/** מצייר את הקבוצות ואת עיגולי השלבים */
+function drawMap(map, nicheId, track, st) {
   const w = map.clientWidth || 340;
-  const h = count * ROW_H;
 
-  /* מיקום כל שלב. השלב הגבוה יושב למעלה, כך שגלילה מטה חושפת
-     את מה שכבר הושלם וגלילה מעלה את הבאים (סעיף ד5). */
-  const points = [];
-  for (let i = 0; i < count; i++) {
-    const level = top - i;
-    points.push({
-      level,
-      x: xFraction(level, track) * w,
-      y: i * ROW_H + ROW_H / 2,
-    });
+  /* השלב הגבוה יושב למעלה, כך שגלילה מטה חושפת את מה שכבר הושלם
+     וגלילה מעלה את הבאים (סעיף ד5). */
+  const yOf = (level) => (MAX_LEVEL - level) * ROW_H + ROW_H / 2;
+
+  /* ---- רקעי הקבוצות והקו המפריד ---- */
+
+  const sections = [];
+  const sectionCount = Math.ceil(MAX_LEVEL / LEVELS_PER_SECTION);
+
+  for (let sec = 0; sec < sectionCount; sec++) {
+    const first = sec * LEVELS_PER_SECTION + 1;
+    const last = Math.min(MAX_LEVEL, first + LEVELS_PER_SECTION - 1);
+
+    // הקבוצה נמתחת מהשלב הגבוה שבה (למעלה) עד הנמוך (למטה)
+    const top = yOf(last) - ROW_H / 2;
+    const height = (last - first + 1) * ROW_H;
+
+    sections.push(`
+      <div class="track__band track__band--s${sec % SECTION_LOOKS}"
+           style="top:${top}px; height:${height}px" aria-hidden="true"></div>`);
+
+    // קו מפריד בתחתית הקבוצה, חוץ מהקבוצה הראשונה
+    if (sec > 0) {
+      sections.push(`
+        <div class="track__divider track__divider--s${sec % SECTION_LOOKS}"
+             style="top:${top + height}px" aria-hidden="true"></div>`);
+    }
   }
 
-  /* הנתיב עצמו — עקומה רכה דרך כל הנקודות. מצויר לפי סקשנים,
-     כך שלכל סקשן של עשרה שלבים יש גוון משלו (סעיף ד4). */
-  const segments = [];
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i];
-    const b = points[i + 1];
-    const my = (a.y + b.y) / 2;
-    segments.push({
-      section: sectionOf(b.level),
-      d: `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} `
-       + `C ${a.x.toFixed(1)} ${my.toFixed(1)}, ${b.x.toFixed(1)} ${my.toFixed(1)}, `
-       + `${b.x.toFixed(1)} ${b.y.toFixed(1)}`,
-    });
-  }
+  /* ---- עיגולי השלבים ---- */
 
-  const svg = `
-    <svg class="track__line" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"
-         aria-hidden="true">
-      ${segments.map((s) => `
-        <path class="track__seg track__seg--s${s.section % 4}" d="${s.d}"
-              fill="none" stroke-linecap="round"/>`).join('')}
-    </svg>`;
-
-  const nodes = points.map((p) => {
-    const done = p.level < st.level;
-    const current = p.level === st.level;
-    const locked = p.level > st.level;
+  const nodes = [];
+  for (let level = MAX_LEVEL; level >= 1; level--) {
+    const sec = sectionOf(level);
+    const done = level < st.level;
+    const current = level === st.level;
+    const locked = level > st.level;
     const size = current ? NODE_CURRENT : NODE;
 
-    const cls = ['track__node', `track__node--s${sectionOf(p.level) % 4}`];
+    const x = xFraction(level, track) * w;
+    const y = yOf(level);
+
+    const cls = ['track__node', `track__node--s${sec % SECTION_LOOKS}`];
     if (done) cls.push('is-done');
     if (current) cls.push('is-current');
     if (locked) cls.push('is-locked');
 
-    return `<button class="${cls.join(' ')}" type="button"
-              ${locked ? 'disabled aria-disabled="true"' : ''}
-              ${current ? 'data-current' : ''}
-              data-level="${p.level}"
-              aria-label="שלב ${p.level}"
-              style="left:${(p.x - size / 2).toFixed(1)}px;
-                     top:${(p.y - size / 2).toFixed(1)}px;
-                     width:${size}px; height:${size}px;">${p.level}</button>`;
-  }).join('');
+    nodes.push(`<button class="${cls.join(' ')}" type="button"
+        ${locked ? 'disabled aria-disabled="true"' : ''}
+        ${current ? 'data-current' : ''}
+        data-level="${level}"
+        aria-label="שלב ${level}"
+        style="left:${(x - size / 2).toFixed(1)}px;
+               top:${(y - size / 2).toFixed(1)}px;
+               width:${size}px; height:${size}px;">${level}</button>`);
+  }
 
-  map.innerHTML = svg + nodes;
+  map.innerHTML = sections.join('') + nodes.join('');
 
   map.querySelectorAll('[data-level]').forEach((b) => {
     b.addEventListener('click', () => {

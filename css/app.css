@@ -2213,8 +2213,15 @@ p  { margin: 0; }
 
 .topbar__title { flex: 1; text-align: center; font-size: var(--fs-h2); }
 
-/* המסלול הוא המקום היחיד שגוללים בו (סעיף ב5) */
-.screen--scroll .screen__body { display: block; overflow: hidden; }
+/* המסלול הוא המקום היחיד שגוללים בו (סעיף ב5).
+   הבליטה לצדדים מרחיבה את תיבת החיתוך עד שולי המסך, כדי
+   שרקעי הקבוצות יגיעו לקצוות ולא ייעצרו בריפוד המסך. */
+.screen--scroll .screen__body {
+  display: block;
+  overflow: hidden;
+  margin-inline: calc(-1 * var(--screen-pad));
+  padding-inline: var(--screen-pad);
+}
 
 /* ---------- רשת 2×2, ממורכזת במסך ---------- */
 
@@ -2271,11 +2278,14 @@ p  { margin: 0; }
 .track-card--writing  { --c: var(--niche-writing); }
 
 /* ============================================================
-   מסלול השלבים — נתיב מתפתל בסגנון מפת שלבים
+   מסלול השלבים — עיגולים בקבוצות של עשרה
 
-   העיגולים הם כפתורי HTML מעל SVG שמצייר את הנתיב, כדי שיישארו
-   נגישים למקלדת. המיקום ב-left פיזי ולא ב-inset-inline: הזיגזג
-   חייב להיראות זהה ב-RTL.
+   אין קו מחבר: רק עיגולים בזיגזג. כל קבוצה של עשרה שלבים מקבלת
+   מראה שונה לגמרי — רקע, גוון וטיפול בעיגולים — וקו מפריד סוגר
+   אותה. חמישה מראות שחוזרים במחזור.
+
+   העיגולים הם כפתורי HTML כדי שיישארו נגישים למקלדת, והמיקום
+   ב-left פיזי ולא ב-inset-inline: הזיגזג חייב להיראות זהה ב-RTL.
    ============================================================ */
 
 .track { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -2287,19 +2297,39 @@ p  { margin: 0; }
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
+  margin-inline: calc(-1 * var(--screen-pad));
+  padding-inline: var(--screen-pad);
 }
 .track__path::-webkit-scrollbar { display: none; }
 
 .track__map { position: relative; width: 100%; }
 
-.track__line { position: absolute; inset: 0; }
+/* ---------- רקע הקבוצה ---------- */
 
-/* לכל קבוצה של עשרה שלבים גוון משלה */
-.track__seg { stroke: var(--c, var(--primary)); stroke-width: 3; opacity: .30; }
-.track__seg--s0 { stroke-width: 3;   opacity: .34; }
-.track__seg--s1 { stroke-width: 3.5; opacity: .26; stroke-dasharray: 10 7; }
-.track__seg--s2 { stroke-width: 4;   opacity: .38; }
-.track__seg--s3 { stroke-width: 3;   opacity: .22; stroke-dasharray: 3 7; }
+/* גולשות אל מעבר לקצוות ונחתכות ע"י track__path — כך הרקע מגיע
+   לשולי המסך בלי תלות בריפוד של ההורים */
+.track__band {
+  position: absolute;
+  left: -120px;
+  right: -120px;
+  pointer-events: none;
+}
+
+/* ---------- הקו המפריד בין קבוצות ---------- */
+
+.track__divider {
+  position: absolute;
+  left: -120px;
+  right: -120px;
+  block-size: 0;
+  border-top: 2px solid var(--c, var(--primary));
+  opacity: .35;
+  pointer-events: none;
+}
+.track__divider--s1 { border-top-style: dashed; }
+.track__divider--s2 { border-top-width: 3px; opacity: .5; }
+.track__divider--s3 { border-top-style: dotted; border-top-width: 3px; }
+.track__divider--s4 { border-top-style: double; border-top-width: 4px; }
 
 /* ---------- עיגול שלב ---------- */
 
@@ -2320,13 +2350,11 @@ p  { margin: 0; }
 }
 .track__node:active:not([disabled]) { transform: scale(.94); }
 
-/* הושלם — מלא בצבע הנישה */
 .track__node.is-done {
   background: var(--c, var(--primary));
   color: var(--niche-contrast);
 }
 
-/* הנוכחי — גדול יותר ועם טבעת */
 .track__node.is-current {
   background: var(--c, var(--primary));
   color: var(--niche-contrast);
@@ -2336,19 +2364,50 @@ p  { margin: 0; }
   font-size: var(--fs-h2);
 }
 
-/* עתידי — עמום ונעול */
 .track__node.is-locked {
   border-color: var(--border);
   background: var(--surface);
   color: var(--text-soft);
-  opacity: .45;
+  opacity: .5;
   cursor: default;
 }
 
-/* הקבוצות נבדלות בגוון ובעובי המסגרת — העיגול נשאר עיגול */
-.track__node--s1 { border-width: 2.5px; }
+/* ============================================================
+   חמשת מראות הקבוצות
+
+   כל מראה משנה את הרקע, את גוון העיגול ואת הטיפול במסגרת, כך
+   שהמעבר בין קבוצה לקבוצה נראה כמו שינוי סביבה ולא כמו גוון.
+   הגוון נגזר מצבע הנישה, ולכן כל נישה מקבלת סדרה משלה.
+   ============================================================ */
+
+/* 0 — נקי: רקע המסך, עיגול מלא */
+.track__band--s0 { background: transparent; }
+
+/* 1 — שדה רך בגוון הנישה, עיגול עם מסגרת כפולה */
+.track__band--s1 { background: color-mix(in srgb, var(--c) 9%, transparent); }
+.track__node--s1 { border-width: 3px; border-style: double; }
+
+/* 2 — פסים אלכסוניים עדינים, עיגול מקווקו */
+.track__band--s2 {
+  background: repeating-linear-gradient(135deg,
+    color-mix(in srgb, var(--c) 10%, transparent) 0 10px,
+    transparent 10px 22px);
+}
 .track__node--s2 { border-style: dashed; }
-.track__node--s3 { border-width: 3px; border-style: double; }
+
+/* 3 — שכבה כהה יותר, עיגול עם הילה */
+.track__band--s3 { background: color-mix(in srgb, var(--c) 18%, transparent); }
+.track__node--s3 {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 14%, transparent);
+}
+
+/* 4 — נקודות, עיגול דק וגדול יותר */
+.track__band--s4 {
+  background: radial-gradient(color-mix(in srgb, var(--c) 26%, transparent) 1.5px,
+                              transparent 1.6px);
+  background-size: 18px 18px;
+}
+.track__node--s4 { border-width: 1.5px; }
 
 /* צבע הנישה על המסלול כולו */
 .track--reading  { --c: var(--niche-reading); }

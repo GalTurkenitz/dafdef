@@ -126,7 +126,7 @@ let selectedApps = new Set(getBlockedApps().map((a) => a.id));
 /* דף אחד לכל שאלה, בלי גלילה (V3, סעיף ח5). מסכים שאינם רלוונטיים
    לבחירה של המשתמש מדולגים ב-go(). */
 const SCREENS = ['age', 'screenTime', 'goal', 'strictness',
-                 'niches', 'steps', 'sleep', 'english', 'book',
+                 'nichesTask', 'nichesBg', 'steps', 'sleep', 'english', 'book',
                  'resetChoice', 'gates1', 'gates2', 'apps'];
 
 /** אילו מסכים מותנים בבחירת נישה */
@@ -161,8 +161,9 @@ function go(delta) {
 
 const PART_OF = {
   age: 'מי אתה', screenTime: 'מי אתה', goal: 'מי אתה', strictness: 'מי אתה',
-  niches: 'הנישות שלך', steps: 'הנישות שלך', sleep: 'הנישות שלך',
-  english: 'הנישות שלך', book: 'הנישות שלך',
+  nichesTask: 'הבחירות שלך', nichesBg: 'הבחירות שלך',
+  steps: 'הבחירות שלך', sleep: 'הבחירות שלך',
+  english: 'הבחירות שלך', book: 'הבחירות שלך',
   resetChoice: 'המסגרת', gates1: 'המסגרת', gates2: 'המסגרת', apps: 'המסגרת',
 };
 
@@ -278,22 +279,51 @@ function renderQuestion(key) {
  * בחירת נישות (המפרט, סעיף 8ב)
  * ------------------------------------------------------------------ */
 
-function renderNiches() {
-  els.step.innerHTML = `
-    <h1>איך תרוויח דקות?</h1>
-    <p class="t-sub" style="margin: var(--sp-2) 0 var(--sp-6);">
-      מומלץ לבחור בין 3 ל-5. אלה יהיו הסבב היומי שלך.</p>
+/**
+ * מסך בחירת הנישות, מפוצל לשתי קטגוריות (דף לכל אחת).
+ *
+ * שמונה כרטיסים על מסך אחד לא נכנסו: שניים מהם גלשו אל מחוץ
+ * לשטח ונחתכו, כי המסך אינו גולל. הפיצול גם נכון מהותית —
+ * נישות שמבוצעות כמשימה ונישות שנצברות ברקע הן שתי החלטות
+ * שונות.
+ */
+const NICHE_GROUPS = {
+  nichesTask: {
+    title: 'איך תרוויח דקות?',
+    sub: 'מומלץ לבחור בין 3 ל-5. אלה יהיו הסבב היומי שלך.',
+    ids: () => NICHE_IDS.filter((id) => NICHES[id].channel !== 'background'),
+    min: 1,
+  },
+  nichesBg: {
+    title: 'מה עוד נספור לך ברקע?',
+    sub: 'אלה נצברות מעצמן, בלי משימה. אפשר גם בלעדיהן.',
+    ids: () => NICHE_IDS.filter((id) => NICHES[id].channel === 'background'),
+    min: 0,
+  },
+};
 
-    <div class="nichegrid">
-      ${NICHE_IDS.map((id) => {
-        const n = NICHES[id];
-        return `<button class="nichecard" data-niche="${id}" aria-pressed="${selectedNiches.has(id)}">
-          <span class="nichecard__icon">${icon(n.icon, 24)}</span>
-          <span class="nichecard__name">${n.name}</span>
-          <span class="nichecard__blurb">${NICHE_BLURB[id]}</span>
-          <span class="nichecard__mark">${icon('check', 14)}</span>
-        </button>`;
-      }).join('')}
+function renderNiches(kind) {
+  const group = NICHE_GROUPS[kind];
+
+  els.step.innerHTML = `
+    <div class="onepage">
+      <div class="onepage__head">
+        <h1>${group.title}</h1>
+        <p class="t-sub">${group.sub}</p>
+      </div>
+      <div class="onepage__body">
+        <div class="nichegrid">
+          ${group.ids().map((id) => {
+            const n = NICHES[id];
+            return `<button class="nichecard" data-niche="${id}" aria-pressed="${selectedNiches.has(id)}">
+              <span class="nichecard__icon">${icon(n.icon, 22)}</span>
+              <span class="nichecard__name">${n.name}</span>
+              <span class="nichecard__blurb">${NICHE_BLURB[id]}</span>
+              <span class="nichecard__mark">${icon('check', 14)}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
     </div>`;
 
   els.step.querySelectorAll('[data-niche]').forEach((card) => {
@@ -301,30 +331,29 @@ function renderNiches() {
       const id = card.dataset.niche;
       if (selectedNiches.has(id)) selectedNiches.delete(id); else selectedNiches.add(id);
       card.setAttribute('aria-pressed', String(selectedNiches.has(id)));
-      renderNichesFooter();
+      renderNichesFooter(kind);
     });
   });
 
-  renderNichesFooter();
+  renderNichesFooter(kind);
 }
 
-function renderNichesFooter() {
-  const n = selectedNiches.size;
-  const inRound = [...selectedNiches].filter((id) => NICHES[id].channel !== 'background').length;
+function renderNichesFooter(kind) {
+  const group = NICHE_GROUPS[kind];
+  const ids = group.ids();
+  const picked = ids.filter((id) => selectedNiches.has(id)).length;
+  const blocked = picked < group.min;
 
   els.actions.innerHTML = `
     <p class="t-small" style="text-align:center; margin-bottom: var(--sp-2);">
-      ${n === 0 ? 'בחר לפחות אחת'
-        : `בחרת ${n} — הסבב היומי שלך הוא ${inRound}${inRound !== n ? ' (צעדים ושינה צוברים ברקע)' : ''}`}
+      ${blocked ? 'בחר לפחות אחת'
+        : picked === 0 ? 'אפשר להמשיך גם בלי'
+        : `בחרת ${picked} מתוך ${ids.length}`}
     </p>
-    <button class="btn btn--primary btn--block" data-next ${n === 0 ? 'disabled' : ''}>המשך</button>`;
+    <button class="btn btn--primary btn--block" data-next ${blocked ? 'disabled' : ''}>המשך</button>`;
 
   els.actions.querySelector('[data-next]')?.addEventListener('click', () => go(1));
 }
-
-/* ------------------------------------------------------------------ *
- * הגדרות הנישות שצריכות (המפרט, סעיף 8ב6)
- * ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ *
  * דף לכל שאלה (V3, סעיף ח5)
@@ -601,7 +630,8 @@ function render() {
   renderProgress();
 
   switch (SCREENS[index]) {
-    case 'niches':      renderNiches(); break;
+    case 'nichesTask':
+    case 'nichesBg':    renderNiches(SCREENS[index]); break;
     case 'resetChoice': renderResetChoice(); break;
     case 'steps':   renderSteps(); break;
     case 'sleep':   renderSleep(); break;
