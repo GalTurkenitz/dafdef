@@ -76,18 +76,27 @@ export async function mount(host, { onComplete } = {}) {
 
   function render() {
     const phase = phaseAt(elapsed);
+    if (!phase) return;
+
     const scale = 0.45 + openness(phase) * 0.55;
-    const left = Math.max(0, BREATHING.totalSeconds - elapsed);
+    const left = Math.max(0, TOTAL - elapsed);
 
     // האימות הרך: מראים אם התנועה מסתנכרנת, בלי לפסול
     const synced = (phase.key === 'inhale' && shoulderHint === 'up')
                 || (phase.key === 'exhale' && shoulderHint === 'down');
 
+    // ו5: חיצי אוויר על הווידאו, מסונכרנים לפאזה
+    cam.setFlow?.(phase.flow, phase.progress);
+
+    const line = guidedLine(elapsed);
+
     panel.innerHTML = `
+      <p class="breath__name">${exercise.name}</p>
       <div class="breath__ring" style="--open:${scale.toFixed(3)}">
         <span class="breath__label">${phase.label}</span>
         <span class="breath__count">${Math.ceil(phase.seconds - phase.into)}</span>
       </div>
+      ${line ? `<p class="breath__guide">${line}</p>` : ''}
       <p class="breath__left">${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')} נותרו</p>
       <p class="breath__sync ${synced ? 'is-on' : ''}">${synced ? 'יפה, ממש ככה' : ' '}</p>`;
   }
@@ -102,7 +111,7 @@ export async function mount(host, { onComplete } = {}) {
 
     render();
 
-    if (elapsed >= BREATHING.totalSeconds) {
+    if (elapsed >= TOTAL) {
       clearInterval(timer);
       cam.stop();
       onComplete?.(1, { seconds: Math.round(elapsed) });
@@ -117,7 +126,7 @@ export async function mount(host, { onComplete } = {}) {
     return;   // createCamera כבר הציג את השגיאה
   }
 
-  cam.setGuide('שב בנוח, כתפיים רפויות. נתחיל.');
+  cam.setGuide(`${exercise.name} — ${exercise.blurb || 'שב בנוח, כתפיים רפויות.'}`);
   last = performance.now();
   timer = setInterval(tick, 100);
 

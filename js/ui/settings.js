@@ -94,13 +94,14 @@ function render() {
                       data-set="sleep" aria-label="יעד שעות שינה">`,
       }) : ''}
 
-      ${selected.has('learning') ? card('רמת האנגלית', {
+      ${card('רמת האנגלית', {
         main: `<div class="seg" role="radiogroup" aria-label="רמת אנגלית">
-          ${[['beginner', 'מתחיל'], ['intermediate', 'בינוני'], ['advanced', 'מתקדם']].map(([v, l]) => `
+          ${[['beginner', 'מתחיל'], ['intermediate', 'בינוני'],
+             ['advanced', 'מתקדם'], ['native', 'שפת אם']].map(([v, l]) => `
             <button class="seg__item" data-level="${v}" role="radio"
                     aria-checked="${(niches.settings.learning?.level || 'beginner') === v}">${l}</button>`).join('')}
         </div>`,
-      }) : ''}
+      })}
 
       ${card('מה קורה לדקות בחצות', {
         main: `<div class="seg" role="radiogroup" aria-label="מצב איפוס">

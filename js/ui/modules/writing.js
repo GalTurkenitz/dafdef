@@ -1,19 +1,37 @@
 /**
  * modules/writing.js — מודול הכתיבה (המפרט, סעיף 10.3).
  *
- * עורך יומן עם פרומפט יומי. ההדבקה חסומה, הקצב נמדד, ונדרשות
- * 50 מילים לפחות. הרישומים נשמרים מקומית וניתנים לצפייה — זה
- * ערך למשתמש, לא רק משימה שצריך לעבור.
+ * עורך יומן עם **נושא יומי** מתחלף (V3, סעיפים ו2-ו3). הנושא
+ * נשלף ממאגר מדורג לפי קושי; השלב במסלול ההתקדמות קובע מאיזו
+ * מדרגה שולפים, כך שהנושאים נעשים מאתגרים עם הזמן ודורשים יותר
+ * מילים. ההדבקה חסומה, הקצב נמדד, והרישומים נשמרים מקומית.
  */
 
 import { icon } from '../icons.js';
 import { WRITING } from '../../config.js';
 import { countWords, verifyEntry, reasonText, promptForDate } from '../../logic/writing.js';
-import { getModuleData, setModuleData, today } from '../../logic/store.js';
+import { writingTopic } from '../../logic/daily.js';
+import { getModuleData, setModuleData, today, getProgress } from '../../logic/store.js';
 
-export function mount(host, { onComplete } = {}) {
+export async function mount(host, { onComplete } = {}) {
   const date = today();
-  const prompt = promptForDate(date);
+  const level = getProgress('writing').level || 1;
+
+  /* הנושא היומי. אם המאגר לא נטען — נופלים לפרומפטים הישנים,
+     כדי שהמודול לא ייתקע בגלל קובץ תוכן. */
+  let topic = promptForDate(date);
+  let tier = null;
+  try {
+    const bank = await fetch('content/writing/topics.json').then((r) => r.json());
+    const pick = writingTopic(bank, date, level);
+    if (pick && pick.topic) { topic = pick.topic; tier = pick.tier; }
+  } catch (err) {
+    console.warn('מאגר הנושאים לא נטען, נופלים לפרומפט הקבוע', err);
+  }
+
+  const prompt = topic;
+  // מדרגה גבוהה דורשת יותר מילים (ו3); בלי מאגר — הרף הבסיסי
+  const minWords = tier?.minWords || WRITING.minWords;
   const saved = getModuleData('writing', { entries: [] });
 
   let startedAt = 0;
@@ -22,7 +40,7 @@ export function mount(host, { onComplete } = {}) {
   host.innerHTML = `
     <div class="writer">
       <div class="writer__prompt">
-        <span class="t-small">הפרומפט של היום</span>
+        <span class="t-small">הנושא היומי${tier ? ` · ${tier.name}` : ''}</span>
         <b>${prompt}</b>
       </div>
 
@@ -70,10 +88,10 @@ export function mount(host, { onComplete } = {}) {
 
     const words = countWords(area.value);
     count.textContent = `${words} מילים`;
-    count.classList.toggle('is-ready', words >= WRITING.minWords);
+    count.classList.toggle('is-ready', words >= minWords);
 
-    if (words < WRITING.minWords) {
-      note.textContent = `עוד ${WRITING.minWords - words}`;
+    if (words < minWords) {
+      note.textContent = `עוד ${minWords - words}`;
       note.className = 't-small';
     } else if (!pastedChars) {
       note.textContent = 'אפשר לסיים';
@@ -88,7 +106,7 @@ export function mount(host, { onComplete } = {}) {
   function update() {
     const words = countWords(area.value);
     const btn = document.querySelector('[data-submit]');
-    if (btn) btn.disabled = words < WRITING.minWords;
+    if (btn) btn.disabled = words < minWords;
   }
 
   function submit() {
@@ -96,6 +114,7 @@ export function mount(host, { onComplete } = {}) {
       text: area.value,
       elapsedMs: startedAt ? Date.now() - startedAt : 0,
       pasted: pastedChars,
+      minWords,
     });
 
     if (!result.ok) {

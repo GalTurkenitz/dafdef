@@ -35,14 +35,20 @@ export function countWords(text) {
  * @param {number} [entry.pasted=0] כמה תווים הודבקו (ה-UI סופר)
  * @returns {{ok: boolean, words: number, reason: string|null}}
  */
-export function verifyEntry({ text = '', elapsedMs = 0, pasted = 0 } = {}) {
+/**
+ * @param {object} opts
+ * @param {number} [opts.minWords] רף מילים חלופי — מדרגות גבוהות
+ *   במסלול הכתיבה דורשות יותר (V3, סעיף ו3)
+ */
+export function verifyEntry({ text = '', elapsedMs = 0, pasted = 0,
+                              minWords = WRITING.minWords } = {}) {
   const words = countWords(text);
 
   if (pasted > 0) {
     return { ok: false, words, reason: 'paste' };
   }
 
-  if (words < WRITING.minWords) {
+  if (words < minWords) {
     return { ok: false, words, reason: 'short' };
   }
 

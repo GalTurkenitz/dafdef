@@ -49,8 +49,8 @@ export const NICHES = {
   writing:   { id: 'writing',   name: 'כתיבה',  channel: 'free', icon: 'pen',
                unit: 'רישום',  taskLabel: 'רישום יומן',      href: 'task.html?niche=writing' },
 
-  breathing: { id: 'breathing', name: 'נשימות', channel: 'task', icon: 'wind',
-               unit: 'תרגיל',  taskLabel: 'תרגיל נשימות',    href: 'task.html?niche=breathing' },
+  breathing: { id: 'breathing', name: 'מדיטציה', channel: 'task', icon: 'wind',
+               unit: 'תרגיל',  taskLabel: 'תרגיל מדיטציה',   href: 'task.html?niche=breathing' },
 
   water:     { id: 'water',     name: 'מים',    channel: 'task', icon: 'droplet',
                unit: 'כוס',    taskLabel: 'כוס מים',         href: 'task.html?niche=water' },

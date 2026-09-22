@@ -2523,3 +2523,73 @@ p  { margin: 0; }
   min-height: 0;
 }
 .screen__body--onb > [data-step] { height: 100%; display: block; }
+
+/* ============================================================
+   חיצי אוויר על הווידאו במדיטציה (V3, סעיף ו5)
+
+   שכבה מעל הווידאו: חץ שמצביע לכיוון הנשימה, וסימני זרימה
+   שנעים איתו. --p הוא ההתקדמות בתוך הפאזה (0..1), כך שהתנועה
+   מסונכרנת לתרגיל ולא רצה בלולאה עצמאית.
+   ============================================================ */
+
+.cam__flow {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cam__flow-arrow {
+  display: grid;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+  opacity: calc(.45 + var(--p, 0) * .5);
+  transform: translateY(calc((var(--p, 0) - .5) * -26px));
+  transition: opacity 120ms linear, transform 120ms linear;
+}
+
+/* בנשיפה החץ מתהפך והתנועה יורדת */
+.cam__flow[data-dir="out"] .cam__flow-arrow {
+  transform: rotate(180deg) translateY(calc((var(--p, 0) - .5) * -26px));
+}
+
+.cam__flow-mark {
+  position: absolute;
+  inline-size: 3px;
+  block-size: 18px;
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, .55);
+  inset-inline-start: calc(50% + (var(--i) - 1) * 34px);
+  opacity: calc(1 - var(--p, 0));
+  transform: translateY(calc(40px - var(--p, 0) * 80px));
+}
+.cam__flow[data-dir="out"] .cam__flow-mark {
+  transform: translateY(calc(-40px + var(--p, 0) * 80px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam__flow-arrow, .cam__flow-mark { transition: none; }
+}
+
+/* ---------- שם התרגיל והשורה המונחית ---------- */
+
+.breath__name {
+  text-align: center;
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  color: var(--primary);
+  margin-bottom: var(--sp-2);
+}
+.breath__guide {
+  text-align: center;
+  font-size: var(--fs-sub);
+  color: var(--text);
+  margin-top: var(--sp-3);
+  min-height: 1.5em;
+}

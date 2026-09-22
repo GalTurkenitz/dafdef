@@ -61,6 +61,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
     <div class="cam">
       <video class="cam__video" playsinline muted autoplay data-video></video>
       <canvas class="cam__overlay" data-overlay></canvas>
+      <div class="cam__flow" data-flow hidden aria-hidden="true"></div>
       <div class="cam__guide" data-guide></div>
       <div class="cam__badge" data-fps hidden></div>
       <div class="cam__loading" data-loading>
@@ -79,6 +80,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
   const loadingText = host.querySelector('[data-loading-text]');
   const loadingNote = host.querySelector('[data-loading-note]');
   const ctx2d = canvas.getContext('2d');
+  const flow = host.querySelector('[data-flow]');
 
   /**
    * ההורדה הראשונה של MediaPipe היא כ-9MB (WASM + מודל), ולוקחת
@@ -108,6 +110,36 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
   function setGuide(html, tone = '') {
     guide.className = 'cam__guide' + (tone ? ' is-' + tone : '');
     guide.innerHTML = html;
+  }
+
+  /**
+   * חיצי אוויר על הווידאו (V3, סעיף ו5).
+   *
+   * dir: 'in' בשאיפה — חץ מעלה עם סימני זרימה שנמשכים פנימה;
+   *      'out' בנשיפה — חץ מטה והזרימה יוצאת;
+   *      null בעצירת נשימה — השכבה נעלמת.
+   * progress (0..1) מניע את הסימנים לאורך הפאזה, כך שהתנועה
+   * מסונכרנת לקצב התרגיל ולא רצה בלולאה משל עצמה.
+   */
+  function setFlow(dir, progress = 0) {
+    if (!flow) return;
+
+    if (!dir) { flow.hidden = true; flow.dataset.dir = ''; return; }
+
+    if (flow.dataset.dir !== dir) {
+      flow.dataset.dir = dir;
+      flow.innerHTML = `
+        <span class="cam__flow-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+          </svg>
+        </span>
+        ${[0, 1, 2].map((i) => `<i class="cam__flow-mark" style="--i:${i}"></i>`).join('')}`;
+    }
+
+    flow.hidden = false;
+    flow.style.setProperty('--p', progress.toFixed(3));
   }
 
   function markPresence(seen, now) {
@@ -159,6 +191,7 @@ export function createCamera({ host, model = 'pose', onFrame, onPresence }) {
     get fps() { return fps; },
     get present() { return present; },
     setGuide,
+    setFlow,
 
     /** מציג את מד ה-FPS — שימושי לאבחון מכשיר איטי */
     showFps(on = true) { fpsBadge.hidden = !on; },
