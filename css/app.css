@@ -1909,17 +1909,15 @@ p  { margin: 0; }
               color var(--t-base) var(--ease);
 }
 
-/* האימוג׳י נושא צבע משלו, אז המצב הכבוי מושג בהחוורה ולא בצבע */
+/* האימוג׳י מוצג תמיד כמות שהוא, בצבעיו המקוריים. ניסיון קודם
+   להחוויר אותו במצב הכבוי הפך אותו לכתם אפור שלא נראה כמו 🔥
+   בכלל. מצב הרצף נקרא ממילא מהרקע, מהמסגרת ומהטקסט של הצ׳יפ. */
 .streak__icon {
   display: grid;
   place-items: center;
   font-size: 15px;
   line-height: 1;
-  filter: grayscale(1);
-  opacity: .55;
-  transition: filter var(--t-base) var(--ease), opacity var(--t-base) var(--ease);
 }
-.streak.is-lit .streak__icon { filter: none; opacity: 1; }
 
 .streak__num {
   font-size: var(--fs-sub);
