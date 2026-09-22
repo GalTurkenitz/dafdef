@@ -31,8 +31,15 @@ const els = {
 let wheel = null;
 
 /* ------------------------------------------------------------------ *
- * רצף השלמת הסבבים (סעיף א6) — בלי אימוג'י
+ * רצף השלמת הסבבים (סעיף א6)
  * ------------------------------------------------------------------ */
+
+/**
+ * הלהבה היא אימוג׳י אמיתי, לפי בקשה מפורשת של המשתמש. זה החריג
+ * היחיד לכלל "אין אימוג׳י באפליקציה" (סעיף א6); הכלל נשאר בתוקף
+ * בכל שאר המסכים, והבדיקה האוטומטית אוכפת אותו מחוץ לצ'יפ הזה.
+ */
+const STREAK_EMOJI = '\u{1F525}';
 
 function renderStreak() {
   const { current } = getStreak();
@@ -43,7 +50,7 @@ function renderStreak() {
 
   els.streak.innerHTML = `
     <div class="streak${lit ? ' is-lit' : ''}">
-      <span class="streak__icon">${icon('flame', 16)}</span>
+      <span class="streak__icon" aria-hidden="true">${STREAK_EMOJI}</span>
       <span class="streak__word">רצף</span>
       <span class="streak__num">${current}</span>
     </div>`;
