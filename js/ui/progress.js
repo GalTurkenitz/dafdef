@@ -50,6 +50,10 @@ const ROW_H = 86;        // מרחק אנכי בין שלבים
 const NODE = 52;         // קוטר עיגול רגיל
 const NODE_CURRENT = 66; // קוטר השלב הנוכחי
 
+/* אוויר מתחת לשלב הראשון. בלעדיו הוא נצמד לקו של הסרגל התחתון,
+   והבסיס התלת-ממדי שלו כמעט נוגע בו. */
+const TAIL = 34;
+
 /**
  * לכל נישה מסלול בעל אופי משלה (סעיף ד2):
  * amp   — עומק הזיגזג ביחס לרוחב
@@ -150,7 +154,8 @@ function renderTrack(nicheId) {
         ${icon('arrow', 18)} כל המסלולים
       </button>
       <div class="track__path" data-path>
-        <div class="track__map" data-map style="height:${MAX_LEVEL * ROW_H}px"></div>
+        <div class="track__map" data-map
+             style="height:${MAX_LEVEL * ROW_H + TAIL}px"></div>
       </div>
     </div>`;
 
@@ -190,9 +195,11 @@ function drawMap(map, nicheId, track, st) {
     const first = sec * LEVELS_PER_SECTION + 1;
     const last = Math.min(MAX_LEVEL, first + LEVELS_PER_SECTION - 1);
 
-    // הקבוצה נמתחת מהשלב הגבוה שבה (למעלה) עד הנמוך (למטה)
+    // הקבוצה נמתחת מהשלב הגבוה שבה (למעלה) עד הנמוך (למטה).
+    // הקבוצה הראשונה מקבלת גם את זנב האוויר שמתחת לשלב 1, אחרת
+    // נשאר שם פס רקע שלא שייך לאף קבוצה.
     const top = yOf(last) - ROW_H / 2;
-    const height = (last - first + 1) * ROW_H;
+    const height = (last - first + 1) * ROW_H + (sec === 0 ? TAIL : 0);
 
     sections.push(`
       <div class="track__band track__band--s${sec % SECTION_LOOKS}"
