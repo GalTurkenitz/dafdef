@@ -1889,6 +1889,14 @@ p  { margin: 0; }
   align-items: center;
   gap: var(--sp-2);
   min-height: 40px;
+
+  /* קו מפריד בין הרצף לבין המשימה הבאה — אותו קו דק של הסרגל
+     התחתון. בלעדיו שני האזורים נשפכים זה לזה.
+     הבליטה לצדדים מותחת אותו עד שולי המסך, כמו בסרגל. */
+  padding-bottom: var(--sp-2);
+  margin-inline: calc(-1 * var(--screen-pad));
+  padding-inline: var(--screen-pad);
+  border-bottom: 1px solid var(--border);
 }
 .topbar__spacer { inline-size: var(--tap-min); flex: none; }
 /* הרצף נדחף לקצה הרחוק מההמבורגר — שמאל למעלה ב-RTL.
