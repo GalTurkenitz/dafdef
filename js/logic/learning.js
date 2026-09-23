@@ -35,8 +35,13 @@ export function shuffle(arr, seed = 1) {
  * @param {number} seed
  * @returns {Array} שאלות
  */
-export function buildSet(pool, wrong = [], seed = 1) {
+/**
+ * @param {number} [size] כמה שאלות בסט. מסלול ההתקדמות מתחיל
+ *   משתי שאלות וגדל עם השלב, ולכן הגודל אינו קבוע יותר.
+ */
+export function buildSet(pool, wrong = [], seed = 1, size = LEARNING.questionsPerSet) {
   if (!pool?.length) return [];
+  const count = Math.max(1, size);
 
   const wrongSet = new Set(wrong);
   const repeats = pool.filter((w) => wrongSet.has(w.id));
@@ -44,9 +49,9 @@ export function buildSet(pool, wrong = [], seed = 1) {
 
   // קודם מה שטעינו בו, ואז חדשות
   const chosen = [
-    ...shuffle(repeats, seed).slice(0, LEARNING.questionsPerSet),
+    ...shuffle(repeats, seed).slice(0, count),
     ...shuffle(fresh, seed + 7),
-  ].slice(0, LEARNING.questionsPerSet);
+  ].slice(0, count);
 
   return chosen.map((word, i) => {
     const wantsFill = i % 2 === 1 && word.sentence;
@@ -86,8 +91,14 @@ export function isCorrect(question, given) {
  * האם הסט הושלם — נדרשות לפחות minCorrect תשובות נכונות
  * (המפרט, סעיף 10.2: מתחת ל-8/10 הסט לא הושלם).
  */
-export function isSetComplete(correctCount) {
-  return correctCount >= LEARNING.minCorrect;
+/**
+ * @param {number} correctCount
+ * @param {number} [total] גודל הסט. הסף יחסי, כי סט של שתי
+ *   שאלות לא יכול לדרוש שמונה נכונות.
+ */
+export function isSetComplete(correctCount, total = LEARNING.questionsPerSet) {
+  const need = Math.max(1, Math.ceil(total * (LEARNING.minCorrect / LEARNING.questionsPerSet)));
+  return correctCount >= need;
 }
 
 /** מוסיף מזהים שטעו בהם להיסטוריה, בלי כפילויות ובלי לגדול בלי סוף */

@@ -10,7 +10,8 @@
 import { icon } from '../icons.js';
 import { LEARNING } from '../../config.js';
 import { buildSet, isCorrect, isSetComplete, rememberWrong, forgetWrong } from '../../logic/learning.js';
-import { getNiches, getModuleData, setModuleData } from '../../logic/store.js';
+import { getNiches, getModuleData, setModuleData, getProgress } from '../../logic/store.js';
+import { unitsForLevel } from '../../logic/progress.js';
 
 export async function mount(host, { onComplete, onFail } = {}) {
   const level = getNiches().settings.learning?.level || 'beginner';
@@ -29,7 +30,9 @@ export async function mount(host, { onComplete, onFail } = {}) {
   }
 
   const pool = bank[level] || bank.beginner;
-  const questions = buildSet(pool, saved.wrong, Date.now() % 100000);
+  /* גודל הסט נקבע מהשלב במסלול — מתחילים משתי שאלות (ד3) */
+  const setSize = unitsForLevel('learning', getProgress('learning').level || 1);
+  const questions = buildSet(pool, saved.wrong, Date.now() % 100000, setSize);
   if (!questions.length) {
     host.innerHTML = '<p class="t-sub empty">אין מילים ברמה הזו.</p>';
     return;

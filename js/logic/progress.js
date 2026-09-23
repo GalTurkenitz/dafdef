@@ -16,7 +16,7 @@ export const LEVELS_PER_SECTION = 10;
 export const SECTION_BONUS = 0.2;
 
 /** פרמיה ליחידה על ביצוע דרך המסלול לעומת משימת רוטציה (סעיף ד4) */
-export const PROGRESS_PREMIUM_MINUTES = 2.5;
+export const PROGRESS_PREMIUM_MINUTES = 2;
 
 /* ------------------------------------------------------------------ *
  * שלבים וסקשנים
@@ -46,10 +46,28 @@ export function sectionRange(section = 0) {
  * ------------------------------------------------------------------ */
 
 const LADDERS = {
-  reading:  [1, 2, 3, 4, 5],          // עמודים
-  fitness:  [10, 12, 15, 18, 20],     // חזרות
-  writing:  [50, 75, 100, 125, 150],  // מילים
-  learning: [1, 1, 1, 1, 1],          // סט אחד; הקושי איכותי ולא כמותי
+  // עמודים
+  reading:  [1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 10, 12],
+  // חזרות — מתחילים משלוש, לא מעשר
+  fitness:  [3, 5, 8, 10, 12, 15, 18, 20, 25, 30, 35, 40, 45, 50, 60],
+  // משפטים — מתחילים משניים
+  writing:  [2, 3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 25, 30, 35, 40],
+  // שאלות — מתחילים משתיים, לא מסט של עשר
+  learning: [2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 22, 25],
+};
+
+/**
+ * כמה שווה יחידה אחת של המסלול ביחס ליחידת הרוטציה.
+ *
+ * במסלול הכמויות נספרות ביחידות קטנות יותר: הכתיבה נמדדת
+ * במשפטים ולא ברישום שלם, והלמידה בשאלות ולא בסט. בלי המקדם
+ * הזה שני משפטים היו שווים כמו שני רישומים.
+ */
+const UNIT_SHARE = {
+  reading: 1,        // עמוד = עמוד
+  fitness: 1,        // חזרה = חזרה
+  writing: 0.2,      // משפט = חמישית מרישום
+  learning: 0.1,     // שאלה = עשירית מסט
 };
 
 /** כמה יחידות דרושות בשלב הזה */
@@ -80,8 +98,12 @@ export function sectionFactor(level = 1) {
  * כמה דקות שווה השלב הזה.
  *
  * הקושי משלם משתי דרכים: היחידות גדלות (3 עמודים = 3× שווי עמוד),
- * ומעליהן מקדם הסקשן לקושי האיכותי. בנוסף יש פרמיה קבועה ליחידה
- * על כך שזה נעשה במסלול ולא כמשימת רוטציה.
+ * ומעליהן מקדם הסקשן לקושי האיכותי.
+ *
+ * מעל הכל נוספת **פרמיה קבועה של שתי דקות לשלב** — לא ליחידה.
+ * קודם היא הוכפלה במספר היחידות, כך ששלב של 20 חזרות קיבל 50
+ * דקות פרמיה. הפרמיה היא תשלום על כך שהמשימה נעשתה במסלול ולא
+ * כמשימת רוטציה, וזה שווה אותו דבר בכל שלב.
  *
  * @param {string} nicheId
  * @param {number} level
@@ -89,8 +111,9 @@ export function sectionFactor(level = 1) {
  */
 export function levelValue(nicheId, level, unitMinutes) {
   const units = unitsForLevel(nicheId, level);
-  const base = unitMinutes * units * sectionFactor(level);
-  return base + PROGRESS_PREMIUM_MINUTES * units;
+  const share = UNIT_SHARE[nicheId] ?? 1;
+  const base = unitMinutes * units * share * sectionFactor(level);
+  return base + PROGRESS_PREMIUM_MINUTES;
 }
 
 /* ------------------------------------------------------------------ *
@@ -143,8 +166,8 @@ export function levelLabel(nicheId, level) {
   switch (nicheId) {
     case 'reading':  return `${units} ${units === 1 ? 'עמוד' : 'עמודים'}`;
     case 'fitness':  return `${units} חזרות`;
-    case 'writing':  return `${units} מילים`;
-    case 'learning': return `סט של 10 שאלות`;
+    case 'writing':  return `${units} ${units === 1 ? 'משפט' : 'משפטים'}`;
+    case 'learning': return `${units} ${units === 1 ? 'שאלה' : 'שאלות'}`;
     default:         return `${units}`;
   }
 }

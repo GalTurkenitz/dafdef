@@ -9,8 +9,10 @@
 
 import { icon } from '../icons.js';
 import { WRITING } from '../../config.js';
-import { countWords, verifyEntry, reasonText, promptForDate } from '../../logic/writing.js';
+import { countWords, countSentences, verifyEntry, reasonText,
+         promptForDate } from '../../logic/writing.js';
 import { writingTopic } from '../../logic/daily.js';
+import { unitsForLevel } from '../../logic/progress.js';
 import { getModuleData, setModuleData, today, getProgress } from '../../logic/store.js';
 
 export async function mount(host, { onComplete } = {}) {
@@ -30,8 +32,13 @@ export async function mount(host, { onComplete } = {}) {
   }
 
   const prompt = topic;
-  // מדרגה גבוהה דורשת יותר מילים (ו3); בלי מאגר — הרף הבסיסי
-  const minWords = tier?.minWords || WRITING.minWords;
+
+  /* הדרישה נמדדת במשפטים לפי השלב במסלול — מתחילים משניים (ד3).
+     רף המילים נגזר מהם כדי שמשפט לא יהיה מילה אחת, ולא מהמדרגה
+     של הנושא: אחרת המסלול היה מבטיח שני משפטים והמודול היה דורש
+     חמישים מילים. */
+  const minSentences = unitsForLevel('writing', level);
+  const minWords = Math.max(6, minSentences * 5);
   const saved = getModuleData('writing', { entries: [] });
 
   let startedAt = 0;
@@ -49,7 +56,7 @@ export async function mount(host, { onComplete } = {}) {
                 spellcheck="false"></textarea>
 
       <div class="writer__foot">
-        <span class="t-small" data-count>0 מילים</span>
+        <span class="t-small" data-count>0/${minSentences} משפטים</span>
         <span class="t-small" data-note></span>
       </div>
     </div>
@@ -67,6 +74,10 @@ export async function mount(host, { onComplete } = {}) {
       </details>` : ''}`;
 
   const area = host.querySelector('[data-text]');
+
+  /** כמה משפטים יש כרגע בשדה. מוגדר אחרי area — קריאה מוקדמת
+     יותר הייתה נופלת על TDZ. */
+  const sentencesNow = () => countSentences(area.value || '');
   const count = host.querySelector('[data-count]');
   const note = host.querySelector('[data-note]');
 
@@ -87,11 +98,12 @@ export async function mount(host, { onComplete } = {}) {
     if (!startedAt) startedAt = Date.now();
 
     const words = countWords(area.value);
-    count.textContent = `${words} מילים`;
-    count.classList.toggle('is-ready', words >= minWords);
+    count.textContent = `${sentencesNow()}/${minSentences} משפטים`;
+    count.classList.toggle('is-ready', sentencesNow() >= minSentences);
 
-    if (words < minWords) {
-      note.textContent = `עוד ${minWords - words}`;
+    const have = sentencesNow();
+    if (have < minSentences) {
+      note.textContent = `עוד ${minSentences - have} ${minSentences - have === 1 ? 'משפט' : 'משפטים'}`;
       note.className = 't-small';
     } else if (!pastedChars) {
       note.textContent = 'אפשר לסיים';
@@ -106,7 +118,7 @@ export async function mount(host, { onComplete } = {}) {
   function update() {
     const words = countWords(area.value);
     const btn = document.querySelector('[data-submit]');
-    if (btn) btn.disabled = words < minWords;
+    if (btn) btn.disabled = sentencesNow() < minSentences;
   }
 
   function submit() {
@@ -115,6 +127,7 @@ export async function mount(host, { onComplete } = {}) {
       elapsedMs: startedAt ? Date.now() - startedAt : 0,
       pasted: pastedChars,
       minWords,
+      minSentences,
     });
 
     if (!result.ok) {

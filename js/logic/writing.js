@@ -15,6 +15,20 @@
 import { WRITING } from '../config.js';
 
 /** ספירת מילים — עברית ואנגלית, בלי ניקוד וסימני פיסוק */
+/**
+ * ספירת משפטים. מסלול הכתיבה נמדד במשפטים ולא במילים, ולכן צריך
+ * מדד משלו. משפט = רצף טקסט שנסגר בנקודה, סימן שאלה, קריאה או
+ * שורה חדשה, ויש בו לפחות שתי מילים — כדי ש"כן." לא ייחשב.
+ */
+export function countSentences(text) {
+  if (!text) return 0;
+  return String(text)
+    .split(/[.!?\n\u05C3]+/)
+    .map((part) => part.trim())
+    .filter((part) => countWords(part) >= 2)
+    .length;
+}
+
 export function countWords(text) {
   if (!text) return 0;
   return text
@@ -41,11 +55,17 @@ export function countWords(text) {
  *   במסלול הכתיבה דורשות יותר (V3, סעיף ו3)
  */
 export function verifyEntry({ text = '', elapsedMs = 0, pasted = 0,
-                              minWords = WRITING.minWords } = {}) {
+                              minWords = WRITING.minWords,
+                              minSentences = 0 } = {}) {
   const words = countWords(text);
 
   if (pasted > 0) {
     return { ok: false, words, reason: 'paste' };
+  }
+
+  // במסלול ההתקדמות הדרישה היא משפטים; ברוטציה — מילים
+  if (minSentences > 0 && countSentences(text) < minSentences) {
+    return { ok: false, words, reason: 'short' };
   }
 
   if (words < minWords) {
