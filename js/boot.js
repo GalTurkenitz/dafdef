@@ -18,7 +18,7 @@
 (function () {
   'use strict';
 
-  var BUILD = '20260923-1402';
+  var BUILD = '20260923-1407';
   window.DAFDEF_BUILD = BUILD;
 
   /* ---------- 1+2: בדיקת גרסה ---------- */
