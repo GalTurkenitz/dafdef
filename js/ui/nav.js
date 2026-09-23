@@ -17,10 +17,10 @@ import { icon } from './icons.js';
  * placeholder: true = מקום שמור, מוצג ריק ולא לחיץ.
  */
 const SLOTS = [
-  { id: 'slot-a',   placeholder: true },
-  { id: 'progress', href: 'progress.html', label: 'התקדמות', icon: 'trending' },
-  { id: 'home',     href: 'index.html',    label: 'בית',      icon: 'home', center: true },
-  { id: 'slot-d',   placeholder: true },
+  { id: 'league',   href: 'league.html',   label: 'ליגה',       icon: 'trophy' },
+  { id: 'progress', href: 'progress.html', label: 'התקדמות',    icon: 'trending' },
+  { id: 'home',     href: 'index.html',    label: 'בית',        icon: 'home', center: true },
+  { id: 'stats',    href: 'stats.html',    label: 'סטטיסטיקה',  icon: 'chart' },
   { id: 'slot-e',   placeholder: true },
 ];
 

@@ -28,16 +28,37 @@ const els = {
 const nicheId = new URLSearchParams(location.search).get('niche');
 const niche = NICHES[nicheId];
 
+/** נוסח אבן דרך: "100 שכיבות סמיכה" */
+const MILESTONE_WORDS = {
+  'fitness.pushups': 'שכיבות סמיכה',
+  'fitness.squats':  'סקוואטים',
+  reading:   'עמודים',
+  writing:   'מילים',
+  learning:  'תשובות נכונות',
+  water:     'כוסות מים',
+  breathing: 'תרגילי מדיטציה',
+  steps:     'צעדים',
+  sleep:     'שעות שינה מעל היעד',
+};
+
+const milestoneText = (m) =>
+  `${m.value.toLocaleString('he')} ${MILESTONE_WORDS[m.key] || ''}`.trim();
+
 /* ------------------------------------------------------------------ *
  * סיום משימה
  * ------------------------------------------------------------------ */
 
 /**
  * מזכה על המשימה, מסמן ✓ בסבב ומציג את אישור הסיום.
+ *
  * @param {number} units כמה יחידות בוצעו
+ * @param {object} meta  מה שהמודול מדווח (exercise, correct, words,
+ *   seconds). זה מה שמזין את המונים המצטברים — בלי זה הם היו
+ *   סופרים "משימה" ולא "57 מילים".
  */
-function complete(units = 1) {
-  const { added, roundComplete, bonus } = earnUnits(nicheId, units);
+function complete(units = 1, meta = {}) {
+  const { added, roundComplete, bonus, milestones, level } =
+    earnUnits(nicheId, units, Date.now(), meta);
 
   els.module.innerHTML = `
     <div class="taskdone screen-in">
@@ -46,6 +67,9 @@ function complete(units = 1) {
       <p class="t-sub">${niche.name} · סומן בסבב היומי</p>
       ${bonus ? `<p class="taskdone__bonus">ועוד ${bonus} דקות על השלמת הסבב</p>` : ''}
       ${roundComplete && !bonus ? '<p class="t-sub">הסבב הושלם — מכאן הכל פתוח</p>' : ''}
+      ${milestones?.length ? milestones.map((m) =>
+        `<p class="taskdone__milestone">אבן דרך: ${milestoneText(m)}</p>`).join('') : ''}
+      ${level?.leveledUp ? `<p class="taskdone__level">רמה ${level.level}</p>` : ''}
     </div>`;
 
   els.actions.innerHTML = '<a class="btn btn--primary btn--block" href="index.html">חזרה לבית</a>';
@@ -80,7 +104,7 @@ async function runModule(id) {
   let live = null;
 
   const api = await mod.mount(els.module, {
-    onComplete: (units = 1) => complete(units),
+    onComplete: (units = 1, meta = {}) => complete(units, meta),
     onFail: () => {
       els.actions.innerHTML =
         '<a class="btn btn--secondary btn--block" href="index.html">חזרה לבית</a>';

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="theme-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="דפדף — תחרות חברית שבועית.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ליגה · דפדף</title>
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+
+<script>
+(function () {
+  var t;
+  try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
+  if (['light', 'dark'].indexOf(t) === -1) {
+    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.className = 'theme-' + t;
+})();
+</script>
+</head>
+
+<body>
+<main class="screen screen--fixed screen--nav screen-in" data-screen>
+
+  <header class="topbar">
+    <button data-menu-btn></button>
+    <h1 class="topbar__title" data-title>ליגה</h1>
+  </header>
+
+  <div class="screen__body" data-body></div>
+
+</main>
+
+<div data-navbar></div>
+
+<script src="js/boot.js"></script>
+<script type="module" src="js/ui/league.js"></script>
+</body>
+</html>

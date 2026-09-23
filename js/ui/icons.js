@@ -30,6 +30,7 @@ const PATHS = {
   flag:       '<path d="M5 21V4"/><path d="M5 4h10l-1.6 3.2L15 10.5H5z"/>',
   target:     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
   trending:   '<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  trophy:     '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5A1.5 1.5 0 0 0 3 7.5 3.5 3.5 0 0 0 6.5 11H7"/><path d="M17 6h2.5A1.5 1.5 0 0 1 21 7.5 3.5 3.5 0 0 1 17.5 11H17"/><path d="M12 14v3"/><path d="M8.5 20h7l-.7-3H9.2z"/>',
 };
 
 /**

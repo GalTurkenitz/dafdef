@@ -17,7 +17,7 @@ import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
 import { getSettings, getProfile, getBank, getStreak, openDay,
          currentTask, skipTask, roundStatus, roundProgress,
-         startNewRound, roundDoneToday } from '../logic/store.js';
+         startNewRound, roundDoneToday, getLevelState } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
 
 const $ = (s) => document.querySelector(s);
@@ -46,12 +46,54 @@ function renderStreak() {
      לכתם אפור. */
   const lit = roundDoneToday();
 
+  /* לצד הרצף — הרמה. שני חיוויים באותו סגנון: אחד על היום,
+     אחד על כל הדרך. */
+  const lv = getLevelState();
+
   els.streak.innerHTML = `
     <div class="streak${lit ? ' is-lit' : ''}">
       <span class="streak__icon">${icon('flame', 16)}</span>
       <span class="streak__word">רצף</span>
       <span class="streak__num">${current}</span>
+    </div>
+    <button class="streak streak--level" type="button" data-level-chip
+            aria-label="רמה ${lv.level}">
+      <span class="streak__word">רמה</span>
+      <span class="streak__num">${lv.level}</span>
+    </button>`;
+
+  els.streak.querySelector('[data-level-chip]')
+    .addEventListener('click', () => openLevelSheet(lv));
+}
+
+/** חלון קטן: כמה נקודות יש, וכמה חסר לרמה הבאה (סעיף 1.5) */
+function openLevelSheet(lv) {
+  const sheet = document.createElement('div');
+  sheet.className = 'levelsheet';
+  sheet.innerHTML = `
+    <div class="levelsheet__scrim" data-close></div>
+    <div class="levelsheet__panel" role="dialog" aria-modal="true" aria-label="רמה ${lv.level}">
+      <span class="levelsheet__badge">${lv.level}</span>
+      <h2 class="levelsheet__title">רמה ${lv.level}</h2>
+      <p class="levelsheet__sub">${lv.xp.toLocaleString('he')} נקודות בסך הכל</p>
+
+      <div class="levelbar" role="progressbar"
+           aria-valuenow="${lv.into}" aria-valuemin="0" aria-valuemax="${lv.need}">
+        <i style="inline-size:${Math.round(lv.ratio * 100)}%"></i>
+      </div>
+      <p class="t-small">עוד ${(lv.need - lv.into).toLocaleString('he')} נקודות לרמה ${lv.level + 1}</p>
+
+      <button class="btn btn--ghost btn--block" type="button" data-close>סגירה</button>
     </div>`;
+
+  document.body.appendChild(sheet);
+  requestAnimationFrame(() => sheet.classList.add('is-open'));
+
+  const close = () => {
+    sheet.classList.remove('is-open');
+    setTimeout(() => sheet.remove(), 200);
+  };
+  sheet.querySelectorAll('[data-close]').forEach((e) => e.addEventListener('click', close));
 }
 
 /* ------------------------------------------------------------------ *

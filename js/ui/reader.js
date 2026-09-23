@@ -138,9 +138,15 @@ function beginPage(words) {
   verifier = createPageVerifier({ words, now: now() });
 }
 
+/** האם העמוד המוצג הוא האחרון בספר — לצורך מונה "ספרים שסיימת" */
+function atLastPage() {
+  return Boolean(pager && pager.pageCount && pager.page >= pager.pageCount - 1);
+}
+
 function countPage() {
   // קריאה היא ערוץ חופשי — היא צוברת תמיד, וגם מסמנת ✓ בסבב היומי
-  const { added, bonus, roundComplete } = earnUnits('reading', 1, now());
+  const { added, bonus, roundComplete } = earnUnits('reading', 1, now(),
+    { finishedBook: atLastPage() });
 
   reading = setReadingState({
     pagesToday: (reading.pagesToday || 0) + 1,

@@ -7,12 +7,13 @@
  */
 
 import { STORE_PREFIX, BACKGROUND_DEFAULTS, ROUND_BONUS_MINUTES,
-         WATER_COOLDOWN_MS, NICHES } from '../config.js';
+         WATER_COOLDOWN_MS, NICHES, XP } from '../config.js';
 import * as bankLogic from './bank.js';
 import * as streakLogic from './streak.js';
 import * as rotation from './rotation.js';
 import * as background from './background.js';
 import * as levels from './progress.js';
+import * as levelLogic from './level.js';
 import { earnFor } from './formula.js';
 
 /* ------------------------------------------------------------------ *
@@ -124,10 +125,10 @@ export function setBank(bank) {
  *
  * @returns {{bank, added, roundComplete, bonus}}
  */
-export function earnUnits(nicheId, units = 1, now = Date.now()) {
+export function earnUnits(nicheId, units = 1, now = Date.now(), meta = {}) {
   const profile = getProfile() || {};
   return creditMinutes(nicheId, earnFor(nicheId, units, profile), now,
-                       nicheId === 'reading' ? units : 0);
+                       nicheId === 'reading' ? units : 0, units, meta);
 }
 
 /** שווי יחידה — עטיפה כדי ש-completeLevel לא ייבא את formula ישירות */
@@ -141,10 +142,16 @@ function formulaUnitValue(nicheId, profile) {
  *
  * זו הדלת היחידה לבנק — כל מודול עובר דרכה.
  */
-function creditMinutes(nicheId, added, now = Date.now(), pagesRead = 0) {
+function creditMinutes(nicheId, added, now = Date.now(), pagesRead = 0,
+                       units = 1, meta = {}) {
   let bank = bankLogic.earn(getBank(), 1, added, now);
   const stats = { minutesEarned: added };
   if (pagesRead) stats.pagesRead = pagesRead;
+
+  /* V4: המונים המצטברים והנקודות מתעדכנים **כאן בלבד** — זו
+     נקודת הזיכוי היחידה, ולכן אי אפשר שייווצר מונה בלי זיכוי. */
+  const milestones = bumpLifetime(nicheId, units, meta, now);
+  const xpGain = XP.task + milestones.length * XP.milestone;
 
   const selected = getSelectedNiches();
   const { round, bonusDue } = rotation.markDone(getRound(), selected, nicheId);
@@ -166,7 +173,10 @@ function creditMinutes(nicheId, added, now = Date.now(), pagesRead = 0) {
 
   if (round.roundComplete) registerRoundToday(now);
 
-  return { bank, added, roundComplete: round.roundComplete, bonus };
+  const level = addXp(xpGain + (round.roundComplete ? XP.round : 0), now);
+
+  return { bank, added, roundComplete: round.roundComplete, bonus,
+           milestones, level };
 }
 
 /** תאימות לאחור — הקורא עדיין מדבר בעמודים */
@@ -630,7 +640,7 @@ export function allProgress() {
  *
  * @returns {{added, leveledUp, level, bonus, roundComplete}}
  */
-export function completeLevel(nicheId, units = 1, now = Date.now()) {
+export function completeLevel(nicheId, units = 1, now = Date.now(), meta = {}) {
   const profile = getProfile() || {};
   const before = getProgress(nicheId);
 
@@ -643,9 +653,13 @@ export function completeLevel(nicheId, units = 1, now = Date.now()) {
   }
 
   const minutes = levels.levelValue(nicheId, before.level, formulaUnitValue(nicheId, profile));
-  const res = creditMinutes(nicheId, minutes, now);
+  const res = creditMinutes(nicheId, minutes, now,
+                            nicheId === 'reading' ? units : 0, units, meta);
 
-  return { ...res, leveledUp: true, level: after.level };
+  // שלב שהושלם מזכה בנקודות מעבר לאלה של המשימה עצמה
+  const level = addXp(XP.level, now);
+
+  return { ...res, leveledUp: true, level: after.level, levelState: level };
 }
 
 /* ------------------------------------------------------------------ *
@@ -655,6 +669,197 @@ export function completeLevel(nicheId, units = 1, now = Date.now()) {
  * ונקודת הסיום נשמרים לכל ספר בנפרד. מונה העמודים היומי והבנק
  * נשארים גלובליים.
  * ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * מונים מצטברים, נקודות ואבני דרך (V4, סעיפים 1.2, 1.4, 1.5)
+ *
+ * המונים **אינם מתאפסים בחצות** ואינם מתאפסים לעולם. הם גדלים
+ * אך ורק דרך bumpLifetime, שנקראת מנקודת הזיכוי היחידה
+ * (creditMinutes) — כך שמונה בלי זיכוי, או זיכוי בלי מונה, לא
+ * יכולים להיווצר.
+ * ------------------------------------------------------------------ */
+
+const EMPTY_LIFETIME = {
+  reading:   { pages: 0, books: 0 },
+  fitness:   { reps: 0, pushups: 0, squats: 0 },
+  learning:  { correct: 0, sets: 0 },
+  writing:   { words: 0, entries: 0 },
+  breathing: { minutes: 0, sessions: 0 },
+  water:     { cups: 0 },
+  steps:     { steps: 0 },
+  sleep:     { hours: 0 },
+};
+
+export function getLifetime() {
+  const raw = read('lifetime') || {};
+  const out = {};
+  for (const [k, v] of Object.entries(EMPTY_LIFETIME)) out[k] = { ...v, ...(raw[k] || {}) };
+  return out;
+}
+
+function setLifetime(next) {
+  write('lifetime', next);
+  return next;
+}
+
+/** אילו ספים כבר הוכרזו, כדי שהודעה לא תחזור אחרי רענון */
+export function getMilestonesHit() {
+  return read('milestones') || {};
+}
+
+function setMilestonesHit(next) {
+  write('milestones', next);
+  return next;
+}
+
+export function getXp() {
+  const raw = read('xp');
+  return typeof raw === 'number' ? raw : 0;
+}
+
+function setXp(value) {
+  write('xp', Math.max(0, Math.round(value)));
+  return getXp();
+}
+
+/** הרמה הנוכחית ומצב ההתקדמות אליה */
+export function getLevelState() {
+  return levelLogic.levelProgress(getXp());
+}
+
+/**
+ * המונה השבועי — אותם מקורות, עם איפוס שבועי (סעיף 2.3א).
+ * שומר את מספר השבוע כדי שהאיפוס יקרה מעצמו.
+ */
+function weekKey(now = Date.now()) {
+  const d = new Date(now);
+  const day = (d.getDay() + 1) % 7;            // ראשון = 0
+  d.setDate(d.getDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
+export function getWeekly(now = Date.now()) {
+  const raw = read('weekly') || {};
+  if (raw.week !== weekKey(now)) return { week: weekKey(now), xp: 0, counters: {} };
+  return { xp: 0, counters: {}, ...raw };
+}
+
+function bumpWeekly(patch, xpAdd = 0, now = Date.now()) {
+  const cur = getWeekly(now);
+  const counters = { ...cur.counters };
+  for (const [k, v] of Object.entries(patch)) counters[k] = (counters[k] || 0) + v;
+  write('weekly', { week: weekKey(now), xp: cur.xp + xpAdd, counters });
+}
+
+/**
+ * מעלה את המונים של נישה ומחזיר את אבני הדרך שנחצו עכשיו.
+ *
+ * @param {string} nicheId
+ * @param {number} units כמה יחידות בוצעו
+ * @param {object} meta  מה שהמודול מדווח: exercise, correct, words, seconds
+ * @returns {Array<{key, value, niche}>}
+ */
+function bumpLifetime(nicheId, units = 1, meta = {}, now = Date.now()) {
+  const life = getLifetime();
+  const before = JSON.parse(JSON.stringify(life));
+  const weekly = {};
+  const track = [];      // אילו מונים לבדוק מולם אבני דרך
+
+  const add = (group, field, amount, milestoneKey) => {
+    if (!amount) return;
+    life[group][field] += amount;
+    if (milestoneKey) {
+      weekly[milestoneKey] = (weekly[milestoneKey] || 0) + amount;
+      track.push({ key: milestoneKey, group, field });
+    }
+  };
+
+  switch (nicheId) {
+    case 'reading':
+      add('reading', 'pages', units, 'reading');
+      if (meta.finishedBook) add('reading', 'books', 1);
+      break;
+
+    case 'fitness': {
+      add('fitness', 'reps', units);
+      const side = meta.exercise === 'squat' ? 'squats' : 'pushups';
+      add('fitness', side, units, `fitness.${side}`);
+      break;
+    }
+
+    case 'learning':
+      add('learning', 'correct', meta.correct ?? units, 'learning');
+      add('learning', 'sets', 1);
+      break;
+
+    case 'writing':
+      add('writing', 'words', meta.words ?? 0, 'writing');
+      add('writing', 'entries', 1);
+      break;
+
+    case 'breathing':
+      add('breathing', 'minutes', Math.round((meta.seconds ?? 0) / 60));
+      add('breathing', 'sessions', units, 'breathing');
+      break;
+
+    case 'water':
+      add('water', 'cups', units, 'water');
+      break;
+
+    case 'steps':
+      // units = אלפי צעדים מעל קו הבסיס
+      add('steps', 'steps', units * 1000, 'steps');
+      break;
+
+    case 'sleep':
+      add('sleep', 'hours', meta.hours ?? units, 'sleep');
+      break;
+
+    default:
+      break;
+  }
+
+  setLifetime(life);
+
+  // אבני דרך: משווים לפני ואחרי על אותו מונה
+  const hitStore = getMilestonesHit();
+  const fresh = [];
+
+  for (const { key, group, field } of track) {
+    const from = before[group][field];
+    const to = life[group][field];
+    const already = new Set(hitStore[key] || []);
+
+    for (const value of levelLogic.crossedMilestones(key, from, to)) {
+      if (already.has(value)) continue;
+      already.add(value);
+      fresh.push({ key, value, niche: nicheId });
+    }
+    hitStore[key] = [...already].sort((a, b) => a - b);
+  }
+
+  if (fresh.length) setMilestonesHit(hitStore);
+
+  bumpWeekly(weekly, 0, now);
+  return fresh;
+}
+
+/**
+ * מוסיף נקודות ומחזיר האם עלתה רמה.
+ * @returns {{xp, level, leveledUp}}
+ */
+function addXp(amount = 0, now = Date.now()) {
+  const before = levelLogic.levelForXp(getXp());
+  const xp = setXp(getXp() + amount);
+  const after = levelLogic.levelForXp(xp);
+  bumpWeekly({}, amount, now);
+  return { xp, level: after, leveledUp: after > before };
+}
+
+/** נקודות מבחוץ — ניצחון בליגה, למשל */
+export function awardXp(amount, now = Date.now()) {
+  return addXp(amount, now);
+}
 
 /* ------------------------------------------------------------------ *
  * הספר הפעיל (V3, סעיף ז1)

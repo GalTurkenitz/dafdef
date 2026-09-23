@@ -133,3 +133,60 @@ export const BACKGROUND_DEFAULTS = {
   steps: { baseline: 4000 },
   sleep: { targetHours: 7, windowStart: '23:00', windowEnd: '08:00' },
 };
+
+/* ------------------------------------------------------------------ *
+ * אבני דרך ורמה (V4, סעיפים 1.4-1.5)
+ *
+ * לכל מונה יש צעד בסיס s. חמש אבני הדרך הראשונות הן s, 2s ... 5s,
+ * ומהשישית והלאה הצעד הוא 5s. זה כלל אחד לכל הנישות, ולכן כאן
+ * נשמר רק הצעד ולא הרשימה המלאה.
+ * ------------------------------------------------------------------ */
+
+export const MILESTONES = {
+  'fitness.pushups': 20,      // 20 · 40 · 60 · 80 · 100 ⇐ 200 · 300…
+  'fitness.squats':  20,      // סולם נפרד וזהה
+  reading:            2,      // עמודים
+  writing:          100,      // מילים
+  learning:          20,      // תשובות נכונות
+  water:              2,      // כוסות
+  breathing:          2,      // תרגילים שהושלמו
+  sleep:              2,      // שעות מצטברות מעל היעד
+  steps:           2000,      // צעדים מצטברים מעל קו הבסיס
+};
+
+/** נקודות על אבן דרך — קבוע לכל אבן דרך */
+export const MILESTONE_POINTS = 100;
+
+/** נקודות לפעולה */
+export const XP = {
+  task: 10,            // משימה שהושלמה (רוטציה או מסלול)
+  level: 12,           // שלב שהושלם במסלול ההתקדמות
+  round: 20,           // סבב יומי מלא
+  milestone: MILESTONE_POINTS,
+  leagueWin: 250,      // ניצחון שבועי בליגה
+};
+
+/** ספי הרמות הראשונות (נקודות מצטברות לרמה 2, 3, 4, 5, 6) */
+export const LEVEL_FIRST_STEPS = [100, 200, 300, 400, 500];
+
+/** מרמה 7 והלאה — כל רמה דורשת עוד כך וכך נקודות */
+export const LEVEL_BASE_STEP = 500;
+
+/** כמה שורות מוצגות בטבלת הליגה לפני דפדוף */
+export const LEAGUE_PAGE_SIZE = 10;
+
+/**
+ * המדדים שאפשר לבחור בהם כשיוצרים ליגה (V4, סעיף 2.3א).
+ * key מצביע על מונה שבועי; niche משמש לצבע ולאייקון.
+ */
+export const LEAGUE_METRICS = [
+  { id: 'xp',               label: 'נקודות',            niche: null },
+  { id: 'fitness.pushups',  label: 'שכיבות סמיכה',      niche: 'fitness' },
+  { id: 'reading',          label: 'עמודי קריאה',       niche: 'reading' },
+  { id: 'writing',          label: 'מילים בכתיבה',      niche: 'writing' },
+  { id: 'learning',         label: 'תשובות נכונות',     niche: 'learning' },
+  { id: 'breathing',        label: 'תרגילי מדיטציה',    niche: 'breathing' },
+  { id: 'water',            label: 'כוסות מים',         niche: 'water' },
+  { id: 'steps',            label: 'צעדים מעל הבסיס',   niche: 'steps' },
+  { id: 'sleep',            label: 'שעות מעל היעד',     niche: 'sleep' },
+];
