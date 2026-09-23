@@ -1,0 +1,7 @@
+# הקבצים ב-vendor הם בינאריים. המרת שורות עליהם הורסת אותם, וגיט
+# מזהה את רובם לבד — זו חגורת ביטחון מפורשת.
+*.wasm   binary
+*.task   binary
+*.tflite binary
+*.woff2  binary
+*.epub   binary

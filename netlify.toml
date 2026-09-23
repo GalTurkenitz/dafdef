@@ -28,3 +28,11 @@
   for = "/*.html"
   [headers.values]
     Cache-Control = "no-store, max-age=0"
+
+# הפוך מהכלל למעלה: הקבצים ב-vendor נעולים לגרסה מדויקת ולעולם
+# אינם משתנים במקום — עדכון ספרייה מחליף נתיב. 42MB של MediaPipe
+# ב-no-store היו הורדה מחדש בכל טעינה.
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

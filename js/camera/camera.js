@@ -14,17 +14,19 @@
  * שלא עומד בקצב.
  */
 
-const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1';
-const WASM = `${CDN}/wasm`;
+/* ארוז מקומית (V5, סעיף ג): האפליקציה חייבת לעבוד בלי רשת, וטעינה
+   מ-CDN בכל פתיחה היא מסך המתנה. הנתיבים מוחלטים מהשורש. */
+const VENDOR = '/vendor/mediapipe';
+const WASM = `${VENDOR}/wasm`;
 
 const MODELS = {
   /* ו7: full במקום lite — מדויק בהרבה על הברכיים והירכיים, וזה
      מה שספירת הסקוואטים נשענת עליו. כבד יותר, ולכן הלולאה מדלגת
      פריימים לפי מד ה-FPS. */
-  pose: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
-  face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+  pose: `${VENDOR}/models/pose_landmarker_full.task`,
+  face: `${VENDOR}/models/face_landmarker.task`,
   /* ו6: מזהה אובייקטים אמיתי — בלעדיו "הראה את הכוס" עובר עם יד ריקה */
-  objects: 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite',
+  objects: `${VENDOR}/models/efficientdet_lite0.tflite`,
 };
 
 /** מה נחשב "כוס" לצורך משימת המים (שמות מחלקות של COCO) */
@@ -38,7 +40,7 @@ let visionPromise = null;
 /** טוען את חבילת MediaPipe פעם אחת בלבד */
 async function loadVision() {
   if (!visionPromise) {
-    visionPromise = import(/* @vite-ignore */ `${CDN}/vision_bundle.mjs`)
+    visionPromise = import(/* @vite-ignore */ `${VENDOR}/vision_bundle.mjs`)
       .then(async (m) => ({ m, fileset: await m.FilesetResolver.forVisionTasks(WASM) }));
   }
   return visionPromise;

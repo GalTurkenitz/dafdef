@@ -26,8 +26,8 @@ import { CONTENT_REV } from '../config.js';
  * ------------------------------------------------------------------ */
 
 const DEFAULT_WORK = 'ws-bialik-safiach';
-const EPUB_JS  = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
-const JSZIP_JS = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+const EPUB_JS  = '/vendor/epubjs/epub.min.js';
+const JSZIP_JS = '/vendor/epubjs/jszip.min.js';
 
 const FONT_MIN = 15;
 const FONT_MAX = 26;
