@@ -23,9 +23,10 @@ import * as bank from '../logic/bank.js';
 const $ = (s) => document.querySelector(s);
 
 const els = {
-  streak: $('[data-streak-mount]'),
-  wheel:  $('[data-wheel-mount]'),
-  next:   $('[data-next-task]'),
+  streak:  $('[data-streak-mount]'),
+  soloTop: $('[data-solo-top]'),
+  wheel:   $('[data-wheel-mount]'),
+  next:    $('[data-next-task]'),
 };
 
 let wheel = null;
@@ -34,23 +35,20 @@ let wheel = null;
  * רצף השלמת הסבבים (סעיף א6)
  * ------------------------------------------------------------------ */
 
-/**
- * הלהבה היא אימוג׳י אמיתי, לפי בקשה מפורשת של המשתמש. זה החריג
- * היחיד לכלל "אין אימוג׳י באפליקציה" (סעיף א6); הכלל נשאר בתוקף
- * בכל שאר המסכים, והבדיקה האוטומטית אוכפת אותו מחוץ לצ'יפ הזה.
- */
-const STREAK_EMOJI = '\u{1F525}';
-
 function renderStreak() {
   const { current } = getStreak();
 
-  /* החיווי דולק רק אחרי שהושלמו כל משימות היום. עד אז הוא אפור —
-     הרצף עוד לא נזקף היום, והאפור אומר את זה בלי מילים. */
+  /* החיווי דולק רק אחרי שהושלמו כל משימות היום: עד אז הלהבה
+     אפורה וכבויה, וברגע שהסבב נסגר היא נדלקת בכתום.
+
+     זה אייקון SVG ולא אימוג׳י בדיוק בשביל זה — אימוג׳י נושא צבע
+     משלו ותמיד נראה בוער, ואי אפשר לכבות אותו בלי להפוך אותו
+     לכתם אפור. */
   const lit = roundDoneToday();
 
   els.streak.innerHTML = `
     <div class="streak${lit ? ' is-lit' : ''}">
-      <span class="streak__icon" aria-hidden="true">${STREAK_EMOJI}</span>
+      <span class="streak__icon">${icon('flame', 16)}</span>
       <span class="streak__word">רצף</span>
       <span class="streak__num">${current}</span>
     </div>`;
@@ -60,9 +58,21 @@ function renderStreak() {
  * הגלגל
  * ------------------------------------------------------------------ */
 
+/**
+ * אזור הגלגל.
+ *
+ * עם נישה אחת אין ממה לבנות גלגל — תחנה בודדת על מעגל אינה
+ * מסלול. במקרה הזה המסך מסודר אחרת: עיגול הדקות למעלה, המשימה
+ * הבאה מתחתיו, ותמונת הנישה כריבוע גדול בתחתית.
+ */
 function renderWheel() {
   const niches = roundStatus();
   const minutes = bank.displayMinutes(getBank());
+
+  if (niches.length === 1) { renderSolo(niches[0], minutes); return; }
+
+  els.soloTop.innerHTML = '';
+  els.wheel.classList.remove('home__solo-square');
 
   // הגלגל ממלא את כל השטח שנשאר לו. הלוח אינו ריבועי בכוונה:
   // כך הטבעת נדחפת עד רוחב המסך ומתרחקת ממספר הדקות שבמרכז.
@@ -76,6 +86,46 @@ function renderWheel() {
   } else {
     wheel.update({ niches, minutes });
   }
+}
+
+/** כמה דקות ממלאות טבעת שלמה — מעל זה היא פשוט מלאה */
+const RING_FULL_MINUTES = 240;
+
+/**
+ * פריסת נישה יחידה: עיגול דקות עם טבעת חומה למעלה, ותמונת
+ * הנישה כריבוע גדול למטה. "המשימה הבאה" יושבת ביניהם, כי היא
+ * מחברת בין מה שצברת לבין מה שעושים עכשיו.
+ */
+function renderSolo(niche, minutes) {
+  wheel = null;
+  els.wheel.innerHTML = '';
+  els.wheel.classList.add('home__solo-square');
+
+  const pct = Math.min(1, minutes / RING_FULL_MINUTES);
+  const R = 52;
+  const C = 2 * Math.PI * R;
+
+  els.soloTop.innerHTML = `
+    <div class="solo-ring">
+      <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+        <circle class="solo-ring__track" cx="60" cy="60" r="${R}" fill="none" stroke-width="8"/>
+        <circle class="solo-ring__fill" cx="60" cy="60" r="${R}" fill="none" stroke-width="8"
+                stroke-linecap="round"
+                stroke-dasharray="${C.toFixed(1)}"
+                stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"
+                transform="rotate(-90 60 60)"/>
+      </svg>
+      <span class="solo-ring__center">
+        <b>${Math.floor(minutes)}</b>
+        <small>דקות</small>
+      </span>
+    </div>`;
+
+  els.wheel.innerHTML = `
+    <div class="solo-square solo-square--${niche.id}"
+         style="--photo:url('/content/img/niches/${niche.id}.webp')">
+      <span class="solo-square__name">${niche.name}</span>
+    </div>`;
 }
 
 /** דילוג — דוחה את המשימה לסוף התור (חוקי הרוטציה הקיימים) */

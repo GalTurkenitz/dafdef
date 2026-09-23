@@ -1899,8 +1899,8 @@ p  { margin: 0; }
 
 /* ---------- רצף השלמת סבבים (סעיף א6) ---------- */
 /* חיווי הרצף — אפור כל עוד לא הושלמו משימות היום, וכתום ברגע
-   שהסבב נסגר. הלהבה כאן היא אימוג׳י אמיתי — החריג היחיד לכלל
-   "אין אימוג׳י" (סעיף א6), לפי בקשה מפורשת של המשתמש. */
+   שהסבב נסגר. הלהבה היא אייקון SVG ולא אימוג׳י, כדי שתוכל
+   באמת להיכבות — ובהתאם לכלל "אין אימוג׳י" (סעיף א6). */
 .streak {
   display: inline-flex;
   align-items: center;
@@ -2145,16 +2145,19 @@ p  { margin: 0; }
 .navbar__icon { display: grid; place-items: center; }
 .navbar__label { line-height: 1; }
 
-/* הבית — עיגול מלא בצבע המותג. שונה מהשאר, ובאותו גובה */
-.navbar__item--center .navbar__icon {
+/* העיגול המלא מסמן את **העמוד הנוכחי**, לא את הבית.
+   הבית נשאר במרכז מבחינת מיקום בלבד. */
+.navbar__icon {
   inline-size: 34px;
   block-size: 34px;
   border-radius: var(--r-chip);
+  transition: background-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+.navbar__item[aria-current="page"] .navbar__icon {
   background: var(--primary);
   color: var(--primary-contrast);
-  transition: background-color var(--t-fast) var(--ease);
 }
-.navbar__item--center .navbar__label { color: var(--primary); font-weight: 500; }
 
 .menu__build {
   margin-top: auto;
@@ -2824,3 +2827,77 @@ p  { margin: 0; }
 
 /* החיפוש בדף בחירת הספר יושב מעל התוצאות */
 .bookpick { min-height: 0; overflow: hidden; margin-top: var(--sp-3); }
+
+/* ============================================================
+   פריסת נישה יחידה
+
+   עם נישה אחת אין גלגל — תחנה בודדת על מעגל אינה מסלול. במקומו:
+   עיגול דקות עם טבעת חומה למעלה, המשימה הבאה באמצע, ותמונת
+   הנישה כריבוע גדול בתחתית.
+   ============================================================ */
+
+.solo-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-block: var(--sp-2);
+}
+.solo-ring svg { display: block; }
+.solo-ring__track { stroke: var(--track); }
+.solo-ring__fill  { stroke: var(--primary); transition: stroke-dashoffset var(--t-base) var(--ease); }
+
+.solo-ring__center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.solo-ring__center b {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.solo-ring__center small { margin-top: 2px; font-size: var(--fs-small); color: var(--text-soft); }
+
+/* הריבוע הגדול בתחתית */
+.home__solo-square { display: flex; align-items: flex-end; justify-content: center; width: 100%; }
+
+.solo-square {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  aspect-ratio: 1;
+  width: min(100%, 72vw);
+  max-height: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--r-card);
+  border: 2px solid var(--c, var(--primary));
+  overflow: hidden;
+  background-image: var(--photo);
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+}
+.solo-square::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+              rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, .3) 50%, rgba(0, 0, 0, .1) 100%);
+}
+.solo-square__name {
+  position: relative;
+  z-index: 1;
+  font-size: var(--fs-h2);
+  font-weight: 700;
+}
+
+.solo-square--reading   { --c: var(--niche-reading); }
+.solo-square--fitness   { --c: var(--niche-fitness); }
+.solo-square--learning  { --c: var(--niche-learning); }
+.solo-square--writing   { --c: var(--niche-writing); }
+.solo-square--breathing { --c: var(--niche-breathing); }
+.solo-square--water     { --c: var(--niche-water); }

@@ -12,7 +12,8 @@
 import { icon } from './icons.js';
 
 /**
- * חמישה מקומות בסרגל. הבית במרכז בכוונה — הוא העוגן.
+ * חמישה מקומות בסרגל. הבית במרכז בכוונה — הוא העוגן, אבל זה
+ * מיקום בלבד: הסימון המלא מציין את העמוד הנוכחי, לא את הבית.
  * placeholder: true = מקום שמור, מוצג ריק ולא לחיץ.
  */
 const SLOTS = [
@@ -35,7 +36,7 @@ export function renderNavbar(current) {
     const cls = s.center ? 'navbar__item navbar__item--center' : 'navbar__item';
 
     return `<a class="${cls}" href="${s.href}"${active}>
-      <span class="navbar__icon">${icon(s.icon, s.center ? 24 : 22)}</span>
+      <span class="navbar__icon">${icon(s.icon, 20)}</span>
       <span class="navbar__label">${s.label}</span>
     </a>`;
   }).join('');
