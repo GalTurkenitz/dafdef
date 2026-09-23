@@ -88,32 +88,24 @@ function renderWheel() {
   }
 }
 
-/** כמה דקות ממלאות טבעת שלמה — מעל זה היא פשוט מלאה */
-const RING_FULL_MINUTES = 240;
-
 /**
- * פריסת נישה יחידה: עיגול דקות עם טבעת חומה למעלה, ותמונת
+ * פריסת נישה יחידה: עיגול דקות בתוך טבעת חומה למעלה, ותמונת
  * הנישה כריבוע גדול למטה. "המשימה הבאה" יושבת ביניהם, כי היא
  * מחברת בין מה שצברת לבין מה שעושים עכשיו.
+ *
+ * הטבעת היא מסגרת ולא מד: אין תקרה לדקות, ולכן אין אחוז למלא.
  */
 function renderSolo(niche, minutes) {
   wheel = null;
   els.wheel.innerHTML = '';
   els.wheel.classList.add('home__solo-square');
 
-  const pct = Math.min(1, minutes / RING_FULL_MINUTES);
-  const R = 52;
-  const C = 2 * Math.PI * R;
-
+  /* טבעת שלמה, לא מד התקדמות: אין תקרה לדקות שאפשר לצבור, ולכן
+     אין מה למלא. המספר הוא שעולה. */
   els.soloTop.innerHTML = `
     <div class="solo-ring">
       <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
-        <circle class="solo-ring__track" cx="60" cy="60" r="${R}" fill="none" stroke-width="8"/>
-        <circle class="solo-ring__fill" cx="60" cy="60" r="${R}" fill="none" stroke-width="8"
-                stroke-linecap="round"
-                stroke-dasharray="${C.toFixed(1)}"
-                stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"
-                transform="rotate(-90 60 60)"/>
+        <circle class="solo-ring__line" cx="60" cy="60" r="52" fill="none" stroke-width="8"/>
       </svg>
       <span class="solo-ring__center">
         <b>${Math.floor(minutes)}</b>

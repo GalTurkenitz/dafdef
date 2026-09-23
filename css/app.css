@@ -2843,8 +2843,7 @@ p  { margin: 0; }
   margin-block: var(--sp-2);
 }
 .solo-ring svg { display: block; }
-.solo-ring__track { stroke: var(--track); }
-.solo-ring__fill  { stroke: var(--primary); transition: stroke-dashoffset var(--t-base) var(--ease); }
+.solo-ring__line { stroke: var(--primary); }
 
 .solo-ring__center {
   position: absolute;
