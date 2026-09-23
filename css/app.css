@@ -1893,7 +1893,7 @@ p  { margin: 0; }
   /* קו מפריד בין הרצף לבין המשימה הבאה — אותו קו דק של הסרגל
      התחתון. בלעדיו שני האזורים נשפכים זה לזה.
      הבליטה לצדדים מותחת אותו עד שולי המסך, כמו בסרגל. */
-  padding-bottom: var(--sp-2);
+  padding-bottom: calc(var(--sp-2) - 1px);
   margin-inline: calc(-1 * var(--screen-pad));
   padding-inline: var(--screen-pad);
   border-bottom: 1px solid var(--border);
@@ -1977,7 +1977,7 @@ p  { margin: 0; }
   gap: var(--sp-2);
   /* המרווח העליון מאזן את זה שמתחת לקו המפריד, כך שהקו יושב
      באמצע בין הרצף לבין "המשימה הבאה" ולא נדבק לטקסט. */
-  padding-block: var(--sp-2) var(--sp-2);
+  padding-block: calc(var(--sp-2) + 1px) var(--sp-2);
 }
 
 .wheel { position: relative; display: grid; place-items: center; flex: none; }
