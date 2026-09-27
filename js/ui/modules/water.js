@@ -1,50 +1,39 @@
 /**
- * modules/water.js — רצף שתיית מים (המפרט, סעיף 10.5).
+ * modules/water.js — כוס מים.
  *
- * שלושה שלבים: "הראה את הכוס" ⇐ "שתה" ⇐ "מאושר".
+ * שני שלבים: **צילום חי של הכוס** ⇐ **הצהרה ששתית**.
  * קירור של 30 דקות בין כוסות, והשווי נמוך בכוונה.
  *
- * V3 סעיף ו6 — תיקון באג: קודם "הראה את הכוס" עבר עם יד ריקה,
- * כי הבדיקה הייתה רק "יד מורמת". עכשיו רץ במקביל מזהה אובייקטים
- * אמיתי (EfficientDet-Lite, על המכשיר), ונדרש **זיהוי בפועל** של
- * כוס, כוס יין או בקבוק. גם בשלב השתייה הכוס חייבת להישאר מזוהה
- * לאורך הלגימה — לא רק תנועת יד.
+ * ─────────────────────────────────────────────────────────────────
+ *  למה זה השתנה
  *
- * אם המודל לא נטען מוצגת שגיאה ברורה והמשימה אינה מתקדמת, במקום
- * לעבור בשקט.
+ *  הגרסה הקודמת ניסתה לזהות בווידאו חי מתי הכוס עולה לפה. שני
+ *  דיווחים אמיתיים הפילו אותה: המרחק נמדד מול הפריים ולא מול
+ *  הגוף (ולכן נשבר לפי המרחק מהמצלמה), ומזהה האובייקטים אישר
+ *  **בקבוק בושם** כי COCO מכיר רק "bottle".
+ *
+ *  אין דרך לאמת שתיית מים במצלמה. אז במקום להעמיד פנים:
+ *
+ *    1. **צילום חי** — פריים מהזרם, לא קובץ. אי אפשר לבחור
+ *       תמונה מהגלריה.
+ *    2. **מסווג ImageNet** על התמונה הבודדת. הוא מכיר
+ *       `water bottle` ו-`perfume` בנפרד, וזה מה שפוסל את הבושם.
+ *       הרצה אחת למשימה, ולכן זול — מודל הפוז ירד מכאן לגמרי.
+ *    3. **הצהרה מפורשת** ששתית.
+ *
+ *  הצילום הוא פעולה מכוונת, לא הוכחה. כוס ריקה עוברת. זה מקובל:
+ *  מי שמרמה כאן מרמה רק את עצמו, והמשימה שווה הכי מעט דקות.
+ *
+ *  התמונה נשארת בזיכרון, מסווגת, ונזרקת. לא נשמרת ולא עוזבת
+ *  את המכשיר.
+ * ─────────────────────────────────────────────────────────────────
  */
 
 import { WATER_COOLDOWN_MS } from '../../config.js';
-import { createCamera, POSE, mid, CUP_CLASSES } from '../../camera/camera.js';
+import { createCamera } from '../../camera/camera.js';
 import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
-import { sipState, cupBox, headTilt, bodyScale, mid as mid2 } from '../../logic/sip.js';
-
-/** כמה זמן צריך להחזיק את הכוס ליד הפה כדי שזה ייחשב שתייה */
-const SIP_MS = 2500;
-
-/** כמה זמן הכוס צריכה להיות מזוהה ברצף כדי לעבור את שלב ההצגה */
-const CUP_HOLD_MS = 1200;
-
-/** זיהוי נחשב "כוס" רק מעל הסף הזה */
-const CUP_SCORE = 0.4;
-
-/**
- * מאתר כוס בין הזיהויים של הפריים.
- * @returns {{score:number, box:object}|null}
- */
-function findCup(objects = []) {
-  let best = null;
-  for (const d of objects) {
-    for (const c of d.categories || []) {
-      const name = (c.categoryName || '').toLowerCase();
-      if (!CUP_CLASSES.includes(name)) continue;
-      if (c.score < CUP_SCORE) continue;
-      if (!best || c.score > best.score) best = { score: c.score, box: d.boundingBox };
-    }
-  }
-  return best;
-}
+import { judgeVessel, vesselMessage } from '../../logic/vessel.js';
 
 export async function mount(host, { onComplete } = {}) {
   /* ---------------------------------------------------------------- *
@@ -60,139 +49,84 @@ export async function mount(host, { onComplete } = {}) {
     return;
   }
 
+  /* ---------------------------------------------------------------- *
+   * מצב
+   * ---------------------------------------------------------------- */
+
+  let step = 0;          // 0 צילום · 1 הצהרה · 2 הושלם
+  let judged = null;
+
   host.innerHTML = `
-    <div data-cam></div>
-    <div class="water" data-water></div>`;
+    <div class="water">
+      <div class="water__cam" data-cam></div>
+      <p class="water__hint" data-hint>צלם את הכוס שלך</p>
+      <div class="water__actions" data-actions></div>
+      <p class="t-small water__note">
+        הצילום נשאר על המכשיר, נבדק, ונמחק. שום תמונה לא נשמרת ולא נשלחת.
+      </p>
+    </div>`;
 
-  const panel = host.querySelector('[data-water]');
-
-  const STEPS = [
-    { key: 'show',  label: 'הראה את הכוס', hint: 'החזק כוס, בקבוק או כוס יין מול המצלמה' },
-    { key: 'drink', label: 'שתה',          hint: 'קרב את הכוס לפה והטה' },
-    { key: 'done',  label: 'מאושר',        hint: '' },
-  ];
-
-  let step = 0;
-  let cupSince = 0;
-  let lastCupAt = 0;
-  let tiltRef = null;          // הטיית הראש בתנוחה זקופה, מכוילת בשלב ההצגה
-  const tiltSamples = [];
-  let sipMs = 0;
-  let finished = false;
-  let cupSeen = false;      // האם כוס מזוהה בפריים הנוכחי
+  const hintEl = host.querySelector('[data-hint]');
+  const actionsEl = host.querySelector('[data-actions]');
 
   function render() {
-    panel.innerHTML = `
-      <div class="water__steps">
-        ${STEPS.map((s, i) => `
-          <span class="water__step${i < step ? ' is-done' : ''}${i === step ? ' is-current' : ''}">
-            ${i < step ? icon('check', 16) : i + 1}
-            <small>${s.label}</small>
-          </span>`).join('')}
-      </div>
-      ${step === 1 ? `<div class="progress"><i style="inline-size:${Math.min(100, (sipMs / SIP_MS) * 100)}%"></i></div>` : ''}
-      <p class="t-sub" style="text-align:center;">${STEPS[step].hint}</p>`;
+    if (step === 0) {
+      actionsEl.innerHTML = `
+        <button class="btn btn--primary btn--block" type="button" data-shot>
+          ${icon('search', 18)} צלם את הכוס
+        </button>`;
+      actionsEl.querySelector('[data-shot]').addEventListener('click', shoot);
+      return;
+    }
+
+    if (step === 1) {
+      actionsEl.innerHTML = `
+        <button class="btn btn--primary btn--block" type="button" data-drank>שתיתי</button>
+        <button class="btn btn--ghost btn--block" type="button" data-again>צלם שוב</button>`;
+      actionsEl.querySelector('[data-drank]').addEventListener('click', drank);
+      actionsEl.querySelector('[data-again]').addEventListener('click', () => {
+        step = 0;
+        judged = null;
+        hintEl.className = 'water__hint';
+        hintEl.textContent = 'צלם את הכוס שלך';
+        render();
+      });
+      return;
+    }
+
+    actionsEl.innerHTML = '';
   }
 
-  /* ---------------------------------------------------------------- */
+  function shoot() {
+    const categories = cam.captureStill();
+    judged = judgeVessel(categories);
+
+    hintEl.textContent = judged.ok
+      ? 'נראה טוב. שתית?'
+      : vesselMessage(judged);
+    hintEl.className = 'water__hint' + (judged.ok ? ' is-ok' : ' is-warn');
+
+    if (judged.ok) { step = 1; render(); }
+  }
+
+  function drank() {
+    step = 2;
+    hintEl.className = 'water__hint is-ok';
+    hintEl.textContent = 'מאושר';
+    render();
+    setModuleData('water', { lastDrink: Date.now() });
+    cam.stop();
+    setTimeout(() => onComplete?.(1), 700);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * מצלמה — תצוגה חיה בלבד, בלי מודל נקודות
+   * ---------------------------------------------------------------- */
 
   const cam = createCamera({
     host: host.querySelector('[data-cam]'),
-    model: 'pose',
-    detectObjects: true,
-    onPresence: (s) => {
-      if (!s.present) cam.setGuide('חזור לתוך הפריים', 'warn');
-    },
-    onFrame: (result, ctx) => {
-      const lm = result.landmarks?.[0];
-      if (!lm || finished) return;
-
-      const nose = lm[POSE.NOSE];
-      const wrists = [lm[POSE.LEFT_WRIST], lm[POSE.RIGHT_WRIST]].filter(Boolean);
-      const shoulders = mid(lm[POSE.LEFT_SHOULDER], lm[POSE.RIGHT_SHOULDER]);
-      const mouth = mid2(lm[POSE.MOUTH_LEFT], lm[POSE.MOUTH_RIGHT]);
-      const earMid = mid2(lm[POSE.LEFT_EAR], lm[POSE.RIGHT_EAR]);
-      if (!nose || !wrists.length || !shoulders) return;
-
-      // ו6: הכוס חייבת להיות מזוהה באמת, לא רק יד מורמת
-      const cup = findCup(ctx.objects);
-      cupSeen = Boolean(cup);
-      if (cup) lastCupAt = ctx.now;
-
-      /* כל הגיאומטריה ב-logic/sip.js, כדי שתהיה ניתנת לבדיקה
-         בלי מצלמה (scripts/test-sip.mjs). */
-      const box = cup
-        ? cupBox(cup.box, ctx.video?.videoWidth, ctx.video?.videoHeight)
-        : null;
-
-      const state = sipState({
-        nose, shoulders, mouth, earMid, wrists,
-        cup: box,
-        now: ctx.now,
-        lastCupAt,
-        tiltRef,
-      });
-      const { drinking, cupRecent, bigEnough } = state;
-
-      if (step === 0) {
-        if (!cup) {
-          cupSince = 0;
-          cam.setGuide('החזק כוס או בקבוק מול המצלמה', 'warn');
-          return;
-        }
-
-        /* שער הגודל — בקבוק בושם או עט אינם מיכל שתייה */
-        if (!bigEnough) {
-          cupSince = 0;
-          cam.setGuide('המיכל קטן מדי. קרב כוס או בקבוק למצלמה', 'warn');
-          return;
-        }
-
-        if (!cupSince) cupSince = ctx.now;
-        cam.setGuide(`רואים כוס · ${Math.round(cup.score * 100)}%`);
-
-        /* תנוחת הבסיס של המשתמש, לכיול שער ההטיה. נמדדת כאן כי
-           עכשיו הראש זקוף — הוא רק מציג את הכוס ועוד לא שותה. */
-        const t = headTilt(nose, earMid, bodyScale(nose, shoulders));
-        if (t !== null) tiltSamples.push(t);
-
-        if (ctx.now - cupSince > CUP_HOLD_MS) {
-          if (tiltSamples.length) {
-            tiltSamples.sort((a, b) => a - b);
-            tiltRef = tiltSamples[Math.floor(tiltSamples.length / 2)];
-          }
-          step = 1;
-          cupSince = 0;
-          render();
-        }
-        return;
-      }
-
-      if (step === 1) {
-        if (drinking) {
-          sipMs += 40;
-          cam.setGuide(`ממשיכים… ${Math.min(99, Math.round(sipMs / SIP_MS * 100))}%`);
-        } else {
-          sipMs = Math.max(0, sipMs - 25);
-          cam.setGuide(
-            !cupRecent ? 'החזק כוס או בקבוק מול המצלמה'
-            : state.cupAtMouth ? 'הטה את הראש ושתה'
-            : 'קרב את הכוס לפה',
-            cupRecent ? '' : 'warn');
-        }
-
-        render();
-
-        if (sipMs >= SIP_MS) {
-          finished = true;
-          step = 2;
-          render();
-          cam.setGuide('מאושר');
-          setModuleData('water', { lastDrink: Date.now() });
-          setTimeout(() => { cam.stop(); onComplete?.(1); }, 900);
-        }
-      }
-    },
+    model: 'none',
+    classify: true,
   });
 
   render();
@@ -203,12 +137,12 @@ export async function mount(host, { onComplete } = {}) {
     return;   // createCamera כבר הציג את השגיאה
   }
 
-  /* מודל שלא נטען = שגיאה ברורה, לא מעבר שקט (ו6) */
-  if (!cam.hasDetector) {
+  /* מודל שלא נטען = שגיאה ברורה, לא מעבר שקט */
+  if (!cam.hasClassifier) {
     cam.stop();
     host.innerHTML = `
-      <p class="t-sub empty">לא הצלחנו לטעון את מזהה האובייקטים,
-        ובלעדיו אי אפשר לאמת שיש כוס.<br>נסה שוב עם חיבור אינטרנט יציב.</p>`;
+      <p class="t-sub empty">לא הצלחנו לטעון את מסווג התמונה,
+        ובלעדיו אי אפשר לבדוק שיש כוס.<br>נסה שוב עם חיבור אינטרנט יציב.</p>`;
     return;
   }
 

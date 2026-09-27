@@ -27,6 +27,9 @@ const MODELS = {
   face: `${VENDOR}/models/face_landmarker.task`,
   /* ו6: מזהה אובייקטים אמיתי — בלעדיו "הראה את הכוס" עובר עם יד ריקה */
   objects: `${VENDOR}/models/efficientdet_lite0.tflite`,
+  /* מסווג ImageNet — 1000 מחלקות, ובהן water bottle ו-perfume
+     בנפרד. רץ על תמונה בודדת ולא על וידאו, ולכן זול. */
+  classify: `${VENDOR}/models/efficientnet_lite2.tflite`,
 };
 
 /** מה נחשב "כוס" לצורך משימת המים (שמות מחלקות של COCO) */
@@ -56,10 +59,11 @@ async function loadVision() {
  * @param {(state) => void} [opts.onPresence]   נוכחות/יציאה מהפריים
  */
 export function createCamera({ host, model = 'pose', detectObjects = false,
-                               onFrame, onPresence }) {
+                               classify = false, onFrame, onPresence }) {
   let stream = null;
   let landmarker = null;
   let detector = null;
+  let classifier = null;
   let objects = [];
   let raf = null;
   let running = false;
@@ -175,10 +179,12 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
       lastVideoTime = video.currentTime;
 
       let result = null;
-      try {
-        result = landmarker.detectForVideo(video, now);
-      } catch {
-        // פריים בודד שנכשל אינו סיבה להפיל את הכל
+      if (landmarker) {
+        try {
+          result = landmarker.detectForVideo(video, now);
+        } catch {
+          // פריים בודד שנכשל אינו סיבה להפיל את הכל
+        }
       }
 
       // זיהוי אובייקטים רץ בקצב נמוך יותר — הוא יקר ולא צריך
@@ -219,6 +225,35 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
     get objects() { return objects; },
     /** האם מזהה האובייקטים באמת נטען — משמש לשגיאה ברורה */
     get hasDetector() { return Boolean(detector); },
+    get hasClassifier() { return Boolean(classifier); },
+
+    /**
+     * מצלם פריים בודד מהזרם החי ומסווג אותו.
+     *
+     * הפריים נלקח מהווידאו הרץ ולא מקובץ, ולכן **אי אפשר להעלות
+     * תמונה מהגלריה**. הוא נשאר בזיכרון, מסווג, ונזרק — לא נשמר
+     * לדיסק ולא עוזב את המכשיר.
+     *
+     * @returns {Array<{categoryName:string, score:number}>}
+     */
+    captureStill() {
+      if (!classifier || video.readyState < 2) return [];
+
+      const shot = document.createElement('canvas');
+      shot.width = video.videoWidth || 640;
+      shot.height = video.videoHeight || 480;
+      shot.getContext('2d').drawImage(video, 0, 0, shot.width, shot.height);
+
+      let out = [];
+      try {
+        out = classifier.classify(shot)?.classifications?.[0]?.categories || [];
+      } catch { /* פריים שנכשל — מחזירים ריק */ }
+
+      /* מנקים מיד: אין שמירה, אין העלאה, אין היסטוריה */
+      shot.width = 0;
+      shot.height = 0;
+      return out;
+    },
     setGuide,
     setFlow,
 
@@ -256,11 +291,20 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
           runningMode: 'VIDEO',
           numFaces: 1,
         });
-      } else {
+      } else if (model !== 'none') {
         landmarker = await m.PoseLandmarker.createFromOptions(fileset, {
           baseOptions: { modelAssetPath: MODELS.pose, delegate: 'GPU' },
           runningMode: 'VIDEO',
           numPoses: 1,
+        });
+      }
+
+      if (classify) {
+        setLoading('טוען מסווג תמונה…');
+        classifier = await m.ImageClassifier.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: MODELS.classify, delegate: 'GPU' },
+          runningMode: 'IMAGE',
+          maxResults: 8,
         });
       }
 
@@ -296,6 +340,9 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 
       try { detector?.close(); } catch { /* ignore */ }
       detector = null;
+
+      try { classifier?.close(); } catch { /* ignore */ }
+      classifier = null;
       objects = [];
     },
   };
