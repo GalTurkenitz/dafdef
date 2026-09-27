@@ -15,7 +15,7 @@ import { icon, iconFilled } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
-import { getSettings, getProfile, getBank, getStreak, openDay,
+import { getSettings, getProfile, getBank, getStreak, openDay, clearAll,
          currentTask, skipTask, roundStatus, roundProgress,
          startNewRound, roundDoneToday, getLevelState } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
@@ -307,6 +307,54 @@ function showWeekEnd(res) {
   });
 }
 
+/* ══════════════════════════════════════════════════════════════════ *
+ *  ⚠️  כפתור בדיקה — יורד לפני העלאה לחנות
+ *
+ *  מוחק את כל מצב האפליקציה כדי לבדוק מאפס. הוא מסומן במסגרת
+ *  אדומה מקווקוות בכוונה, כדי שיהיה בלתי אפשרי לשכוח אותו.
+ *
+ *  **להסרה:** DEV_RESET = false, או חיפוש "DEV_RESET" בריפו —
+ *  הוא מופיע כאן וב-.devreset ב-app.css בלבד.
+ *  רשום גם ב-changes-v5.md, סעיף י.
+ * ══════════════════════════════════════════════════════════════════ */
+
+const DEV_RESET = true;
+
+function confirmReset() {
+  const d = document.createElement('div');
+  d.className = 'confirm';
+  d.innerHTML = `
+    <div class="confirm__scrim" data-no></div>
+    <div class="confirm__panel" role="dialog" aria-modal="true"
+         aria-label="מחיקת התקדמות">
+      <p class="confirm__q">למחוק את כל ההתקדמות ולהתחיל מאפס?</p>
+      <button class="btn btn--danger btn--block" type="button" data-yes>
+        כן, מחק הכל</button>
+      <button class="btn btn--ghost btn--block" type="button" data-no>
+        לא, חזור</button>
+    </div>`;
+
+  document.body.appendChild(d);
+  requestAnimationFrame(() => d.classList.add('is-open'));
+
+  const close = () => { d.classList.remove('is-open'); setTimeout(() => d.remove(), 180); };
+  d.querySelectorAll('[data-no]').forEach((b) => b.addEventListener('click', close));
+  d.querySelector('[data-yes]').addEventListener('click', () => {
+    clearAll();
+    location.replace('onboarding.html');
+  });
+}
+
+function mountDevReset() {
+  if (!DEV_RESET) return;
+  const b = document.createElement('button');
+  b.className = 'devreset';
+  b.type = 'button';
+  b.textContent = 'מחק התקדמות';
+  b.addEventListener('click', confirmReset);
+  document.body.appendChild(b);
+}
+
 function init() {
   initTheme();
 
@@ -322,6 +370,8 @@ function init() {
 
   const pending = league.getPendingResult();
   if (pending) showWeekEnd(pending);
+
+  mountDevReset();
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) { openDay(); renderAll(); }
