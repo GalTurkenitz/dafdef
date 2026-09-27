@@ -15,7 +15,7 @@ import { icon, iconFilled } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
-import { getSettings, getProfile, getBank, getStreak, openDay, clearAll,
+import { getSettings, getProfile, getBank, getStreak, openDay, setModuleData,
          currentTask, skipTask, roundStatus, roundProgress,
          startNewRound, roundDoneToday, getLevelState } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
@@ -310,8 +310,11 @@ function showWeekEnd(res) {
 /* ══════════════════════════════════════════════════════════════════ *
  *  ⚠️  כפתור בדיקה — יורד לפני העלאה לחנות
  *
- *  מוחק את כל מצב האפליקציה כדי לבדוק מאפס. הוא מסומן במסגרת
- *  אדומה מקווקוות בכוונה, כדי שיהיה בלתי אפשרי לשכוח אותו.
+ *  מאפס את **הסבב בלבד**, כדי לבדוק משימה שוב בלי לעבור את כל
+ *  הגלגל. לא נוגע בבנק, ברצף, בנקודות, במסלולים ובליגות.
+ *
+ *  מאפס גם את קירור המים — שלושים הדקות בין כוסות הופכות כל
+ *  בדיקה חוזרת של המודול הזה להמתנה.
  *
  *  **להסרה:** DEV_RESET = false, או חיפוש "DEV_RESET" בריפו —
  *  הוא מופיע כאן וב-.devreset ב-app.css בלבד.
@@ -320,38 +323,18 @@ function showWeekEnd(res) {
 
 const DEV_RESET = true;
 
-function confirmReset() {
-  const d = document.createElement('div');
-  d.className = 'confirm';
-  d.innerHTML = `
-    <div class="confirm__scrim" data-no></div>
-    <div class="confirm__panel" role="dialog" aria-modal="true"
-         aria-label="מחיקת התקדמות">
-      <p class="confirm__q">למחוק את כל ההתקדמות ולהתחיל מאפס?</p>
-      <button class="btn btn--danger btn--block" type="button" data-yes>
-        כן, מחק הכל</button>
-      <button class="btn btn--ghost btn--block" type="button" data-no>
-        לא, חזור</button>
-    </div>`;
-
-  document.body.appendChild(d);
-  requestAnimationFrame(() => d.classList.add('is-open'));
-
-  const close = () => { d.classList.remove('is-open'); setTimeout(() => d.remove(), 180); };
-  d.querySelectorAll('[data-no]').forEach((b) => b.addEventListener('click', close));
-  d.querySelector('[data-yes]').addEventListener('click', () => {
-    clearAll();
-    location.replace('onboarding.html');
-  });
-}
-
 function mountDevReset() {
   if (!DEV_RESET) return;
   const b = document.createElement('button');
   b.className = 'devreset';
   b.type = 'button';
-  b.textContent = 'מחק התקדמות';
-  b.addEventListener('click', confirmReset);
+  b.textContent = 'אפס סבב';
+  b.addEventListener('click', () => {
+    startNewRound();
+    setModuleData('water', { lastDrink: 0 });
+    renderAll();
+    toast('הסבב אופס');
+  });
   document.body.appendChild(b);
 }
 
