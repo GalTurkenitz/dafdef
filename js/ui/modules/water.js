@@ -18,8 +18,9 @@ import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera, POSE, mid, CUP_CLASSES } from '../../camera/camera.js';
 import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
+import { sipState, cupCenter } from '../../logic/sip.js';
 
-/** כמה זמן צריך להחזיק את היד ליד הפה כדי שזה ייחשב שתייה */
+/** כמה זמן צריך להחזיק את הכוס ליד הפה כדי שזה ייחשב שתייה */
 const SIP_MS = 2500;
 
 /** כמה זמן הכוס צריכה להיות מזוהה ברצף כדי לעבור את שלב ההצגה */
@@ -73,6 +74,7 @@ export async function mount(host, { onComplete } = {}) {
 
   let step = 0;
   let cupSince = 0;
+  let lastCupAt = 0;
   let sipMs = 0;
   let finished = false;
   let cupSeen = false;      // האם כוס מזוהה בפריים הנוכחי
@@ -108,17 +110,21 @@ export async function mount(host, { onComplete } = {}) {
       const shoulders = mid(lm[POSE.LEFT_SHOULDER], lm[POSE.RIGHT_SHOULDER]);
       if (!nose || !wrists.length || !shoulders) return;
 
-      // היד הקרובה ביותר לפה
-      const near = wrists.reduce((best, w) => {
-        const d = Math.hypot(w.x - nose.x, w.y - nose.y);
-        return !best || d < best.d ? { w, d } : best;
-      }, null);
-
-      const handNearFace = near.d < 0.22;
-
       // ו6: הכוס חייבת להיות מזוהה באמת, לא רק יד מורמת
       const cup = findCup(ctx.objects);
       cupSeen = Boolean(cup);
+      if (cup) lastCupAt = ctx.now;
+
+      /* כל הגיאומטריה ב-logic/sip.js, כדי שתהיה ניתנת לבדיקה
+         בלי מצלמה (scripts/test-sip.mjs). */
+      const { drinking, cupRecent } = sipState({
+        nose,
+        shoulders,
+        wrists,
+        cup: cup ? cupCenter(cup.box, ctx.video?.videoWidth, ctx.video?.videoHeight) : null,
+        now: ctx.now,
+        lastCupAt,
+      });
 
       if (step === 0) {
         if (!cup) {
@@ -135,13 +141,13 @@ export async function mount(host, { onComplete } = {}) {
       }
 
       if (step === 1) {
-        // גם כאן הכוס חייבת להישאר בפריים — לא מספיק להרים יד ריקה
-        if (handNearFace && cupSeen) {
+        if (drinking) {
           sipMs += 40;
-          cam.setGuide('ממשיכים…');
+          cam.setGuide(`ממשיכים… ${Math.min(99, Math.round(sipMs / SIP_MS * 100))}%`);
         } else {
           sipMs = Math.max(0, sipMs - 25);
-          cam.setGuide(cupSeen ? 'קרב את הכוס לפה' : 'הכוס יצאה מהפריים', cupSeen ? '' : 'warn');
+          cam.setGuide(cupRecent ? 'קרב את הכוס לפה' : 'החזק כוס או בקבוק מול המצלמה',
+                       cupRecent ? '' : 'warn');
         }
 
         render();
