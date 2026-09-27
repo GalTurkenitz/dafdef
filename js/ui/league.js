@@ -20,7 +20,7 @@ import { getSettings, openDay } from '../logic/store.js';
 const $ = (s) => document.querySelector(s);
 const els = { title: $('[data-title]'), body: $('[data-body]') };
 
-let view = 'main';     // main | create | join | friends
+let view = 'main';     // main | home | create | join | friends
 let page = 0;
 
 /* ------------------------------------------------------------------ *
@@ -59,27 +59,56 @@ function renderUsername() {
  * הליגה שלי
  * ------------------------------------------------------------------ */
 
-function renderMain() {
+/* דף הליגה הראשוני — המדף שממנו נכנסים פנימה. כל הפעולות שאינן
+   הטבלה עצמה יושבות כאן, כדי שבתוך הליגה יהיה רק מה שרלוונטי לה. */
+function renderHome() {
   const my = league.getMyLeague();
   els.title.textContent = 'ליגה';
 
-  if (!my) {
-    els.body.innerHTML = `
-      <div class="onepage">
-        <div class="onepage__head">
-          <h1>עוד אין לך ליגה</h1>
-          <p class="t-sub">צור ליגה והזמן חברים, או הצטרף עם קוד שקיבלת.</p>
-        </div>
-        <div class="onepage__body">
+  els.body.innerHTML = `
+    <div class="onepage">
+      <div class="onepage__head">
+        <h1>${my ? my.name : 'עוד אין לך ליגה'}</h1>
+        <p class="t-sub">${my
+          ? 'תחרות שבועית מול מי שהזמנת.'
+          : 'צור ליגה והזמן חברים, או הצטרף עם קוד שקיבלת.'}</p>
+      </div>
+      <div class="onepage__body">
+        ${my ? `
+          <button class="btn btn--primary btn--block" data-go="main">הליגה שלי</button>
+          <button class="btn btn--ghost btn--block" data-go="friends">החברים שלי</button>
+          <button class="btn btn--ghost btn--block" data-close-week>סיים שבוע</button>
+          <button class="btn btn--ghost btn--block" data-leave>עזוב ליגה</button>`
+        : `
           <button class="btn btn--primary btn--block" data-go="create">צור ליגה</button>
           <button class="btn btn--secondary btn--block" data-go="join">הצטרף עם קוד</button>
-          <button class="btn btn--ghost btn--block" data-go="friends">החברים שלי</button>
-        </div>
-      </div>`;
-    bindNav();
-    return;
-  }
+          <button class="btn btn--ghost btn--block" data-go="friends">החברים שלי</button>`}
+      </div>
+    </div>`;
 
+  bindNav();
+
+  els.body.querySelector('[data-leave]')?.addEventListener('click', () => {
+    league.leaveLeague();
+    view = 'home';
+    render();
+  });
+
+  els.body.querySelector('[data-close-week]')?.addEventListener('click', () => {
+    const res = league.closeWeek();
+    if (!res.ok) { toast(res.reason); return; }
+    showWeekResult(res);
+  });
+}
+
+function renderMain() {
+  const my = league.getMyLeague();
+  if (!my) { renderHome(); return; }
+
+  els.title.textContent = 'ליגה';
+
+  const me = league.getUsername();
+  const isOwner = my.owner === me;
   const rows = league.getStandings();
   const pages = Math.max(1, Math.ceil(rows.length / LEAGUE_PAGE_SIZE));
   page = Math.min(page, pages - 1);
@@ -101,11 +130,23 @@ function renderMain() {
             <span class="leaguerow__rank">${r.rank}</span>
             <span class="leaguerow__name">${r.username}</span>
             <span class="leaguerow__value">${r.value.toLocaleString('he')}</span>
-            ${my.owner === league.getUsername() && !r.me
+            ${isOwner && !r.me
               ? `<button class="leaguerow__x" data-remove="${r.username}"
                          aria-label="הסרה">${icon('x', 14)}</button>`
               : ''}
           </div>`).join('')}
+
+        ${isOwner && page === pages - 1 ? `
+          <button class="leagueadd" type="button" data-add-open>
+            ${icon('plus', 18)}<span>הוסף חברים</span>
+          </button>
+          <div class="leagueadd__form" hidden data-add-form>
+            <label class="search">
+              <input class="search__input" type="text" data-add-name maxlength="20"
+                     placeholder="שם משתמש" aria-label="הוספת חבר לליגה">
+            </label>
+            <p class="t-small is-warn" data-add-err></p>
+          </div>` : ''}
       </div>
 
       ${pages > 1 ? `
@@ -117,11 +158,7 @@ function renderMain() {
                   aria-label="הבא">${icon('arrow', 20)}</button>
         </div>` : ''}
 
-      <div class="league__actions">
-        <button class="btn btn--ghost" data-go="friends">חברים</button>
-        <button class="btn btn--ghost" data-close-week>סיים שבוע</button>
-        <button class="btn btn--ghost" data-leave>עזוב ליגה</button>
-      </div>
+      <button class="btn btn--ghost btn--block" data-go="home">חזרה</button>
     </div>`;
 
   bindNav();
@@ -144,15 +181,21 @@ function renderMain() {
     });
   });
 
-  els.body.querySelector('[data-leave]')?.addEventListener('click', () => {
-    league.leaveLeague();
-    render();
+  /* צירוף חבר ישירות, בלי שהוא ימלא קוד */
+  const addForm = els.body.querySelector('[data-add-form]');
+  const addInput = els.body.querySelector('[data-add-name]');
+  const addErr = els.body.querySelector('[data-add-err]');
+
+  els.body.querySelector('[data-add-open]')?.addEventListener('click', () => {
+    addForm.hidden = !addForm.hidden;
+    if (!addForm.hidden) addInput.focus();
   });
 
-  els.body.querySelector('[data-close-week]')?.addEventListener('click', () => {
-    const res = league.closeWeek();
-    if (!res.ok) { toast(res.reason); return; }
-    showWeekResult(res);
+  addInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const res = league.addMember(addInput.value);
+    if (!res.ok) { addErr.textContent = res.reason; return; }
+    render();
   });
 }
 
@@ -335,6 +378,7 @@ function render() {
   if (!league.getUsername()) { renderUsername(); return; }
 
   switch (view) {
+    case 'home':    renderHome(); break;
     case 'create':  renderCreate(); break;
     case 'join':    renderJoin(); break;
     case 'friends': renderFriends(); break;

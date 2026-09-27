@@ -128,12 +128,14 @@ export function createLeague(name, metric = 'xp') {
   if (!username) return { ok: false, reason: 'צריך שם משתמש קודם' };
   if (String(name).trim().length < 2) return { ok: false, reason: 'שם הליגה קצר מדי' };
 
+  /* ליגה חדשה נפתחת ריקה. חברים מדומים מראש נתנו תחושה של פעילות
+     שלא קיימת — המשתמש צריך לראות שהוא לבד ולהזמין בעצמו. */
   const league = {
     name: String(name).trim(),
     metric,
     code: makeCode(),
     owner: username,
-    members: [username, ...DEMO_FRIENDS.slice(0, 4).map((f) => f.username)],
+    members: [username],
     createdAt: Date.now(),
   };
 
@@ -170,6 +172,30 @@ export function joinByCode(code) {
 export function leaveLeague() {
   const data = read();
   delete data.league;
+  write(data);
+  return { ok: true };
+}
+
+/**
+ * צירוף חבר ישירות לליגה, בלי שהוא ימלא קוד.
+ * בדמו אפשר לצרף רק שמות מתוך DEMO_FRIENDS, כי אין שרת שיחזיק
+ * משתמשים אמיתיים; בגרסת הרשת זו תהיה חיפוש־והזמנה.
+ */
+export function addMember(username) {
+  const data = read();
+  const me = getUsername();
+  if (!data.league) return { ok: false, reason: 'אין ליגה' };
+  if (data.league.owner !== me) return { ok: false, reason: 'רק יוצר הליגה יכול להוסיף' };
+
+  const v = String(username || '').trim();
+  if (!v) return { ok: false, reason: 'הזן שם משתמש' };
+  if (v === me) return { ok: false, reason: 'זה אתה' };
+  if (data.league.members.includes(v)) return { ok: false, reason: 'כבר בליגה' };
+  if (!DEMO_FRIENDS.some((f) => f.username === v)) {
+    return { ok: false, reason: 'לא נמצא משתמש בשם הזה' };
+  }
+
+  data.league.members = [...data.league.members, v];
   write(data);
   return { ok: true };
 }
