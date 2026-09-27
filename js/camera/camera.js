@@ -35,6 +35,9 @@ const MODELS = {
 /** מה נחשב "כוס" לצורך משימת המים (שמות מחלקות של COCO) */
 export const CUP_CLASSES = ['cup', 'wine glass', 'bottle'];
 
+/** צלע הריבוע שנשלח למסווג */
+const SHOT_SIDE = 320;
+
 /** כמה זמן בלי זיהוי נחשב "יצא מהפריים" */
 export const OUT_OF_FRAME_MS = 1500;
 
@@ -81,7 +84,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
   let lastDetect = 0;
 
   host.innerHTML = `
-    <div class="cam">
+    <div class="cam${facing === 'environment' ? ' cam--rear' : ''}">
       <video class="cam__video" playsinline muted autoplay data-video></video>
       <canvas class="cam__overlay" data-overlay></canvas>
       <div class="cam__flow" data-flow hidden aria-hidden="true"></div>
@@ -242,22 +245,37 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
      * @returns {Array<{categoryName:string, score:number}>}
      */
     captureStill() {
-      if (!classifier || video.readyState < 2) return [];
+      if (!classifier || video.readyState < 2) return { categories: [], image: null };
+
+      const vw = video.videoWidth || 640;
+      const vh = video.videoHeight || 480;
+
+      /* חיתוך לריבוע המרכזי.
+         מסווג תמונה עובד על **כל הפריים**, ולכן כוס שתופסת עשירית
+         ממנו נבלעת ברקע — המודל מדווח על החדר ולא על הכוס. החיתוך
+         מתאים למסגרת שמוצגת למשתמש בתצוגה. */
+      const side = Math.min(vw, vh);
+      const sx = (vw - side) / 2;
+      const sy = (vh - side) / 2;
 
       const shot = document.createElement('canvas');
-      shot.width = video.videoWidth || 640;
-      shot.height = video.videoHeight || 480;
-      shot.getContext('2d').drawImage(video, 0, 0, shot.width, shot.height);
+      shot.width = SHOT_SIDE;
+      shot.height = SHOT_SIDE;
+      shot.getContext('2d').drawImage(video, sx, sy, side, side, 0, 0, SHOT_SIDE, SHOT_SIDE);
 
-      let out = [];
+      let categories = [];
       try {
-        out = classifier.classify(shot)?.classifications?.[0]?.categories || [];
+        categories = classifier.classify(shot)?.classifications?.[0]?.categories || [];
       } catch { /* פריים שנכשל — מחזירים ריק */ }
 
-      /* מנקים מיד: אין שמירה, אין העלאה, אין היסטוריה */
+      /* התמונה מוחזרת כדי להציג למשתמש מה נבדק. היא חיה בזיכרון
+         בלבד — לא נכתבת לדיסק ולא עוזבת את המכשיר. */
+      let image = null;
+      try { image = shot.toDataURL('image/jpeg', 0.8); } catch { /* ignore */ }
+
       shot.width = 0;
       shot.height = 0;
-      return out;
+      return { categories, image };
     },
     setGuide,
     setFlow,

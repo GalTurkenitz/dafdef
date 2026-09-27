@@ -1666,6 +1666,10 @@ p  { margin: 0; }
   transform: scaleX(-1);
 }
 
+/* מצלמה אחורית מצלמת את העולם ולא אותך — מראה הופכת אותה */
+.cam--rear .cam__video,
+.cam--rear .cam__overlay { transform: none; }
+
 .cam__guide {
   position: absolute;
   inset-inline: var(--sp-3);
@@ -3354,8 +3358,40 @@ p  { margin: 0; }
 
 /* המצלמה מתכווצת למה שנשאר. היחס הקבוע 3:4 של .cam דחף את
    כפתור הצילום מתחת לקצה המסך — והמסך הזה אינו נגלל. */
-.water__cam { flex: 1; min-height: 0; }
+.water__stage { position: relative; flex: 1; min-height: 0; }
+.water__cam { position: absolute; inset: 0; }
 .water__cam .cam { aspect-ratio: auto; height: 100%; }
+
+/* מסגרת הריבוע — בדיוק מה שנשלח למסווג */
+.water__cam .cam::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72%, 72vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px dashed rgba(255, 255, 255, .75);
+  border-radius: var(--r-card);
+  pointer-events: none;
+}
+
+/* התמונה שצולמה, מעל התצוגה החיה */
+.water__shot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-card);
+  background: #0B0907;
+  overflow: hidden;
+}
+.water__shot[hidden] { display: none; }
+.water__shot img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
 
 .water__hint,
 .water__actions,
