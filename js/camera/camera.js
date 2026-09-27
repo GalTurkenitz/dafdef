@@ -308,6 +308,8 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 /** אינדקסים של נקודות ציון ב-Pose (BlazePose 33) */
 export const POSE = {
   NOSE: 0,
+  LEFT_EAR: 7,       RIGHT_EAR: 8,
+  MOUTH_LEFT: 9,     MOUTH_RIGHT: 10,
   LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
   LEFT_ELBOW: 13,    RIGHT_ELBOW: 14,
   LEFT_WRIST: 15,    RIGHT_WRIST: 16,

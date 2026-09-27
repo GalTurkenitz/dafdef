@@ -18,7 +18,7 @@ import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera, POSE, mid, CUP_CLASSES } from '../../camera/camera.js';
 import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
-import { sipState, cupCenter } from '../../logic/sip.js';
+import { sipState, cupBox, headTilt, bodyScale, mid as mid2 } from '../../logic/sip.js';
 
 /** כמה זמן צריך להחזיק את הכוס ליד הפה כדי שזה ייחשב שתייה */
 const SIP_MS = 2500;
@@ -75,6 +75,8 @@ export async function mount(host, { onComplete } = {}) {
   let step = 0;
   let cupSince = 0;
   let lastCupAt = 0;
+  let tiltRef = null;          // הטיית הראש בתנוחה זקופה, מכוילת בשלב ההצגה
+  const tiltSamples = [];
   let sipMs = 0;
   let finished = false;
   let cupSeen = false;      // האם כוס מזוהה בפריים הנוכחי
@@ -108,6 +110,8 @@ export async function mount(host, { onComplete } = {}) {
       const nose = lm[POSE.NOSE];
       const wrists = [lm[POSE.LEFT_WRIST], lm[POSE.RIGHT_WRIST]].filter(Boolean);
       const shoulders = mid(lm[POSE.LEFT_SHOULDER], lm[POSE.RIGHT_SHOULDER]);
+      const mouth = mid2(lm[POSE.MOUTH_LEFT], lm[POSE.MOUTH_RIGHT]);
+      const earMid = mid2(lm[POSE.LEFT_EAR], lm[POSE.RIGHT_EAR]);
       if (!nose || !wrists.length || !shoulders) return;
 
       // ו6: הכוס חייבת להיות מזוהה באמת, לא רק יד מורמת
@@ -117,14 +121,18 @@ export async function mount(host, { onComplete } = {}) {
 
       /* כל הגיאומטריה ב-logic/sip.js, כדי שתהיה ניתנת לבדיקה
          בלי מצלמה (scripts/test-sip.mjs). */
-      const { drinking, cupRecent } = sipState({
-        nose,
-        shoulders,
-        wrists,
-        cup: cup ? cupCenter(cup.box, ctx.video?.videoWidth, ctx.video?.videoHeight) : null,
+      const box = cup
+        ? cupBox(cup.box, ctx.video?.videoWidth, ctx.video?.videoHeight)
+        : null;
+
+      const state = sipState({
+        nose, shoulders, mouth, earMid, wrists,
+        cup: box,
         now: ctx.now,
         lastCupAt,
+        tiltRef,
       });
+      const { drinking, cupRecent, bigEnough } = state;
 
       if (step === 0) {
         if (!cup) {
@@ -133,10 +141,30 @@ export async function mount(host, { onComplete } = {}) {
           return;
         }
 
+        /* שער הגודל — בקבוק בושם או עט אינם מיכל שתייה */
+        if (!bigEnough) {
+          cupSince = 0;
+          cam.setGuide('המיכל קטן מדי. קרב כוס או בקבוק למצלמה', 'warn');
+          return;
+        }
+
         if (!cupSince) cupSince = ctx.now;
         cam.setGuide(`רואים כוס · ${Math.round(cup.score * 100)}%`);
 
-        if (ctx.now - cupSince > CUP_HOLD_MS) { step = 1; cupSince = 0; render(); }
+        /* תנוחת הבסיס של המשתמש, לכיול שער ההטיה. נמדדת כאן כי
+           עכשיו הראש זקוף — הוא רק מציג את הכוס ועוד לא שותה. */
+        const t = headTilt(nose, earMid, bodyScale(nose, shoulders));
+        if (t !== null) tiltSamples.push(t);
+
+        if (ctx.now - cupSince > CUP_HOLD_MS) {
+          if (tiltSamples.length) {
+            tiltSamples.sort((a, b) => a - b);
+            tiltRef = tiltSamples[Math.floor(tiltSamples.length / 2)];
+          }
+          step = 1;
+          cupSince = 0;
+          render();
+        }
         return;
       }
 
@@ -146,8 +174,11 @@ export async function mount(host, { onComplete } = {}) {
           cam.setGuide(`ממשיכים… ${Math.min(99, Math.round(sipMs / SIP_MS * 100))}%`);
         } else {
           sipMs = Math.max(0, sipMs - 25);
-          cam.setGuide(cupRecent ? 'קרב את הכוס לפה' : 'החזק כוס או בקבוק מול המצלמה',
-                       cupRecent ? '' : 'warn');
+          cam.setGuide(
+            !cupRecent ? 'החזק כוס או בקבוק מול המצלמה'
+            : state.cupAtMouth ? 'הטה את הראש ושתה'
+            : 'קרב את הכוס לפה',
+            cupRecent ? '' : 'warn');
         }
 
         render();
