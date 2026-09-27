@@ -32,7 +32,7 @@
 import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera } from '../../camera/camera.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
-import { judgeVessel, vesselMessage } from '../../logic/vessel.js';
+import { judgeVessel, vesselMessage, topLabels } from '../../logic/vessel.js';
 
 export async function mount(host, { onComplete } = {}) {
   /* ---------------------------------------------------------------- *
@@ -107,7 +107,7 @@ export async function mount(host, { onComplete } = {}) {
         ${judged?.ok
           ? '<button class="btn btn--primary btn--block" type="button" data-drank>שתיתי</button>'
           : ''}
-        <button class="btn btn--ghost btn--block" type="button" data-again>תמונה חדשה</button>`;
+        <button class="btn btn--secondary btn--block" type="button" data-again>תמונה חדשה</button>`;
       actionsEl.querySelector('[data-drank]')?.addEventListener('click', drank);
       actionsEl.querySelector('[data-again]').addEventListener('click', retake);
       return;
@@ -131,8 +131,9 @@ export async function mount(host, { onComplete } = {}) {
       hintEl.className = 'water__hint is-ok';
     } else {
       /* מה המודל כן ראה — גם הסבר למשתמש וגם מידע לכיול */
-      const seen = judged.match ? ` (זיהיתי: ${judged.match})` : '';
-      hintEl.textContent = vesselMessage(judged) + seen;
+      const seen = topLabels(categories);
+      hintEl.innerHTML = vesselMessage(judged)
+        + (seen.length ? `<br><i class="t-small">זיהיתי: ${seen.join(' · ')}</i>` : '');
       hintEl.className = 'water__hint is-warn';
     }
 

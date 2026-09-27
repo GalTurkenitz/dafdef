@@ -11,7 +11,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { judgeVessel, vesselMessage, MIN_SCORE,
+import { judgeVessel, vesselMessage, topLabels, MIN_SCORE,
          VESSEL, NOT_VESSEL } from '../js/logic/vessel.js';
 
 let fail = 0;
@@ -166,6 +166,43 @@ console.log('— מול אוצר המילים של המודל —');
     is(`כוס שזוהתה כ-${glass} עוברת`,
        judgeVessel([{ categoryName: glass, score: 0.3 }]).ok, true);
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * החלטה לפי דירוג ולא לפי סף
+ *
+ * מודל int8 שמתפלג על 1000 מחלקות נותן לעיתים ציון נמוך למחלקה
+ * הנכונה. סף קבוע פסל כוסות אמיתיות — מה שקובע הוא מי מדורג
+ * גבוה יותר.
+ * ------------------------------------------------------------------ */
+
+console.log('');
+console.log('— דירוג ולא סף —');
+{
+  const r = judgeVessel(cats(['desk', 0.21], ['beaker', 0.08], ['lamp', 0.05]));
+  is('כוס בציון נמוך אך ללא מתחרה', r.ok, true);
+  is('  ומה זוהה', r.match, 'beaker');
+}
+{
+  const r = judgeVessel(cats(['perfume', 0.19], ['beaker', 0.08]));
+  is('בושם מדורג מעל כוס — נפסל', r.ok, false);
+}
+{
+  const r = judgeVessel(cats(['beaker', 0.19], ['perfume', 0.08]));
+  is('כוס מדורגת מעל בושם — עוברת', r.ok, true);
+}
+{
+  const r = judgeVessel(cats(['cup', 0.015]));
+  is('מתחת לרצפת הרעש — לא נספר', r.ok, false);
+}
+
+console.log('');
+console.log('— תוויות לתצוגה —');
+{
+  const t = topLabels(cats(['Coffee Mug', 0.42], ['desk', 0.11], ['cup', 0.07], ['x', 0.01]));
+  is('שלוש הראשונות', t.length, 3);
+  is('  מנורמלות ובאחוזים', t[0], 'coffee mug 42%');
+  is('בלי קלט — ריק', topLabels(null).length, 0);
 }
 
 console.log(fail ? `\n${fail} בדיקות נכשלו` : '\nכל הבדיקות עברו');

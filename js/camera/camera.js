@@ -38,6 +38,15 @@ export const CUP_CLASSES = ['cup', 'wine glass', 'bottle'];
 /** צלע הריבוע שנשלח למסווג */
 const SHOT_SIDE = 320;
 
+/**
+ * כמה מהצלע הקצרה של הפריים נחתך.
+ *
+ * התצוגה משתמשת ב-object-fit: cover, ולכן מה שהמשתמש רואה הוא
+ * חיתוך צר של הפריים הגולמי. חיתוך של הריבוע המרכזי המלא לקח
+ * שטח רחב בהרבה ממה שנראה במסגרת — והכוס יצאה קטנה בתוכו.
+ */
+const CROP = 0.62;
+
 /** כמה זמן בלי זיהוי נחשב "יצא מהפריים" */
 export const OUT_OF_FRAME_MS = 1500;
 
@@ -254,7 +263,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
          מסווג תמונה עובד על **כל הפריים**, ולכן כוס שתופסת עשירית
          ממנו נבלעת ברקע — המודל מדווח על החדר ולא על הכוס. החיתוך
          מתאים למסגרת שמוצגת למשתמש בתצוגה. */
-      const side = Math.min(vw, vh);
+      const side = Math.min(vw, vh) * CROP;
       const sx = (vw - side) / 2;
       const sy = (vh - side) / 2;
 
@@ -327,7 +336,9 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
         classifier = await m.ImageClassifier.createFromOptions(fileset, {
           baseOptions: { modelAssetPath: MODELS.classify, delegate: 'GPU' },
           runningMode: 'IMAGE',
-          maxResults: 8,
+          /* 1000 מחלקות — רשימה קצרה מדי מפספסת מחלקת כוס
+             שדורגה נמוך */
+          maxResults: 20,
         });
       }
 
