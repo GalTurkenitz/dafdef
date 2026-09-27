@@ -10,6 +10,7 @@
  * נבדקת כאן בלי מצלמה.
  */
 
+import { readFileSync } from 'node:fs';
 import { judgeVessel, vesselMessage, MIN_SCORE,
          VESSEL, NOT_VESSEL } from '../js/logic/vessel.js';
 
@@ -81,7 +82,9 @@ console.log('\n— בקבוק בושם —');
 is('בקבוק תרופות נפסל', judgeVessel(cats(['pill bottle', 0.66])).ok, false);
 is('ספריי נפסל', judgeVessel(cats(['hair spray', 0.58])).ok, false);
 is('טלפון נפסל', judgeVessel(cats(['cellular telephone', 0.80])).ok, false);
-is('אגרטל נפסל', judgeVessel(cats(['vase', 0.52])).ok, false);
+/* vase עבר בכוונה לרשימת כלי השתייה: כוס זכוכית רגילה נוחתת
+   עליו, ואגרטל שיעבור הוא מחיר סביר מול כוס שנדחית. */
+is('אגרטל עובר — במכוון', judgeVessel(cats(['vase', 0.52])).ok, true);
 
 /* ------------------------------------------------------------------ *
  * לא ברור
@@ -128,6 +131,41 @@ console.log('\n— הרשימות —');
      [...VESSEL, ...NOT_VESSEL].every((v) => v === v.toLowerCase()), true);
   is('perfume ברשימת הפסילה', NOT_VESSEL.includes('perfume'), true);
   is('water bottle ברשימת הקבלה', VESSEL.includes('water bottle'), true);
+}
+
+/* ------------------------------------------------------------------ *
+ * הרשימות מול אוצר המילים של המודל
+ *
+ * זו הבדיקה שהייתה חסרה. שם שלא קיים במודל לא יחזור לעולם,
+ * ולכן הוא שורה מתה שנראית כמו כיסוי. כך נפסלו כוסות אמיתיות:
+ * ImageNet לא מכיר "כוס שתייה", וכוס זכוכית נוחתת על beaker,
+ * goblet או vase — שניים מהם חסרו, והשלישי ישב ברשימת הפסילה.
+ * ------------------------------------------------------------------ */
+
+console.log('');
+console.log('— מול אוצר המילים של המודל —');
+{
+  const bin = readFileSync(new URL(
+    '../vendor/mediapipe/models/efficientnet_lite2.tflite', import.meta.url));
+  const RE = new RegExp("[a-zA-Z][a-zA-Z_ '-]{2,40}", 'g');
+  const labels = new Set((bin.toString('latin1').match(RE) || [])
+    .map((x) => x.toLowerCase()));
+
+  is('אוצר המילים נקרא מהמודל', labels.size > 900, true);
+  console.log('     (' + labels.size + ' מחרוזות במודל)');
+
+  const missingV = VESSEL.filter((v) => !labels.has(v));
+  const missingN = NOT_VESSEL.filter((v) => !labels.has(v));
+  is('כל כלי השתייה קיימים במודל', missingV.length, 0);
+  if (missingV.length) console.log('     חסרים:', missingV.join(', '));
+  is('כל הפסילות קיימות במודל', missingN.length, 0);
+  if (missingN.length) console.log('     חסרים:', missingN.join(', '));
+
+  /* המחלקות שכוס זכוכית רגילה נוחתת עליהן — חייבות לעבור */
+  for (const glass of ['beaker', 'goblet', 'vase', 'cup']) {
+    is(`כוס שזוהתה כ-${glass} עוברת`,
+       judgeVessel([{ categoryName: glass, score: 0.3 }]).ok, true);
+  }
 }
 
 console.log(fail ? `\n${fail} בדיקות נכשלו` : '\nכל הבדיקות עברו');

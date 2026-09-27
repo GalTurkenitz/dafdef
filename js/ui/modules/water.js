@@ -31,7 +31,6 @@
 
 import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera } from '../../camera/camera.js';
-import { icon } from '../icons.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
 import { judgeVessel, vesselMessage } from '../../logic/vessel.js';
 

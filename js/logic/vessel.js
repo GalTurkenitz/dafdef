@@ -23,16 +23,30 @@
  *  אחריו באה הצהרה מפורשת, והמשימה שווה הכי מעט דקות.
  */
 
-/** ציון מינימלי כדי להתייחס לזיהוי ברצינות */
-export const MIN_SCORE = 0.12;
+/**
+ * ציון מינימלי כדי להתייחס לזיהוי ברצינות.
+ * נמוך בכוונה: המודל int8, התמונה חתוכה לריבוע, והוא מתפלג על
+ * 1000 מחלקות — ציון 0.06 לכוס הוא כבר אות חזק.
+ */
+export const MIN_SCORE = 0.06;
 
-/** כלי שתייה — ImageNet */
+/**
+ * כלי שתייה, מתוך אוצר המילים האמיתי של המודל.
+ *
+ * **אין ב-ImageNet מחלקה "כוס שתייה" או "tumbler".** כוס זכוכית
+ * רגילה נוחתת כמעט תמיד על `beaker`, `goblet` או `vase` — וזו
+ * הייתה הסיבה שכוסות אמיתיות נפסלו. `vase` מופיע כאן ולא
+ * ברשימת הפסילה בכוונה: אגרטל שיעבור הוא מחיר סביר מול כוס
+ * אמיתית שנדחית.
+ *
+ * כל שם כאן קיים במודל — scripts/test-vessel.mjs מוודא את זה.
+ */
 export const VESSEL = [
-  'cup', 'coffee mug', 'beer glass', 'goblet', 'water bottle',
-  'pop bottle', 'soda bottle', 'beer bottle', 'wine bottle',
-  'water jug', 'pitcher', 'ewer', 'measuring cup', 'cocktail shaker',
-  'teapot', 'coffeepot', 'espresso', 'espresso maker', 'red wine',
-  'eggnog', 'cup of coffee', 'mug',
+  'cup', 'coffee mug', 'beer glass', 'goblet', 'beaker', 'vase',
+  'water bottle', 'pop bottle', 'beer bottle', 'wine bottle',
+  'water jug', 'whiskey jug', 'milk can', 'pitcher', 'measuring cup',
+  'cocktail shaker', 'teapot', 'coffeepot', 'pot',
+  'espresso', 'espresso maker', 'red wine', 'eggnog',
 ];
 
 /**
@@ -41,9 +55,8 @@ export const VESSEL = [
  */
 export const NOT_VESSEL = [
   'perfume', 'pill bottle', 'lotion', 'sunscreen', 'hair spray',
-  'soap dispenser', 'spray can', 'lighter', 'syringe', 'candle',
-  'cellular telephone', 'remote control', 'flashlight', 'saltshaker',
-  'vase', 'pot', 'oil filter', 'lipstick', 'nail polish',
+  'soap dispenser', 'lighter', 'syringe', 'candle', 'saltshaker',
+  'cellular telephone', 'remote control', 'oil filter', 'lipstick',
 ];
 
 /** ImageNet מפריד מחלקות בפסיקים, ולפעמים בקו תחתון */
