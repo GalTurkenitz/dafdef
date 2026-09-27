@@ -127,6 +127,8 @@ export async function mount(host, { onComplete } = {}) {
     host: host.querySelector('[data-cam]'),
     model: 'none',
     classify: true,
+    /* אתה מצלם כוס, לא את עצמך */
+    facing: 'environment',
   });
 
   render();

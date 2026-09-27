@@ -58,8 +58,13 @@ async function loadVision() {
  * @param {(result, ctx) => void} opts.onFrame  נקרא על כל פריים מנותח
  * @param {(state) => void} [opts.onPresence]   נוכחות/יציאה מהפריים
  */
+/**
+ * facing: 'user' לסלפי (כושר, נשימה — אתה בפריים),
+ *         'environment' למצלמה האחורית (מים — אתה מצלם חפץ).
+ */
 export function createCamera({ host, model = 'pose', detectObjects = false,
-                               classify = false, onFrame, onPresence }) {
+                               classify = false, facing = 'user',
+                               onFrame, onPresence }) {
   let stream = null;
   let landmarker = null;
   let detector = null;
@@ -265,7 +270,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false,
         });
       } catch (err) {

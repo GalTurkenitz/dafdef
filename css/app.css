@@ -3351,7 +3351,15 @@ p  { margin: 0; }
 /* ---------- משימת המים: צילום והצהרה ---------- */
 
 .water { display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; }
+
+/* המצלמה מתכווצת למה שנשאר. היחס הקבוע 3:4 של .cam דחף את
+   כפתור הצילום מתחת לקצה המסך — והמסך הזה אינו נגלל. */
 .water__cam { flex: 1; min-height: 0; }
+.water__cam .cam { aspect-ratio: auto; height: 100%; }
+
+.water__hint,
+.water__actions,
+.water__note { flex: none; }
 
 .water__hint {
   margin: 0;
