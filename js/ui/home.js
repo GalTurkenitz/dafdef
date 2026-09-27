@@ -19,6 +19,7 @@ import { getSettings, getProfile, getBank, getStreak, openDay,
          currentTask, skipTask, roundStatus, roundProgress,
          startNewRound, roundDoneToday, getLevelState } from '../logic/store.js';
 import * as bank from '../logic/bank.js';
+import * as league from '../logic/league.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -247,15 +248,73 @@ function renderAll() {
   safely('גלגל', renderWheel);
 }
 
+/* ------------------------------------------------------------------ *
+ * סיכום השבוע בליגה
+ *
+ * השבוע נסגר אוטומטית. בפתיחה הראשונה אחרי שהוא נגמר מוצג המסך
+ * הזה לפני הבית, פעם אחת, ואז הוא נמחק.
+ * ------------------------------------------------------------------ */
+
+function showWeekEnd(res) {
+  const place = res.myRank;
+  const top = place === 1;
+  const podium = place <= 3;
+
+  const el = document.createElement('div');
+  el.className = 'weekend';
+  el.innerHTML = `
+    <div class="weekend__card">
+      <span class="weekend__badge${top ? ' is-win' : ''}">
+        ${podium ? icon('trophy', 34) : icon('flag', 34)}
+      </span>
+
+      <p class="weekend__eyebrow">השבוע נגמר · ${res.league}</p>
+      <p class="weekend__place">${place}</p>
+      <h1 class="weekend__title">
+        ${top ? 'מקום ראשון' : `מקום ${place} מתוך ${res.total}`}
+      </h1>
+      <p class="weekend__sub">
+        ${res.iWon ? `ניצחת את השבוע — ${res.prize} נקודות לרמה שלך`
+                   : 'שבוע חדש התחיל. הטבלה התאפסה.'}
+      </p>
+
+      <div class="weekend__rows">
+        ${res.standings.slice(0, 5).map((r) => `
+          <div class="weekend__row${r.me ? ' is-me' : ''}">
+            <span class="weekend__rank">${r.rank}</span>
+            <span class="weekend__name">${r.username}</span>
+            <b>${r.value.toLocaleString('he')}</b>
+          </div>`).join('')}
+      </div>
+
+      <button class="btn btn--primary btn--block" type="button" data-go>המשך</button>
+    </div>`;
+
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-open'));
+
+  el.querySelector('[data-go]').addEventListener('click', () => {
+    league.clearPendingResult();
+    el.classList.remove('is-open');
+    setTimeout(() => el.remove(), 220);
+  });
+}
+
 function init() {
   initTheme();
 
   if (!getSettings().onboardingDone) { location.replace('onboarding.html'); return; }
 
+  /* לפני openDay: הרשומה השבועית עדיין מחזיקה את השבוע שנגמר */
+  league.settleWeek();
+
   openDay();
   renderNavbar('home');
   mountMenu();
   renderAll();
+
+  const pending = league.getPendingResult();
+  if (pending) showWeekEnd(pending);
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) { openDay(); renderAll(); }
