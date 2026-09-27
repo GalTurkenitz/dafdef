@@ -11,7 +11,7 @@
 import { initTheme } from './theme.js';
 import { renderNavbar, mountMenu } from './nav.js';
 import { createWheel } from './wheel.js';
-import { icon } from './icons.js';
+import { icon, iconFilled } from './icons.js';
 import { toast } from './toast.js';
 import { NICHES } from '../config.js';
 import { taskValue, roundMinutes } from '../logic/formula.js';
@@ -52,14 +52,13 @@ function renderStreak() {
   const lv = getLevelState();
 
   els.streak.innerHTML = `
-    <div class="streak${lit ? ' is-lit' : ''}">
+    <div class="streak${lit ? ' is-lit' : ''}" aria-label="רצף ${current}">
       <span class="streak__icon">${icon('flame', 16)}</span>
-      <span class="streak__word">רצף</span>
       <span class="streak__num">${current}</span>
     </div>
     <button class="streak streak--level" type="button" data-level-chip
             aria-label="רמה ${lv.level}">
-      <span class="streak__word">רמה</span>
+      <span class="streak__icon">${iconFilled('badge', 16)}</span>
       <span class="streak__num">${lv.level}</span>
     </button>`;
 
@@ -256,35 +255,43 @@ function renderAll() {
  * ------------------------------------------------------------------ */
 
 function showWeekEnd(res) {
-  const place = res.myRank;
-  const top = place === 1;
-  const podium = place <= 3;
+  const best = res.leagues.reduce(
+    (a, l) => (a && a.myRank <= l.myRank ? a : l), res.leagues[0]);
+  const many = res.leagues.length > 1;
 
   const el = document.createElement('div');
   el.className = 'weekend';
   el.innerHTML = `
     <div class="weekend__card">
-      <span class="weekend__badge${top ? ' is-win' : ''}">
-        ${podium ? icon('trophy', 34) : icon('flag', 34)}
+      <span class="weekend__badge${res.wins ? ' is-win' : ''}">
+        ${best.myRank <= 3 ? icon('trophy', 34) : icon('flag', 34)}
       </span>
 
-      <p class="weekend__eyebrow">השבוע נגמר · ${res.league}</p>
-      <p class="weekend__place">${place}</p>
+      <p class="weekend__eyebrow">השבוע נגמר</p>
+      <p class="weekend__place">${best.myRank}</p>
       <h1 class="weekend__title">
-        ${top ? 'מקום ראשון' : `מקום ${place} מתוך ${res.total}`}
+        ${best.myRank === 1 ? 'מקום ראשון' : `מקום ${best.myRank} מתוך ${best.total}`}
       </h1>
       <p class="weekend__sub">
-        ${res.iWon ? `ניצחת את השבוע — ${res.prize} נקודות לרמה שלך`
-                   : 'שבוע חדש התחיל. הטבלה התאפסה.'}
+        ${res.wins
+          ? `ניצחת ${res.wins === 1 ? 'ליגה' : `${res.wins} ליגות`} — ${res.prize} נקודות לרמה שלך`
+          : 'שבוע חדש התחיל. הטבלאות התאפסו.'}
       </p>
 
       <div class="weekend__rows">
-        ${res.standings.slice(0, 5).map((r) => `
-          <div class="weekend__row${r.me ? ' is-me' : ''}">
-            <span class="weekend__rank">${r.rank}</span>
-            <span class="weekend__name">${r.username}</span>
-            <b>${r.value.toLocaleString('he')}</b>
-          </div>`).join('')}
+        ${many
+          ? res.leagues.map((l) => `
+            <div class="weekend__row${l.iWon ? ' is-me' : ''}">
+              <span class="weekend__rank">${l.myRank}</span>
+              <span class="weekend__name">${l.name}</span>
+              <b>מתוך ${l.total}</b>
+            </div>`).join('')
+          : best.standings.slice(0, 5).map((r) => `
+            <div class="weekend__row${r.me ? ' is-me' : ''}">
+              <span class="weekend__rank">${r.rank}</span>
+              <span class="weekend__name">${r.username}</span>
+              <b>${r.value.toLocaleString('he')}</b>
+            </div>`).join('')}
       </div>
 
       <button class="btn btn--primary btn--block" type="button" data-go>המשך</button>

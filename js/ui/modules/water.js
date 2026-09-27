@@ -123,7 +123,7 @@ export async function mount(host, { onComplete } = {}) {
       if (step === 0) {
         if (!cup) {
           cupSince = 0;
-          cam.setGuide('לא רואים כוס. החזק כוס או בקבוק מול המצלמה', 'warn');
+          cam.setGuide('החזק כוס או בקבוק מול המצלמה', 'warn');
           return;
         }
 

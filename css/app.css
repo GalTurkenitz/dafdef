@@ -1680,7 +1680,9 @@ p  { margin: 0; }
   transition: opacity var(--t-fast) var(--ease);
 }
 .cam__guide:empty { opacity: 0; }
-.cam__guide.is-warn { background: rgba(179, 64, 58, .8); }
+/* color מפורש: הכלל הגנרי .is-warn (בהמשך הקובץ) צובע טקסט
+   באדום באותה ספציפיות, ובלי זה ההנחיה יוצאת אדום על אדום. */
+.cam__guide.is-warn { background: rgba(179, 64, 58, .8); color: #FFFFFF; }
 
 .cam__badge {
   position: absolute;
@@ -3012,13 +3014,16 @@ p  { margin: 0; }
 
 .topbar > [data-streak-mount] { gap: var(--sp-2); }
 
+/* הרמה בכחול ולא בחום: היא מסמנת התקדמות לאורך כל הדרך, והרצף
+   מסמן את היום — שני חיוויים סמוכים שצריכים להיקרא כשני דברים. */
 .streak--level {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary);
+  border-color: var(--level);
+  background: var(--level-soft);
+  color: var(--level);
   cursor: pointer;
 }
-.streak--level .streak__num { color: var(--primary); }
+.streak--level .streak__num,
+.streak--level .streak__icon { color: var(--level); }
 
 .levelbar {
   inline-size: 100%;
@@ -3112,6 +3117,165 @@ p  { margin: 0; }
 
 .leagueadd__form { display: flex; flex-direction: column; gap: var(--sp-1); }
 .leagueadd__form[hidden] { display: none; }
+
+/* ---------- פתיח: שני כפתורים גדולים ---------- */
+
+.bigbtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.bigbtn:hover { border-color: var(--primary); }
+
+.bigbtn__icon {
+  display: grid; place-items: center;
+  inline-size: 48px; block-size: 48px;
+  flex: none;
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.bigbtn__text { display: flex; flex-direction: column; font-size: var(--fs-h2); }
+.bigbtn__text i { font-style: normal; color: var(--text-soft); }
+
+/* עיגול עדכון — בקשות חברות שממתינות */
+.badge {
+  display: grid; place-items: center;
+  min-inline-size: 22px; block-size: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--badge);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bigbtn .badge { position: absolute; inset-inline-end: var(--sp-4); }
+.reqbtn { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.reqbtn .badge { min-inline-size: 18px; block-size: 18px; font-size: 11px; }
+
+/* ---------- כותרת רשימה עם פעולות לידה ---------- */
+
+.listhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex: none;
+}
+.listhead__title { margin: 0; font-size: var(--fs-h2); }
+.listhead__actions { display: flex; gap: var(--sp-2); }
+
+/* ---------- רשימה נגללת ---------- */
+
+.leaguelist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-block: var(--sp-1);
+}
+
+.leaguecard {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.leaguecard:hover { border-color: var(--primary); }
+
+.leaguecard__img {
+  display: grid; place-items: center;
+  inline-size: 40px; block-size: 40px;
+  flex: none;
+  border-radius: var(--r-chip);
+  background: var(--primary-soft);
+  color: var(--primary);
+  overflow: hidden;
+}
+.leaguecard__img img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+.leaguecard__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.leaguecard__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leaguecard__body i { font-style: normal; color: var(--text-soft); }
+
+.leaguecard__rank {
+  flex: none;
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 22px; font-weight: 700; line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.leaguecard__rank i { font-style: normal; font-size: 11px; font-weight: 400; color: var(--text-soft); }
+
+/* ---------- בקשת חברות ---------- */
+
+.reqrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-btn);
+  background: var(--primary-softer);
+}
+.reqrow__name { flex: 1; cursor: pointer; }
+
+.btn--ok { color: #2E7D52; border-color: #2E7D52; background: transparent; }
+
+/* ---------- שעון הספירה לאחור ---------- */
+
+.clock {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  flex: none;
+  padding: var(--sp-2) 0;
+  color: var(--text);
+}
+.clock__unit { display: flex; flex-direction: column; align-items: center; min-inline-size: 34px; }
+.clock__unit b {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  /* רוחב ספרה קבוע — אחרת השניות מקפיצות את כל השורה */
+  font-feature-settings: 'tnum' 1;
+}
+.clock__unit i { font-style: normal; font-size: 10px; color: var(--text-soft); margin-top: 2px; }
+.clock__sep { font-size: 20px; line-height: 1.1; color: var(--text-soft); }
+
+/* ---------- פרופיל: חיוויים וכרטיסים ---------- */
+
+.profilechips { display: flex; justify-content: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+
+.statgrid--profile {
+  flex: none;
+  max-block-size: 46vh;
+  overflow-y: auto;
+  grid-auto-rows: auto;
+  margin-bottom: var(--sp-2);
+}
 
 /* ---------- זהות הליגה: תמונה, שם, וטיימר ---------- */
 
