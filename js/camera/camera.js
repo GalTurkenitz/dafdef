@@ -112,7 +112,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
         <p data-loading-text>מפעילים מצלמה…</p>
         <p class="cam__loading-note" data-loading-note></p>
       </div>
-      <p class="cam__privacy">הכל רץ על המכשיר שלך. שום וידאו לא נשמר ולא נשלח.</p>
+      <p class="cam__privacy">שום וידאו לא נשמר ולא נשלח.</p>
     </div>`;
 
   const video = host.querySelector('[data-video]');

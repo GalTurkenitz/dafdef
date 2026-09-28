@@ -64,11 +64,8 @@ export async function mount(host, { onComplete } = {}) {
           <img alt="התמונה שצולמה" data-shot-img>
         </div>
       </div>
-      <p class="water__hint" data-hint>מקם את הכוס בתוך המסגרת</p>
+      <p class="water__hint" data-hint></p>
       <div class="water__actions" data-actions></div>
-      <p class="t-small water__note">
-        הצילום נשאר על המכשיר, נבדק, ונמחק. שום תמונה לא נשמרת ולא נשלחת.
-      </p>
     </div>`;
 
   const hintEl = host.querySelector('[data-hint]');
@@ -76,18 +73,23 @@ export async function mount(host, { onComplete } = {}) {
   const shotView = host.querySelector('[data-shot-view]');
   const shotImg = host.querySelector('[data-shot-img]');
 
+  /* ההנחיה יושבת על המצלמה עצמה. התוצאה יושבת מתחת, כי אחרי
+     הצילום התמונה מכסה את התצוגה והכיתוב שעליה לא נראה. */
+  const FRAME_HINT = 'מקם את הכוס בתוך המסגרת';
+
   function showLive() {
     shotView.hidden = true;
     shotImg.removeAttribute('src');
     shot = null;
+    cam?.setGuide(FRAME_HINT);
   }
 
   function retake() {
     step = 0;
     judged = null;
-    showLive();
     hintEl.className = 'water__hint';
-    hintEl.textContent = 'מקם את הכוס בתוך המסגרת';
+    hintEl.textContent = '';
+    showLive();
     render();
   }
 
@@ -173,6 +175,8 @@ export async function mount(host, { onComplete } = {}) {
   } catch {
     return;   // createCamera כבר הציג את השגיאה
   }
+
+  cam.setGuide(FRAME_HINT);
 
   /* מודל שלא נטען = שגיאה ברורה, לא מעבר שקט */
   if (!cam.hasClassifier) {

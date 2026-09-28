@@ -3371,8 +3371,9 @@ p  { margin: 0; }
   width: min(72%, 72vw);
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
-  border: 2px dashed rgba(255, 255, 255, .75);
+  border: 2px dashed rgba(255, 255, 255, .55);
   border-radius: var(--r-card);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .22);
   pointer-events: none;
 }
 
@@ -3394,19 +3395,23 @@ p  { margin: 0; }
 }
 
 .water__hint,
-.water__actions,
-.water__note { flex: none; }
+.water__actions { flex: none; }
+
+/* גובה קבוע: ההנחיה מתחלפת בין שורה לשתיים, ובלי זה כל צילום
+   מזיז את הכפתורים. */
+.water__hint { min-block-size: 3.2em; display: grid; align-content: center; }
 
 .water__hint {
   margin: 0;
   text-align: center;
   font-size: var(--fs-sub);
+  line-height: 1.35;
 }
+.water__hint i { color: var(--text-soft); }
 .water__hint.is-ok { color: var(--primary); font-weight: 600; }
 .water__hint.is-warn { color: var(--danger); }
 
 .water__actions { display: flex; flex-direction: column; gap: var(--sp-2); }
-.water__note { margin: 0; text-align: center; color: var(--text-soft); }
 
 /* ══════════════════════════════════════════════════════════════
    ⚠️  כפתור בדיקה — יורד לפני העלאה לחנות (חפש DEV_RESET)
