@@ -22,6 +22,7 @@
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,9 +34,15 @@ const CREDITS = join(ROOT, 'content', 'authors', 'credits.json');
 const UA = { 'User-Agent': 'dafdef/1.0 (https://dafdef-demo.netlify.app)' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** שם קובץ בטוח מתוך שם עברי */
+/**
+ * שם קובץ ASCII דטרמיניסטי.
+ *
+ * שמות עבריים עובדים באינטרנט אחרי קידוד, אבל האפליקציה נארזת
+ * ל-APK והם הופכים לשמות נכסים באנדרואיד. ASCII מוציא מהמשוואה
+ * מחלקה שלמה של תקלות, והמיפוי לשם האמיתי נשמר ב-credits.json.
+ */
 function slug(name) {
-  return name.replace(/[^֐-׿a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  return 'a' + createHash('sha1').update(name).digest('hex').slice(0, 10);
 }
 
 /** הדיוקן והרישיון שלו מוויקיפדיה */
