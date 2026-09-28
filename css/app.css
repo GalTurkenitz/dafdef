@@ -3380,6 +3380,17 @@ p  { margin: 0; }
 .tonechip--medium { --chip-bg: var(--len-medium-bg); --chip-ink: var(--len-medium-ink); }
 .tonechip--long   { --chip-bg: var(--len-long-bg);   --chip-ink: var(--len-long-ink); }
 
+/* שכבת־על של הקורא — בורר ספרים, בחירת מקור, ומסך שגיאה.
+   היא מכסה את הבמה במקום להחליף את תוכנה, כי [data-content]
+   חייב לשרוד: הקורא מרנדר לתוכו. */
+.readerover {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
 /* בורר הספרים בכניסה לקריאה */
 .pickbooks { padding: var(--sp-4) var(--screen-pad); }
 .pickbooks__lead { margin: 0 0 var(--sp-4); text-align: center; }

@@ -427,6 +427,7 @@ async function waitForReadingFont() {
 }
 
 async function openText(data) {
+  hideOverlay();
   mode = 'text';
   work = data;
 
@@ -563,6 +564,7 @@ async function epubWordsOnPage(loc) {
 }
 
 async function openEpub(file) {
+  hideOverlay();
   await loadScript(JSZIP_JS);
   await loadScript(EPUB_JS);
 
@@ -636,22 +638,44 @@ function showLoading(on) {
  * כל כרטיס מוביל ל-reader.html?work=<id>, והקורא משחזר משם את
  * המיקום השמור — כלומר חוזרים בדיוק למקום שבו עצרת.
  */
-function showBookPicker(started) {
+/**
+ * שכבת־על מעל הבמה.
+ *
+ * **לא** els.stage.innerHTML: זה מוחק את [data-content], והקורא
+ * מרנדר לתוכו. ייבוא EPUB מהבורר נרשם אז אבל לא הופיע על המסך.
+ */
+function overlay(html) {
   picking = true;
-  els.title.textContent = 'הספרים שלי';
-  els.stage.innerHTML = `
+  hideOverlay();
+  const el = document.createElement('div');
+  el.className = 'readerover';
+  el.dataset.overlay = '1';
+  el.innerHTML = html;
+  els.stage.appendChild(el);
+  return el;
+}
+
+function hideOverlay() {
+  els.stage.querySelector('[data-overlay]')?.remove();
+  picking = false;
+}
+
+function showBookPicker(started) {
+  const host = overlay(`
     <div class="pickbooks">
       <p class="t-sub pickbooks__lead">באיזה ספר להמשיך?</p>
       <div class="bookgrid">
         ${started.map((b) => bookCard(b, { percent: b.percent ?? null })).join('')}
         ${newBookCard()}
       </div>
-    </div>`;
+    </div>`);
+
+  els.title.textContent = 'הספרים שלי';
 
   /* הכרטיס הוא <a> לספרייה — מיירטים אותו כדי להציג קודם את
      שתי הדרכים להוסיף ספר. */
-  const fresh = els.stage.querySelector('.bookcard--new');
-  fresh?.addEventListener('click', (e) => { e.preventDefault(); showNewBookChoice(); });
+  host.querySelector('.bookcard--new')
+    ?.addEventListener('click', (e) => { e.preventDefault(); showNewBookChoice(); });
 }
 
 /**
@@ -659,9 +683,7 @@ function showBookPicker(started) {
  * לספרייה, כי ייבוא EPUB הוא אפשרות שקולה ולא פינה נסתרת.
  */
 function showNewBookChoice() {
-  picking = true;
-  els.title.textContent = 'ספר חדש';
-  els.stage.innerHTML = `
+  const host = overlay(`
     <div class="pickbooks">
       <p class="t-sub pickbooks__lead">מאיפה להוסיף ספר?</p>
       <div class="pickbooks__ways">
@@ -676,21 +698,22 @@ function showNewBookChoice() {
             <i class="t-small">קובץ EPUB מהמכשיר</i></span>
         </button>
       </div>
-    </div>`;
+    </div>`);
 
-  els.stage.querySelector('[data-way="library"]')
+  els.title.textContent = 'ספר חדש';
+
+  host.querySelector('[data-way="library"]')
     .addEventListener('click', () => { location.href = 'library.html?pick=1'; });
-  els.stage.querySelector('[data-way="import"]')
+  host.querySelector('[data-way="import"]')
     .addEventListener('click', () => els.file.click());
 }
 
 function showEmpty(message) {
-  picking = true;
-  els.stage.innerHTML = `
+  overlay(`
     <div class="reader__empty">
       <p class="t-sub">${message}</p>
       <a class="btn btn--secondary" href="library.html">לספרייה</a>
-    </div>`;
+    </div>`);
 }
 
 /* ------------------------------------------------------------------ *
