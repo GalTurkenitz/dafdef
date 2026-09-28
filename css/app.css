@@ -1145,6 +1145,18 @@ p  { margin: 0; }
 }
 .bookcard:active { transform: scale(.97); }
 
+/* דיוקן המחבר כרקע. הוא מעומעם ומכוסה במדרג של צבע האורך, כדי
+   שהשם והמחבר יישארו קריאים על כל תמונה. */
+.bookcard__photo {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+  opacity: .55;
+}
+
 .bookcard__face {
   position: absolute;
   inset: 0;
@@ -1153,6 +1165,15 @@ p  { margin: 0; }
   gap: var(--sp-1);
   padding: var(--sp-3);
 }
+
+.bookcard.has-face .bookcard__face {
+  justify-content: flex-end;
+  background: linear-gradient(to top,
+    var(--card-veil) 0%, var(--card-veil) 38%, transparent 78%);
+}
+.bookcard--short.has-face  { --card-veil: color-mix(in srgb, var(--len-short-bg) 92%, transparent); }
+.bookcard--medium.has-face { --card-veil: color-mix(in srgb, var(--len-medium-bg) 92%, transparent); }
+.bookcard--long.has-face   { --card-veil: color-mix(in srgb, var(--len-long-bg) 92%, transparent); }
 
 .bookcard__title {
   font-family: var(--font-read);
@@ -2813,8 +2834,9 @@ p  { margin: 0; }
 }
 .pager__pos { font-size: var(--fs-small); color: var(--text-soft); font-variant-numeric: tabular-nums; }
 
-/* רשת הספרים לא גולשת — הדפדוף הוא שמחליף עמוד */
-.screen--fixed [data-library-list] { flex: 1; min-height: 0; overflow: hidden; }
+/* הכלל על [data-library-list] ירד יחד עם הדפדוף. הוא היה בדיוק
+   באותה ספציפיות ככלל הגלילה של הספרייה אבל מאוחר יותר בקובץ,
+   ולכן החזיר את overflow:hidden והספרייה לא נגללה. */
 .screen--fixed [data-settings-list] { flex: 1; min-height: 0; overflow: hidden; }
 
 /* ---------- מסך המשימה לא גולל (סעיף ב5) ---------- */

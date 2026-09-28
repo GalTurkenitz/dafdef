@@ -1,9 +1,12 @@
 /**
  * bookcard.js — כרטיס ספר, משותף לספרייה ול"הספרים שלי" במסך הבית.
  *
- * אין עטיפות בשלב הזה: כל ספר מקבל רקע צבעוני פשוט עם שם היצירה
- * והמחבר. הצבע נקבע לפי אורך הקריאה המשוער — ירוק קצר, צהוב בינוני,
- * אדום ארוך. הספים ב-config.js.
+ * הרקע הוא דיוקן המחבר כשיש כזה (86% מהקטלוג), ומעליו שכבת
+ * הצבע של אורך הקריאה — ירוק קצר, צהוב בינוני, אדום ארוך. ספר
+ * בלי דיוקן מקבל את הצבע בלבד, וזה מצב תקין ולא חור.
+ *
+ * הדיוקנאות מוויקיפדיה, כי ל-API של בן-יהודה אין תמונות בכלל.
+ * הרישיונות ב-content/authors/credits.json.
  */
 
 import { BOOK_LENGTH } from '../config.js';
@@ -38,8 +41,12 @@ export function bookCard(book, { percent = null } = {}) {
   const tone = lengthClass(book.estMinutes);
   const pct = percent == null ? null : Math.round(percent * 100);
 
-  return `<a class="bookcard bookcard--${tone}" href="reader.html?work=${encodeURIComponent(book.id)}"
+  return `<a class="bookcard bookcard--${tone}${book.authorImage ? ' has-face' : ''}"
+             href="reader.html?work=${encodeURIComponent(book.id)}"
              data-book="${esc(book.id)}">
+    ${book.authorImage
+      ? `<img class="bookcard__photo" src="${esc(book.authorImage)}" alt="" loading="lazy">`
+      : ''}
     <span class="bookcard__face">
       <span class="bookcard__title">${esc(book.title)}</span>
       <span class="bookcard__author">${esc(book.author)}</span>
