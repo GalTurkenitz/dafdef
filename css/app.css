@@ -1957,7 +1957,9 @@ p  { margin: 0; }
   padding: 4px var(--sp-3);
   border-radius: var(--r-chip);
   background: var(--surface);
-  border: 1px solid var(--border);
+  /* המסגרת כתומה תמיד — היא מסמנת "כאן יושב הרצף". הלהבה
+     והמספר נצבעים רק כשהסבב הושלם היום. */
+  border: 1px solid var(--accent);
   color: var(--text-soft);
   transition: background-color var(--t-base) var(--ease),
               border-color var(--t-base) var(--ease),
@@ -1986,9 +1988,10 @@ p  { margin: 0; }
 
 .streak.is-lit {
   background: var(--accent-soft);
-  border-color: var(--accent);
   color: var(--accent);
 }
+.streak.is-lit .streak__icon,
+.streak.is-lit .streak__num { color: var(--accent); }
 
 /* ============================================================
    גלגל הסבב (סעיף א4)

@@ -24,7 +24,7 @@
  * השלב הנוכחי; גלילה מטה חושפת שלבים שהושלמו, מעלה — הבאים.
  */
 
-import { initTheme, applyTheme, getTheme } from './theme.js';
+import { initTheme, applyTheme } from './theme.js';
 import { renderNavbar, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { NICHES } from '../config.js';
@@ -79,8 +79,9 @@ function renderGrid() {
   els.screen.classList.remove('screen--scroll');
   els.screen.classList.remove('screen--dark');
 
-  // יוצאים מהמסלול — חוזרים למצב התצוגה שהמשתמש בחר
-  applyTheme(getTheme());
+  /* יוצאים מהמסלול — חוזרים לכהה. מצב התצוגה הוא הגדרה של
+     הקריאה בלבד וחל רק בתוך ספר פתוח. */
+  applyTheme('dark');
 
   const selected = new Set(getSelectedNiches());
   const states = allProgress();

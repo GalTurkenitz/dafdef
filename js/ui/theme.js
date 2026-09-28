@@ -52,13 +52,15 @@ export function setTheme(theme) {
   return t;
 }
 
-/** מפעיל את המצב השמור בטעינת עמוד ומאזין לשינוי בהעדפת המערכת */
-export function initTheme() {
-  applyTheme(getTheme());
-
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    let saved;
-    try { saved = JSON.parse(localStorage.getItem(KEY) || '{}').theme; } catch { /* ignore */ }
-    if (!THEMES.includes(saved)) applyTheme(systemTheme()); // רק כשאין בחירה מפורשת
-  });
+/**
+ * מפעיל את המצב בטעינת עמוד.
+ *
+ * **האפליקציה כהה בכל מקום.** מצב התצוגה הוא הגדרה של הקריאה
+ * ולא של האפליקציה, ולכן הוא חל רק כשספר פתוח — שם הוא באמת
+ * משנה משהו. כל מסך אחר כהה, וזה גם מונע הבהוב בין מסכים.
+ *
+ * @param {boolean} [readerTheme] true רק בקורא, כשספר פתוח
+ */
+export function initTheme(readerTheme = false) {
+  applyTheme(readerTheme ? getTheme() : 'dark');
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" class="theme-light">
+<html lang="he" dir="rtl" class="theme-dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,14 +14,9 @@
 <link rel="stylesheet" href="css/app.css">
 
 <script>
-(function () {
-  var t;
-  try { t = JSON.parse(localStorage.getItem('dafdef:settings') || '{}').theme; } catch (e) {}
-  if (['light', 'dark'].indexOf(t) === -1) {
-    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  document.documentElement.className = 'theme-' + t;
-})();
+/* האפליקציה כהה בכל מקום. מצב התצוגה ניתן לשינוי רק בתוך ספר
+   פתוח, ולכן רק reader.html קורא את ההעדפה השמורה. */
+document.documentElement.className = 'theme-dark';
 </script>
 
 <!-- סגנונות של עמוד הפיתוח בלבד. לא חלק מהאפליקציה. -->

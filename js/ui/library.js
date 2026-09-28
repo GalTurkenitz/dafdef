@@ -140,7 +140,10 @@ function renderSearch() {
 
 async function init() {
   initTheme();
-  renderNavbar('library');
+  /* מסכים שנכנסים אליהם מהבית ולא מהסרגל התחתון — הבית נשאר
+     מסומן. אחרת הסימון החום נעלם באמצע משימה, ונראה כאילו יצאת
+     מהאפליקציה. */
+  renderNavbar('home');
   mountBack('index.html');
   mountMenu();
 

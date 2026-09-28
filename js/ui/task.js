@@ -153,7 +153,10 @@ function init() {
   openDay();
   mountBack('index.html');
   mountMenu();
-  mountNavbar('task');
+  /* מסכים שנכנסים אליהם מהבית ולא מהסרגל התחתון — הבית נשאר
+     מסומן. אחרת הסימון החום נעלם באמצע משימה, ונראה כאילו יצאת
+     מהאפליקציה. */
+  mountNavbar('home');
 
   if (!getSettings().onboardingDone) { location.replace('onboarding.html'); return; }
 

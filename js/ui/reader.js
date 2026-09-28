@@ -12,13 +12,14 @@
 
 import { createPaginator } from './paginator.js';
 import { bookCard, newBookCard } from './bookcard.js';
+import { saveEpub, loadEpub, removeEpub, isImported } from '../logic/epubstore.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
          getCachedWork, cacheWork, earnUnits, openDay,
          touchBook, getBook, getActiveBookId, setActiveBookId,
          getStartedBooks, removeBook } from '../logic/store.js';
 import { mountNavbar } from './nav.js';
-import { initTheme, setTheme, getTheme } from './theme.js';
+import { initTheme, setTheme, getTheme, applyTheme } from './theme.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
 import { CONTENT_REV } from '../config.js';
@@ -465,6 +466,7 @@ async function waitForReadingFont() {
 
 async function openText(data) {
   hideOverlay();
+  applyTheme(getTheme());   // מצב התצוגה חל רק בתוך ספר
   mode = 'text';
   work = data;
 
@@ -627,6 +629,7 @@ async function epubWordsOnPage(loc) {
 
 async function openEpub(file) {
   hideOverlay();
+  applyTheme(getTheme());   // מצב התצוגה חל רק בתוך ספר
 
   /* הכותרת והטעינה נקבעות **לפני** הפענוח. קובץ של עשרות
      מגה-בייט לוקח שניות ארוכות, ועד עכשיו כל הזמן הזה נראה כמו
@@ -655,6 +658,10 @@ async function openEpub(file) {
   });
 
   work = { id: 'epub:' + file.name, title: file.name.replace(/\.epub$/i, ''), author: '' };
+
+  /* שומרים את הקובץ עצמו — בלי זה הספר מופיע ב"הספרים שלי"
+     ולא נפתח אחרי רענון. */
+  saveEpub(work.id, file);
   const saved = getBook(work.id) || {};
   await rendition.display(saved.location || undefined);
   showLoading(false);
@@ -727,6 +734,7 @@ function overlay(html) {
   hideOverlay();
   picking = true;
   document.body.classList.add('is-picking');
+  applyTheme('dark');   // מחוץ לספר האפליקציה כהה
 
   const el = document.createElement('div');
   el.className = 'readerover';
@@ -795,6 +803,7 @@ function confirmRemoveBook(book) {
 
   d.querySelector('[data-yes]').addEventListener('click', () => {
     removeBook(book.id);
+    if (isImported(book.id)) removeEpub(book.id);
     d.remove();
     const left = getStartedBooks().filter((x) => !x.finished);
     if (left.length) showBookPicker(left);
@@ -847,9 +856,9 @@ function showEmpty(message) {
 
 function bindChrome() {
   /* שלושת הכפתורים הקודמים (בית · החלף ספר · הגדרות) הוחלפו
-     בשניים: הגדרות בימין עם שלושת הקווים, וחזרה בשמאל. מונה
+     בשניים: חזרה והגדרות בימין, ומונה העמודים בשמאל. 
      העמודים באמצע. */
-  els.settingsBtn.innerHTML = icon('menu', 20);
+  els.settingsBtn.innerHTML = icon('settings', 20);
   els.importBtn.innerHTML = icon('book', 22);
   els.back.innerHTML = icon('arrow', 20);
 
@@ -903,7 +912,10 @@ function bindChrome() {
 
 async function init() {
   initTheme();
-  mountNavbar('reader');
+  /* מסכים שנכנסים אליהם מהבית ולא מהסרגל התחתון — הבית נשאר
+     מסומן. אחרת הסימון החום נעלם באמצע משימה, ונראה כאילו יצאת
+     מהאפליקציה. */
+  mountNavbar('home');
   openDay();
   markThemeButtons();
   bindChrome();
@@ -929,6 +941,18 @@ async function init() {
   const wanted = asked
     || getActiveBookId()
     || (reading.lastWorkId && !reading.lastWorkId.startsWith('epub:') ? reading.lastWorkId : null);
+
+  /* ספר מיובא — הקובץ נשמר ב-IndexedDB בייבוא */
+  if (asked && isImported(asked)) {
+    const blob = await loadEpub(asked);
+    if (blob) {
+      const name = asked.slice('epub:'.length);
+      await openEpub(new File([blob], name, { type: 'application/epub+zip' }));
+      return;
+    }
+    showEmpty('הקובץ הזה כבר לא שמור על המכשיר. אפשר לייבא אותו שוב.');
+    return;
+  }
 
   /* בלי ספר מבוקש בכתובת — המשתמש בוחר בעצמו מתוך מה שהוא קורא */
   if (!asked) {
