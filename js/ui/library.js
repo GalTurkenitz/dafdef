@@ -145,14 +145,6 @@ async function init() {
   mountBack('index.html');
   mountMenu();
 
-  /* הגיעו לכאן מהקורא כי אין ספר פעיל — מסבירים למה, במקום
-     להשאיר את המשתמש עם מסך שהוא לא ביקש. */
-  if (new URLSearchParams(location.search).get('pick')) {
-    const note = document.createElement('p');
-    note.className = 't-sub library__pick';
-    note.textContent = 'בחר ספר כדי להתחיל לקרוא.';
-    els.search?.before(note);
-  }
 
   try {
     const res = await fetch('content/catalog.json');

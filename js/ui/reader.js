@@ -481,10 +481,35 @@ function applyEpubStyles() {
   const css = getComputedStyle(document.documentElement);
   const val = (name) => css.getPropertyValue(name).trim();
 
-  rendition.themes.override('color', val('--text'), true);
-  rendition.themes.override('background', val('--bg'), true);
-  rendition.themes.override('font-family', val('--font-read'), true);
-  rendition.themes.override('line-height', String(val('--lh-read')), true);
+  const text = val('--text');
+  const bg = val('--bg');
+
+  /* override חל על ה-body בלבד, ולכן קישורים בתוך הספר נשארו
+     בכחול של ברירת המחדל ותמונות גלשו מהעמוד. themes.default
+     מזריק CSS מלא לתוך המסמך. */
+  rendition.themes.default({
+    'body': {
+      'color': text,
+      'background': bg,
+      'font-family': val('--font-read'),
+      'line-height': String(val('--lh-read')),
+    },
+    'p, div, span, li, td, th, h1, h2, h3, h4, h5, h6, blockquote': {
+      'color': text + ' !important',
+    },
+    'a, a:link, a:visited, a:hover': {
+      'color': val('--primary') + ' !important',
+      'text-decoration': 'none',
+    },
+    'img, svg, figure': {
+      'max-width': '100% !important',
+      'height': 'auto !important',
+    },
+    'hr': { 'border-color': val('--border') },
+  });
+
+  rendition.themes.override('color', text, true);
+  rendition.themes.override('background', bg, true);
   rendition.themes.fontSize(settings.fontSize + 'px');
 }
 
@@ -565,8 +590,21 @@ async function epubWordsOnPage(loc) {
 
 async function openEpub(file) {
   hideOverlay();
-  await loadScript(JSZIP_JS);
-  await loadScript(EPUB_JS);
+
+  /* הכותרת והטעינה נקבעות **לפני** הפענוח. קובץ של עשרות
+     מגה-בייט לוקח שניות ארוכות, ועד עכשיו כל הזמן הזה נראה כמו
+     מסך "ספר חדש" שנתקע. */
+  els.title.textContent = file.name.replace(/\.epub$/i, '');
+  showLoading(true);
+
+  try {
+    await loadScript(JSZIP_JS);
+    await loadScript(EPUB_JS);
+  } catch {
+    showLoading(false);
+    showEmpty('לא הצלחנו לטעון את מנוע ה-EPUB.');
+    return;
+  }
 
   mode = 'epub';
   stopTicker();
@@ -582,6 +620,7 @@ async function openEpub(file) {
   work = { id: 'epub:' + file.name, title: file.name.replace(/\.epub$/i, ''), author: '' };
   const saved = getBook(work.id) || {};
   await rendition.display(saved.location || undefined);
+  showLoading(false);
 
   els.title.textContent = work.title;
   document.title = `${work.title} · דפדף`;

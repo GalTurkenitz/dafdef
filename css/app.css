@@ -3356,13 +3356,14 @@ p  { margin: 0; }
    אותם צבעים בדיוק של כרטיסי הספרים, כדי שהשבב והכרטיס ייקראו
    כאותה שפה. שבב לא נבחר הוא בגוון חיוור של אותו צבע. */
 
-.tonefilter { display: flex; gap: var(--sp-2); }
+.tonefilter { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 
+/* שבבים קומפקטיים כמו שאר הקטגוריות באפליקציה — לא כפתורים
+   מתוחים לרוחב. הצבע הוא של אורך הספר, זהה לכרטיסים. */
 .tonechip {
-  flex: 1;
-  min-height: var(--tap-min);
+  padding: 6px var(--sp-4);
   border: 1.5px solid transparent;
-  border-radius: var(--r-btn);
+  border-radius: var(--r-chip);
   background: color-mix(in srgb, var(--chip-bg) 45%, var(--surface));
   color: var(--chip-ink);
   font: inherit;
@@ -3395,15 +3396,6 @@ p  { margin: 0; }
 .pickbooks { padding: var(--sp-4) var(--screen-pad); }
 .pickbooks__lead { margin: 0 0 var(--sp-4); text-align: center; }
 .pickbooks__ways { display: flex; flex-direction: column; gap: var(--sp-3); }
-
-.library__pick {
-  margin: 0;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-btn);
-  background: var(--primary-soft);
-  color: var(--primary);
-  text-align: center;
-}
 
 /* ---------- משימת המים: צילום והצהרה ---------- */
 
