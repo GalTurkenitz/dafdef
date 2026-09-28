@@ -394,20 +394,57 @@ function confetti(host) {
  * מסלול טקסט
  * ------------------------------------------------------------------ */
 
+let catalogCache = null;
+
+async function catalogEntry(id) {
+  if (!catalogCache) {
+    try {
+      const res = await fetch('content/catalog.json');
+      catalogCache = res.ok ? await res.json() : [];
+    } catch { catalogCache = []; }
+  }
+  return catalogCache.find((b) => b.id === id) || null;
+}
+
+/**
+ * טוען ספר: מטמון ⇐ קובץ ארוז ⇐ משיכה לפי דרישה.
+ *
+ * ספר ממוצע שוקל ~700KB, ומאות ספרים לא נכנסים לאפליקציה. לכן
+ * הקטלוג מחזיק מטא-דאטה בלבד, והטקסט נמשך בפתיחה ראשונה ונשמר
+ * במטמון המקומי — מאותו רגע הספר זמין גם בלי רשת.
+ *
+ * המשיכה עוברת דרך /by/ ולא ישירות: benyehuda.org אינו מחזיר
+ * CORS, ודפדפן שמנסה למשוך ממנו מקבל "Failed to fetch".
+ */
 async function loadWork(id) {
   const cached = getCachedWork(id);
   if (cached && cached._rev === CONTENT_REV) return cached;
 
-  const res = await fetch(`content/works/${id}.json`);
-  if (!res.ok) {
-    if (cached) return cached;
-    throw new Error('הספר לא נמצא');
+  /* ספר ארוז — זמין תמיד, גם בלי רשת */
+  try {
+    const res = await fetch(`content/works/${id}.json`);
+    if (res.ok) {
+      const data = await res.json();
+      data._rev = CONTENT_REV;
+      cacheWork(data);
+      return data;
+    }
+  } catch { /* אין רשת או אין קובץ — ממשיכים */ }
+
+  /* משיכה לפי דרישה מהקטלוג */
+  const entry = await catalogEntry(id);
+  if (entry?.downloadUrl) {
+    const path = '/by/' + entry.downloadUrl.split('/download/')[1];
+    const res = await fetch(path);
+    if (res.ok) {
+      const data = { ...entry, html: await res.text(), _rev: CONTENT_REV };
+      cacheWork(data);
+      return data;
+    }
   }
 
-  const data = await res.json();
-  data._rev = CONTENT_REV;
-  cacheWork(data);
-  return data;
+  if (cached) return cached;
+  throw new Error('הספר לא נמצא');
 }
 
 /**

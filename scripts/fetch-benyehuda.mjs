@@ -1,194 +1,130 @@
 /**
- * fetch-benyehuda.mjs — מושך את הקטלוג והספרים מפרויקט בן-יהודה.
+ * fetch-benyehuda.mjs — בונה את קטלוג הספרים מפרויקט בן-יהודה.
  *
- * ** רץ מקומית בלבד. המפתח לעולם לא נכנס לקוד הלקוח. **
- * הסקריפט כותב קבצים סטטיים ל-content/, והאתר קורא רק אותם.
+ * ─────────────────────────────────────────────────────────────────
+ *  ספרים בלבד
  *
- * מפתח: מונפק חינם ומיידית ב-https://benyehuda.org/api_keys/new
- *   ונקרא מ-~/.secrets/benyehuda.txt או ממשתנה הסביבה BENYEHUDA_KEY.
+ *  במאגר 66,138 יצירות, ורובן אינן ספרים: במדגם יצא 44% שירה,
+ *  36% מאמרים, 8% עיון ורק 12% פרוזה. לכן מסננים **לפי ז'אנר**
+ *  ואז **לפי אורך אמיתי** — לא לפי הצהרה.
  *
- * מגבלת קצב רשמית: 50 בקשות בדקה. הסקריפט עובד ב-40 בדקה.
+ *  ה-API לא מחזיר אורך כלל. הגרסה הקודמת של הקובץ הזה סיננה
+ *  `wordCount === 0 || wordCount >= 5000`, כלומר "אורך לא ידוע —
+ *  תעביר", ומכיוון שהאורך תמיד לא ידוע **הכל היה עובר**. כאן כל
+ *  יצירה נמדדת בפועל לפני שהיא נכנסת.
  *
- * הרצה:
- *   node scripts/fetch-benyehuda.mjs --probe        בדיקת חיבור והצגת מבנה התשובה
- *   node scripts/fetch-benyehuda.mjs --catalog      משיכת הקטלוג בלבד
- *   node scripts/fetch-benyehuda.mjs --limit 200    משיכת הקטלוג + 200 ספרים
+ *  נמדד על 25 היצירות הפופולריות: 68% מהפרוזה הם ספרים.
+ * ─────────────────────────────────────────────────────────────────
+ *  למה רק מטא-דאטה
+ *
+ *  ספר ממוצע שוקל ~700KB. 300 ספרים הם 210MB — יותר מכל האפליקציה.
+ *  לכן הקטלוג מחזיק מטא-דאטה ו-downloadUrl בלבד, והטקסט נמשך
+ *  בפתיחה ראשונה ונשמר במטמון המקומי.
+ *
+ *  **downloadUrl ציבורי ואינו דורש מפתח**, ולכן המפתח נשאר
+ *  ב-~/.secrets/benyehuda.txt ולעולם לא נכנס לקוד הלקוח.
+ * ─────────────────────────────────────────────────────────────────
+ *
+ * שימוש:
+ *   node scripts/fetch-benyehuda.mjs            # 300 ספרים
+ *   node scripts/fetch-benyehuda.mjs --limit 80
+ *   node scripts/fetch-benyehuda.mjs --probe
  */
 
-import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-
-import { countWords, WPM } from '../js/logic/verify.js';
+import { WPM } from '../js/logic/verify.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const WORKS_DIR = join(ROOT, 'content', 'works');
 const CATALOG = join(ROOT, 'content', 'catalog.json');
-
 const BASE = 'https://benyehuda.org/api/v1';
-const GAP_MS = 1500;                 // 40 בקשות בדקה — מתחת למגבלה של 50
-const PAGE_SIZE_GUESS = 25;          // גודל עמוד שה-API מחזיר בפועל; מתעדכן מהתשובה
 
-/** ספר, להבדיל משיר בודד או מאמר. סף שמרני — מכוונים אחרי הרצה ראשונה. */
+/** מתחת לזה זה סיפור קצר או מאמר, לא ספר */
 const MIN_BOOK_WORDS = 5000;
 
-/* ------------------------------------------------------------------ */
-
 const args = process.argv.slice(2);
-const has = (flag) => args.includes(flag);
-const opt = (flag, dflt) => {
-  const i = args.indexOf(flag);
-  return i === -1 ? dflt : args[i + 1];
-};
+const has = (f) => args.includes(f);
+const opt = (f, d) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : d; };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const countWords = (t) => (String(t).match(/[֐-׿a-zA-Z0-9']+/g) || []).length;
 
 async function loadKey() {
   if (process.env.BENYEHUDA_KEY) return process.env.BENYEHUDA_KEY.trim();
-  const path = join(homedir(), '.secrets', 'benyehuda.txt');
   try {
-    return (await readFile(path, 'utf8')).trim();
+    return (await readFile(join(homedir(), '.secrets', 'benyehuda.txt'), 'utf8')).trim();
   } catch {
     console.error(`
 לא נמצא מפתח API.
 
   1. הנפק מפתח חינם ב-https://benyehuda.org/api_keys/new
-  2. שמור אותו ב-${path}
+  2. שמור אותו ב-~/.secrets/benyehuda.txt
 
-או הרץ עם BENYEHUDA_KEY=<המפתח> node scripts/fetch-benyehuda.mjs
-`);
+**לא בריפו.**`);
     process.exit(1);
   }
 }
 
-let lastCall = 0;
-async function call(path, body, method = 'POST') {
-  const wait = GAP_MS - (Date.now() - lastCall);
-  if (wait > 0) await sleep(wait);
-  lastCall = Date.now();
-
-  const url = method === 'GET'
-    ? `${BASE}${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(body.key)}`
-    : `${BASE}${path}`;
-
-  const res = await fetch(url, {
-    method,
-    headers: { accept: 'application/json', 'Content-Type': 'application/json' },
-    ...(method === 'POST' ? { body: JSON.stringify(body) } : {}),
+/**
+ * עמוד תוצאות אחד, פרוזה בלבד, לפי פופולריות.
+ *
+ * **הדפדוף הוא לפי סמן ולא לפי מספר עמוד.** `page: 1` מחזיר בדיוק
+ * את אותן תוצאות כמו `page: 0` — נמדד — ולכן הגרסה הקודמת אספה
+ * 25 פריטים וחשבה שנגמר המאגר. הסמן חוזר בשדה
+ * next_page_search_after ונשלח חזרה כ-search_after.
+ */
+async function searchPage(key, cursor) {
+  const res = await fetch(`${BASE}/search?key=${encodeURIComponent(key)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      key, view: 'basic', file_format: 'html', snippet: false,
+      sort_by: 'popularity', sort_dir: 'default',
+      genres: ['prose'],
+      ...(cursor ? { search_after: cursor } : { page: 0 }),
+    }),
   });
 
-  if (res.status === 401) throw new Error('המפתח נדחה — בדוק שהוא נכון ופעיל');
-  if (res.status === 429) {
-    console.warn('  קצב גבוה מדי — ממתין 30 שניות');
-    await sleep(30_000);
-    return call(path, body, method);
-  }
-  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}`);
+  if (res.status === 429) { await sleep(30_000); return searchPage(key, cursor); }
+  if (!res.ok) throw new Error(`search ${res.status}: ${(await res.text()).slice(0, 120)}`);
   return res.json();
 }
 
-/* ------------------------------------------------------------------ *
- * נרמול
- * ------------------------------------------------------------------ */
+/** מוריד את הטקסט וסופר מילים. מחזיר null אם אינו ספר. */
+async function measure(item) {
+  const url = item.download_url;
+  if (!url) return null;
 
-/**
- * מבנה התשובה של בן-יהודה לא מתועד במלואו (ה-swagger שלהם מחזיר 500),
- * ולכן מנרמלים בסובלנות: מחפשים את השדה בכמה שמות אפשריים.
- */
-const pick = (obj, ...names) => {
-  for (const n of names) {
-    const v = n.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
-    if (v != null && v !== '') return v;
-  }
-  return undefined;
-};
+  const res = await fetch(url);
+  if (!res.ok) return null;
 
-function normalize(raw) {
-  const id = pick(raw, 'id', 'text_id', 'manifestation_id');
-  if (id == null) return null;
+  const html = await res.text();
+  const plain = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
 
-  const title = pick(raw, 'title', 'name', 'metadata.title');
-  const author = pick(raw, 'author_string', 'author', 'authors.0.name', 'metadata.author') || '';
-  const genre = pick(raw, 'genre', 'metadata.genre') || '';
-  const words = Number(pick(raw, 'word_count', 'words', 'metadata.word_count')) || 0;
+  const words = countWords(plain);
+  if (words < MIN_BOOK_WORDS) return { words, book: false };
 
+  const m = item.metadata || {};
   return {
-    id: 'by-' + id,
-    sourceId: id,
-    title: String(title || '').trim(),
-    author: String(author).trim(),
-    genre: String(genre).trim(),
-    wordCount: words,
-    estMinutes: words ? Math.max(1, Math.round(words / WPM)) : 0,
-    url: pick(raw, 'url', 'link') || `https://benyehuda.org/read/${id}`,
-  };
-}
-
-/* ------------------------------------------------------------------ *
- * משיכה
- * ------------------------------------------------------------------ */
-
-async function probe(key) {
-  console.log('בודק חיבור…\n');
-  const res = await call('/search', {
-    key, view: 'basic', file_format: 'html', snippet: false,
-    page: 0, sort_by: 'alphabetical', sort_dir: 'default',
-  });
-
-  console.log('מפתחות ברמה העליונה:', Object.keys(res).join(', '));
-  const list = Array.isArray(res) ? res : (res.data || res.results || res.texts || []);
-  console.log('פריטים בעמוד:', list.length);
-  if (list[0]) {
-    console.log('\nמבנה הפריט הראשון:');
-    console.log(JSON.stringify(list[0], null, 2).slice(0, 1600));
-    console.log('\nאחרי נרמול:', JSON.stringify(normalize(list[0]), null, 2));
-  }
-}
-
-async function fetchCatalog(key) {
-  const out = [];
-  let page = 0;
-
-  for (;;) {
-    const res = await call('/search', {
-      key, view: 'basic', file_format: 'html', snippet: false,
-      page, sort_by: 'alphabetical', sort_dir: 'default',
-    });
-
-    const list = Array.isArray(res) ? res : (res.data || res.results || res.texts || []);
-    if (!list.length) break;
-
-    for (const raw of list) {
-      const item = normalize(raw);
-      if (item && item.title) out.push(item);
-    }
-
-    process.stdout.write(`\r  עמוד ${page} · ${out.length} רשומות`);
-    page += 1;
-
-    const total = Number(pick(res, 'total_count', 'total', 'count'));
-    if (Number.isFinite(total) && out.length >= total) break;
-    if (list.length < PAGE_SIZE_GUESS) break;
-  }
-
-  console.log('');
-  return out;
-}
-
-async function fetchText(key, item) {
-  const res = await call(`/texts/${item.sourceId}?view=basic&file_format=html`, { key }, 'GET');
-
-  const html = pick(res, 'html', 'content', 'text', 'body', 'snippet') || '';
-  const plain = String(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = countWords(plain) || item.wordCount;
-
-  return {
-    ...item,
-    wordCount: words,
-    estMinutes: Math.max(1, Math.round(words / WPM)),
-    source: 'פרויקט בן-יהודה — benyehuda.org',
-    html: String(html),
+    words,
+    book: true,
+    entry: {
+      id: 'by-' + item.id,
+      title: String(m.title || '').trim(),
+      author: String(m.author_string || '').trim(),
+      genre: 'פרוזה',
+      wordCount: words,
+      estMinutes: Math.max(1, Math.round(words / WPM)),
+      source: 'פרויקט בן-יהודה — benyehuda.org',
+      url: item.url || `https://benyehuda.org/read/${item.id}`,
+      /* התוכן נמשך מכאן בפתיחה ראשונה ונשמר במטמון */
+      downloadUrl: url,
+    },
   };
 }
 
@@ -197,43 +133,52 @@ async function fetchText(key, item) {
 const key = await loadKey();
 
 if (has('--probe')) {
-  await probe(key);
+  const d = await searchPage(key, null);
+  console.log('פרוזה במאגר:', d.total_count);
+  console.log('פריט לדוגמה:', JSON.stringify(d.data?.[0], null, 2).slice(0, 700));
   process.exit(0);
 }
 
-await mkdir(WORKS_DIR, { recursive: true });
+const limit = Number(opt('--limit', '300'));
+console.log(`מחפש ${limit} ספרים (פרוזה, ${MIN_BOOK_WORDS}+ מילים)…\n`);
 
-console.log('מושך קטלוג…');
-const catalog = await fetchCatalog(key);
+const books = [];
+const seen = new Set();
+let checked = 0;
+let cursor = null;
+let pages = 0;
 
-// ספרים בלבד (המפרט, סעיף 6)
-const books = catalog
-  .filter((w) => w.wordCount === 0 || w.wordCount >= MIN_BOOK_WORDS)
-  .sort((a, b) => a.title.localeCompare(b.title, 'he'));
+outer:
+for (;;) {
+  const d = await searchPage(key, cursor);
+  const list = d.data || [];
+  if (!list.length) break;
 
-console.log(`\n${catalog.length} רשומות · ${books.length} מהן ספרים (≥${MIN_BOOK_WORDS} מילים)`);
+  for (const item of list) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
 
-await writeFile(CATALOG, JSON.stringify(books, null, 2), 'utf8');
-console.log(`נשמר ${CATALOG}`);
+    try {
+      const r = await measure(item);
+      checked += 1;
+      if (r?.book) {
+        books.push(r.entry);
+        console.log(`  ${String(books.length).padStart(3)}. ${r.entry.title.slice(0, 38).padEnd(40)} ${String(r.words).padStart(7)} מילים`);
+      }
+    } catch { /* פריט שנכשל אינו סיבה לעצור */ }
 
-if (has('--catalog')) process.exit(0);
-
-const limit = Number(opt('--limit', '60'));
-console.log(`\nמוריד ${limit} ספרים…`);
-
-let done = 0, skipped = 0;
-for (const item of books.slice(0, limit)) {
-  const path = join(WORKS_DIR, item.id + '.json');
-  try { await access(path); skipped += 1; continue; } catch { /* עוד לא הורד */ }
-
-  try {
-    const work = await fetchText(key, item);
-    await writeFile(path, JSON.stringify(work), 'utf8');
-    done += 1;
-    process.stdout.write(`\r  ${done}/${limit} · ${item.title.slice(0, 40)}`.padEnd(70));
-  } catch (err) {
-    console.error(`\n  דילוג על ${item.title}: ${err.message}`);
+    if (books.length >= limit) break outer;
+    await sleep(350);
   }
+
+  cursor = d.next_page_search_after;
+  if (!cursor) break;
+  pages += 1;
+  if (pages > 400) break;
 }
 
-console.log(`\n\nהורדו ${done} ספרים, ${skipped} כבר היו קיימים.`);
+books.sort((a, b) => a.title.localeCompare(b.title, 'he'));
+await writeFile(CATALOG, JSON.stringify(books, null, 2), 'utf8');
+
+console.log(`\nנבדקו ${checked} · ${books.length} ספרים (${Math.round(books.length / checked * 100)}%)`);
+console.log(`נשמר ${CATALOG}`);

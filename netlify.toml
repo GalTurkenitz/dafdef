@@ -36,3 +36,18 @@
   for = "/vendor/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# פרוקסי לתוכן בן-יהודה.
+#
+# benyehuda.org אינו מחזיר CORS, ולכן הדפדפן אינו יכול למשוך ממנו
+# ישירות — נמדד: "Failed to fetch". הקטלוג מחזיק מטא-דאטה בלבד
+# (ספר ממוצע 700KB, ומאות ספרים לא נכנסים לאפליקציה), והטקסט נמשך
+# דרך כאן בפתיחה ראשונה ונשמר במטמון.
+#
+# באנדרואיד אין מגבלת CORS ל-HTTP נייטיב, ושם עדיף למשוך ישירות
+# במקום להיות תלויים באתר שלנו (changes-v5.md).
+[[redirects]]
+  from = "/by/*"
+  to = "https://benyehuda.org/download/:splat"
+  status = 200
+  force = true
