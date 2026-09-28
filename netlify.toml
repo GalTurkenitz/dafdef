@@ -46,8 +46,6 @@
 #
 # באנדרואיד אין מגבלת CORS ל-HTTP נייטיב, ושם עדיף למשוך ישירות
 # במקום להיות תלויים באתר שלנו (changes-v5.md).
-[[redirects]]
-  from = "/by/*"
-  to = "https://benyehuda.org/download/:splat"
-  status = 200
-  force = true
+# מטופל ב-netlify/functions/by.js — פרוקסי פשוט לא מספיק, כי
+# הכתובת מחזירה 302 אל blob חתום והדפדפן נשלח חזרה למקור שאין
+# לו CORS. הפונקציה עוקבת בצד השרת.
