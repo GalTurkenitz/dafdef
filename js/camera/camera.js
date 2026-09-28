@@ -263,19 +263,39 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
          מסווג תמונה עובד על **כל הפריים**, ולכן כוס שתופסת עשירית
          ממנו נבלעת ברקע — המודל מדווח על החדר ולא על הכוס. החיתוך
          מתאים למסגרת שמוצגת למשתמש בתצוגה. */
-      const side = Math.min(vw, vh) * CROP;
-      const sx = (vw - side) / 2;
-      const sy = (vh - side) / 2;
-
       const shot = document.createElement('canvas');
       shot.width = SHOT_SIDE;
       shot.height = SHOT_SIDE;
-      shot.getContext('2d').drawImage(video, sx, sy, side, side, 0, 0, SHOT_SIDE, SHOT_SIDE);
+      const g = shot.getContext('2d');
 
-      let categories = [];
-      try {
-        categories = classifier.classify(shot)?.classifications?.[0]?.categories || [];
-      } catch { /* פריים שנכשל — מחזירים ריק */ }
+      /* שני חיתוכים: צמוד למסגרת, ורחב.
+         מדדתי על תמונות אמיתיות שהלוגיקה עובדת — מה שלא ידוע הוא
+         איך המשתמש ממסגר בפועל. חיתוך יחיד מהמר על מרחק אחד;
+         שניים מכסים גם כוס קרובה וגם כוס שנמצאת בתוך הסצנה.
+         העלות היא סיווג נוסף, כ-130ms, פעם אחת למשימה. */
+      const runCrop = (frac) => {
+        const side = Math.min(vw, vh) * frac;
+        g.clearRect(0, 0, SHOT_SIDE, SHOT_SIDE);
+        g.drawImage(video, (vw - side) / 2, (vh - side) / 2, side, side,
+                    0, 0, SHOT_SIDE, SHOT_SIDE);
+        try {
+          return classifier.classify(shot)?.classifications?.[0]?.categories || [];
+        } catch { return []; }
+      };
+
+      const tight = runCrop(CROP);
+      const wide = runCrop(1);
+
+      /* מאחדים: לכל מחלקה הציון הגבוה מבין שני החיתוכים */
+      const best = new Map();
+      for (const c of [...tight, ...wide]) {
+        const k = c.categoryName;
+        if (!best.has(k) || best.get(k).score < c.score) best.set(k, c);
+      }
+      const categories = [...best.values()].sort((a, b) => b.score - a.score);
+
+      /* החיתוך הצמוד נשאר על הקנבס להצגה */
+      runCrop(CROP);
 
       /* התמונה מוחזרת כדי להציג למשתמש מה נבדק. היא חיה בזיכרון
          בלבד — לא נכתבת לדיסק ולא עוזבת את המכשיר. */
@@ -284,7 +304,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 
       shot.width = 0;
       shot.height = 0;
-      return { categories, image };
+      return { categories, image, source: `${vw}×${vh}` };
     },
     setGuide,
     setFlow,

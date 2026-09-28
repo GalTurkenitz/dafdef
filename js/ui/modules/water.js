@@ -117,7 +117,7 @@ export async function mount(host, { onComplete } = {}) {
   }
 
   function shoot() {
-    const { categories, image } = cam.captureStill();
+    const { categories, image, source } = cam.captureStill();
     judged = judgeVessel(categories);
     shot = image;
 
@@ -133,7 +133,9 @@ export async function mount(host, { onComplete } = {}) {
       /* מה המודל כן ראה — גם הסבר למשתמש וגם מידע לכיול */
       const seen = topLabels(categories);
       hintEl.innerHTML = vesselMessage(judged)
-        + (seen.length ? `<br><i class="t-small">זיהיתי: ${seen.join(' · ')}</i>` : '');
+        + `<br><i class="t-small">${seen.length
+            ? 'זיהיתי: ' + seen.join(' · ')
+            : 'המודל לא החזיר כלום'} · מצלמה ${source || '?'}</i>`;
       hintEl.className = 'water__hint is-warn';
     }
 
