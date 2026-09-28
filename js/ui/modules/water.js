@@ -129,7 +129,7 @@ export async function mount(host, { onComplete } = {}) {
     }
 
     if (judged.ok) {
-      hintEl.textContent = 'נראה טוב. שתית?';
+      hintEl.textContent = 'אנא אשר ששתית';
       hintEl.className = 'water__hint is-ok';
     } else {
       /* מה המודל כן ראה — גם הסבר למשתמש וגם מידע לכיול */

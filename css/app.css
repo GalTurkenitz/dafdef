@@ -3244,7 +3244,7 @@ p  { margin: 0; }
 }
 .reqrow__name { flex: 1; cursor: pointer; }
 
-.btn--ok { color: #2E7D52; border-color: #2E7D52; background: transparent; }
+.btn--ok { color: var(--ok); border-color: var(--ok); background: transparent; }
 
 /* ---------- שעון הספירה לאחור ---------- */
 
@@ -3408,7 +3408,7 @@ p  { margin: 0; }
   line-height: 1.35;
 }
 .water__hint i { color: var(--text-soft); }
-.water__hint.is-ok { color: var(--primary); font-weight: 600; }
+.water__hint.is-ok { color: var(--ok); font-weight: 600; }
 .water__hint.is-warn { color: var(--danger); }
 
 .water__actions { display: flex; flex-direction: column; gap: var(--sp-2); }
