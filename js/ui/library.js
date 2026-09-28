@@ -22,35 +22,17 @@ const $ = (s) => document.querySelector(s);
 const els = {
   search: $('[data-library-search]'),
   tones:  $('[data-library-tones]'),
-  pager:  $('[data-library-pager]'),
   list:   $('[data-library-list]'),
   count:  $('[data-library-count]'),
 };
 
 let books = [];
 let query = '';
-let tone = 'all';        // all | short | medium | long
-let page = 0;
-let remeasured = false;
+let tone = null;         // null = הכל · short | medium | long
 
-const COLS = 3;
-const GAP = 12;
-
-/**
- * כמה ספרים נכנסים בעמוד. הגובה נמדד מכרטיס אמיתי ולא מקבוע —
- * הערכה קשיחה גרמה לשורה האחרונה להיחתך.
- */
-function pageSize() {
-  const box = els.list.getBoundingClientRect();
-  const card = els.list.querySelector('.bookcard');
-  const rowH = (card ? card.getBoundingClientRect().height : 140) + GAP;
-  const rows = Math.max(1, Math.floor((box.height + GAP) / rowH));
-  return rows * COLS;
-}
-
-/** שבבי הסינון לפי אורך הקריאה (סעיף ז2) */
+/* שלושה שבבים בלבד. אין "הכל" — שבב נבחר מסנן, לחיצה נוספת
+   עליו מבטלת, וכשאף אחד לא נבחר רואים את הכל. */
 const TONES = [
-  { id: 'all',    label: 'הכל' },
   { id: 'short',  label: 'קצר' },
   { id: 'medium', label: 'בינוני' },
   { id: 'long',   label: 'ארוך' },
@@ -73,7 +55,7 @@ function norm(s) {
 }
 
 function matches(book, q) {
-  if (tone !== 'all' && lengthClass(book.estMinutes) !== tone) return false;
+  if (tone && lengthClass(book.estMinutes) !== tone) return false;
   if (!q) return true;
   const hay = norm(`${book.title} ${book.author} ${book.genre}`);
   return norm(q).split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
@@ -94,29 +76,14 @@ function render() {
   if (!found.length) {
     els.list.innerHTML = `<p class="t-sub empty">
       לא מצאנו ספר כזה.<br>אפשר לנסות שם אחר, או לייבא EPUB משלך מתוך הקורא.</p>`;
-    els.pager.innerHTML = '';
     return;
   }
 
-  const size = pageSize();
-  const pages = Math.max(1, Math.ceil(found.length / size));
-  page = Math.min(page, pages - 1);
-  const slice = found.slice(page * size, page * size + size);
-
+  /* הרשימה נגללת ולא מדפדפת — הדפדוף הסתיר ספרים מאחורי
+     כפתורים, והמדידה של כמה נכנסים בעמוד הייתה מקור לבאגים. */
   els.list.innerHTML = `<div class="bookgrid">${
-    slice.map((b) => bookCard(b, { percent: started[b.id]?.percent ?? null })).join('')
+    found.map((b) => bookCard(b, { percent: started[b.id]?.percent ?? null })).join('')
   }</div>`;
-
-  renderPager(pages);
-
-  /* המדידה הראשונה נעשית לפני שיש כרטיס על המסך, ולכן היא
-     מבוססת על הערכה. אחרי שהכרטיסים קיימים מודדים שוב, ואם
-     המספר השתנה מרעננים פעם אחת בלבד. */
-  if (!remeasured) {
-    const real = pageSize();
-    if (real !== size) { remeasured = true; render(); return; }
-  }
-  remeasured = false;
 
   // בחירה קובעת את הספר הפעיל; הקישור עצמו כבר מוביל לקורא
   els.list.querySelectorAll('[data-book]').forEach((a) => {
@@ -124,28 +91,9 @@ function render() {
   });
 }
 
-/** דפדוף בין עמודי הספרים — במקום גלילה (סעיף ב5) */
-function renderPager(pages) {
-  if (pages <= 1) { els.pager.innerHTML = ''; return; }
+/* ------------------------------------------------------------------ */
 
-  els.pager.innerHTML = `
-    <div class="pager">
-      <button class="pagebtn" data-page="-1" ${page === 0 ? 'disabled' : ''}
-              aria-label="העמוד הקודם">${icon('arrow', 20)}</button>
-      <span class="pager__pos">${page + 1} מתוך ${pages}</span>
-      <button class="pagebtn is-next" data-page="1" ${page >= pages - 1 ? 'disabled' : ''}
-              aria-label="העמוד הבא">${icon('arrow', 20)}</button>
-    </div>`;
-
-  els.pager.querySelectorAll('[data-page]').forEach((b) => {
-    b.addEventListener('click', () => {
-      page = Math.max(0, Math.min(pages - 1, page + Number(b.dataset.page)));
-      render();
-    });
-  });
-}
-
-/** שבבי הסינון לפי צבע האורך */
+/** שבבי הסינון לפי אורך — שלושה, כל אחד בצבע שלו */
 function renderTones() {
   if (!els.tones) return;
   els.tones.innerHTML = `<div class="tonefilter" role="group" aria-label="סינון לפי אורך">
@@ -156,8 +104,8 @@ function renderTones() {
 
   els.tones.querySelectorAll('[data-tone]').forEach((b) => {
     b.addEventListener('click', () => {
-      tone = b.dataset.tone;
-      page = 0;
+      /* לחיצה על שבב נבחר מבטלת אותו — כך אין צורך ב"הכל" */
+      tone = tone === b.dataset.tone ? null : b.dataset.tone;
       renderTones();
       render();
     });
@@ -179,7 +127,6 @@ function renderSearch() {
   input.addEventListener('input', () => {
     query = input.value;
     clear.hidden = !query;
-    page = 0;
     render();
   });
 
@@ -191,8 +138,6 @@ function renderSearch() {
     render();
   });
 }
-
-/* ------------------------------------------------------------------ */
 
 async function init() {
   initTheme();

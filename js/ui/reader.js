@@ -66,6 +66,9 @@ const els = {
 let settings = getSettings();
 let reading = getReadingState();
 
+/* בורר הספרים או מסך שגיאה מוצג — מחוות הדפדוף מנוטרלות */
+let picking = false;
+
 let mode = 'text';
 let work = null;
 let pager = null;
@@ -295,13 +298,17 @@ function bindGestures() {
   const activity = () => verifier && verifier.activity(now());
 
   els.stage.addEventListener('pointerdown', (e) => {
+    /* בבורר הספרים ובמסך שגיאה ה-stage מכיל כפתורים וקישורים,
+       ומחוות הדפדוף חייבות להיות מנוטרלות — אחרת לחיצה על
+       "ספר חדש" רק מקפיצה את הסרגל במקום לנווט. */
+    if (picking) return;
     tracking = true;
     startX = e.clientX; startY = e.clientY; startT = now();
     activity();
   });
 
   els.stage.addEventListener('pointerup', (e) => {
-    if (!tracking) return;
+    if (picking || !tracking) return;
     tracking = false;
     activity();
 
@@ -630,6 +637,7 @@ function showLoading(on) {
  * המיקום השמור — כלומר חוזרים בדיוק למקום שבו עצרת.
  */
 function showBookPicker(started) {
+  picking = true;
   els.title.textContent = 'הספרים שלי';
   els.stage.innerHTML = `
     <div class="pickbooks">
@@ -639,9 +647,45 @@ function showBookPicker(started) {
         ${newBookCard()}
       </div>
     </div>`;
+
+  /* הכרטיס הוא <a> לספרייה — מיירטים אותו כדי להציג קודם את
+     שתי הדרכים להוסיף ספר. */
+  const fresh = els.stage.querySelector('.bookcard--new');
+  fresh?.addEventListener('click', (e) => { e.preventDefault(); showNewBookChoice(); });
+}
+
+/**
+ * שתי הדרכים להוסיף ספר. "ספר חדש" בבורר מוביל לכאן ולא ישר
+ * לספרייה, כי ייבוא EPUB הוא אפשרות שקולה ולא פינה נסתרת.
+ */
+function showNewBookChoice() {
+  picking = true;
+  els.title.textContent = 'ספר חדש';
+  els.stage.innerHTML = `
+    <div class="pickbooks">
+      <p class="t-sub pickbooks__lead">מאיפה להוסיף ספר?</p>
+      <div class="pickbooks__ways">
+        <button class="bigbtn" type="button" data-way="library">
+          <span class="bigbtn__icon">${icon('books', 26)}</span>
+          <span class="bigbtn__text">מהספרייה
+            <i class="t-small">ספרים מוכנים לקריאה</i></span>
+        </button>
+        <button class="bigbtn" type="button" data-way="import">
+          <span class="bigbtn__icon">${icon('plus', 26)}</span>
+          <span class="bigbtn__text">ספר משלי
+            <i class="t-small">קובץ EPUB מהמכשיר</i></span>
+        </button>
+      </div>
+    </div>`;
+
+  els.stage.querySelector('[data-way="library"]')
+    .addEventListener('click', () => { location.href = 'library.html?pick=1'; });
+  els.stage.querySelector('[data-way="import"]')
+    .addEventListener('click', () => els.file.click());
 }
 
 function showEmpty(message) {
+  picking = true;
   els.stage.innerHTML = `
     <div class="reader__empty">
       <p class="t-sub">${message}</p>

@@ -3352,9 +3352,38 @@ p  { margin: 0; }
 .leagueimg__text { color: var(--text-soft); font-size: var(--fs-small); line-height: 1.3; }
 .leagueimg__text i { font-style: normal; opacity: .75; }
 
+/* ---------- סינון הספרייה לפי אורך ----------
+   אותם צבעים בדיוק של כרטיסי הספרים, כדי שהשבב והכרטיס ייקראו
+   כאותה שפה. שבב לא נבחר הוא בגוון חיוור של אותו צבע. */
+
+.tonefilter { display: flex; gap: var(--sp-2); }
+
+.tonechip {
+  flex: 1;
+  min-height: var(--tap-min);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-btn);
+  background: color-mix(in srgb, var(--chip-bg) 45%, var(--surface));
+  color: var(--chip-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease);
+}
+.tonechip:hover { background: color-mix(in srgb, var(--chip-bg) 70%, var(--surface)); }
+.tonechip[aria-pressed="true"] {
+  background: var(--chip-bg);
+  border-color: var(--chip-ink);
+}
+
+.tonechip--short  { --chip-bg: var(--len-short-bg);  --chip-ink: var(--len-short-ink); }
+.tonechip--medium { --chip-bg: var(--len-medium-bg); --chip-ink: var(--len-medium-ink); }
+.tonechip--long   { --chip-bg: var(--len-long-bg);   --chip-ink: var(--len-long-ink); }
+
 /* בורר הספרים בכניסה לקריאה */
 .pickbooks { padding: var(--sp-4) var(--screen-pad); }
 .pickbooks__lead { margin: 0 0 var(--sp-4); text-align: center; }
+.pickbooks__ways { display: flex; flex-direction: column; gap: var(--sp-3); }
 
 .library__pick {
   margin: 0;
