@@ -88,6 +88,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
   let landmarker = null;
   let detector = null;
   let classifier = null;
+  let lastClassifyError = null;
   let objects = [];
   let raf = null;
   let running = false;
@@ -284,7 +285,12 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
                     0, 0, SHOT_SIDE, SHOT_SIDE);
         try {
           return classifier.classify(shot)?.classifications?.[0]?.categories || [];
-        } catch { return []; }
+        } catch (e) {
+          /* בליעה שקטה כאן הסתירה כשל אמיתי של ה-delegate והציגה
+             "המודל לא החזיר כלום" בלי סיבה. */
+          lastClassifyError = String(e?.message || e).slice(0, 120);
+          return [];
+        }
       };
 
       /* מאחדים את כל הזומים: לכל מחלקה הציון הגבוה שהתקבל */
@@ -307,7 +313,7 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 
       shot.width = 0;
       shot.height = 0;
-      return { categories, image, source: `${vw}×${vh}` };
+      return { categories, image, source: `${vw}×${vh}`, error: lastClassifyError };
     },
     setGuide,
     setFlow,
@@ -361,7 +367,11 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
       if (classify) {
         setLoading('טוען מסווג תמונה…');
         classifier = await m.ImageClassifier.createFromOptions(fileset, {
-          baseOptions: { modelAssetPath: MODELS.classify, delegate: 'GPU' },
+          /* בלי delegate: 'GPU'.
+             ImageClassifier נכשל איתו עם INVALID_ARGUMENT ומחזיר
+             אפס קטגוריות — שוחזר בדפדפן. הוא רץ פעם אחת למשימה,
+             ו-CPU לוקח ~120ms, אז אין מה להרוויח מ-GPU. */
+          baseOptions: { modelAssetPath: MODELS.classify },
           runningMode: 'IMAGE',
           /* 1000 מחלקות — רשימה קצרה מדי מפספסת מחלקת כוס
              שדורגה נמוך */
