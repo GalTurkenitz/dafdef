@@ -11,7 +11,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { judgeVessel, vesselMessage, topLabels, MIN_SCORE,
+import { judgeVessel, vesselMessage, MIN_SCORE,
          VESSEL_RATIO, REJECT_RATIO,
          VESSEL, NOT_VESSEL } from '../js/logic/vessel.js';
 
@@ -209,15 +209,6 @@ console.log('— דירוג ולא סף —');
 {
   const r = judgeVessel(cats(['cup', 0.015]));
   is('מתחת לרצפת הרעש — לא נספר', r.ok, false);
-}
-
-console.log('');
-console.log('— תוויות לתצוגה —');
-{
-  const t = topLabels(cats(['Coffee Mug', 0.42], ['desk', 0.11], ['cup', 0.07], ['x', 0.01]));
-  is('שלוש הראשונות', t.length, 3);
-  is('  מנורמלות ובאחוזים', t[0], 'coffee mug 42%');
-  is('בלי קלט — ריק', topLabels(null).length, 0);
 }
 
 /* ------------------------------------------------------------------ *

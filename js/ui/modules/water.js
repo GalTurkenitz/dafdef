@@ -32,7 +32,7 @@
 import { WATER_COOLDOWN_MS } from '../../config.js';
 import { createCamera } from '../../camera/camera.js';
 import { waterCooldownLeft, setModuleData } from '../../logic/store.js';
-import { judgeVessel, vesselMessage, topLabels } from '../../logic/vessel.js';
+import { judgeVessel, vesselMessage } from '../../logic/vessel.js';
 
 export async function mount(host, { onComplete } = {}) {
   /* ---------------------------------------------------------------- *
@@ -132,12 +132,11 @@ export async function mount(host, { onComplete } = {}) {
       hintEl.textContent = 'אנא אשר ששתית';
       hintEl.className = 'water__hint is-ok';
     } else {
-      /* מה המודל כן ראה — גם הסבר למשתמש וגם מידע לכיול */
-      const seen = topLabels(categories);
-      hintEl.innerHTML = vesselMessage(judged)
-        + `<br><i class="t-small">${seen.length
-            ? 'זיהיתי: ' + seen.join(' · ')
-            : (error ? 'שגיאת מסווג: ' + error : 'המודל לא החזיר כלום')}</i>`;
+      /* תקלת מסווג היא כשל אמיתי ולא "לא זוהתה כוס" — היא מוצגת
+         כי בליעה שקטה שלה כבר עלתה בארבעה סבבי אבחון. */
+      hintEl.innerHTML = error
+        ? `שגיאת מסווג<br><i class="t-small">${error}</i>`
+        : vesselMessage(judged);
       hintEl.className = 'water__hint is-warn';
     }
 

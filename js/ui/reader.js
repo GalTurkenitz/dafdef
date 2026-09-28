@@ -11,10 +11,12 @@
  */
 
 import { createPaginator } from './paginator.js';
+import { bookCard, newBookCard } from './bookcard.js';
 import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
          getCachedWork, cacheWork, earnUnits, openDay,
-         touchBook, getBook, getActiveBookId, setActiveBookId } from '../logic/store.js';
+         touchBook, getBook, getActiveBookId, setActiveBookId,
+         getStartedBooks } from '../logic/store.js';
 import { mountNavbar } from './nav.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
@@ -25,7 +27,6 @@ import { CONTENT_REV } from '../config.js';
  * קבועים
  * ------------------------------------------------------------------ */
 
-const DEFAULT_WORK = 'ws-bialik-safiach';
 const EPUB_JS  = '/vendor/epubjs/epub.min.js';
 const JSZIP_JS = '/vendor/epubjs/jszip.min.js';
 
@@ -210,6 +211,10 @@ function renderPosition() {
  * ------------------------------------------------------------------ */
 
 function turn(direction) {
+  /* בורר הספרים ומסך שגיאה חיים בלי טקסט טעון, והמחוות עדיין
+     קשורות — בלי זה לחיצה שם קורסת על pager שהוא null. */
+  if (mode === 'text' ? !pager : !rendition) return;
+
   if (direction === 'next') leavingPage();
 
   if (mode === 'text') {
@@ -617,6 +622,25 @@ function showLoading(on) {
   els.stage.appendChild(node);
 }
 
+/**
+ * בורר הספרים — מה שנפתח כשנכנסים לקריאה בלי ספר מבוקש.
+ *
+ * המשתמש בוחר בעצמו לאיזה ספר להיכנס, ולא נפתח לו אחד שלא ביקש.
+ * כל כרטיס מוביל ל-reader.html?work=<id>, והקורא משחזר משם את
+ * המיקום השמור — כלומר חוזרים בדיוק למקום שבו עצרת.
+ */
+function showBookPicker(started) {
+  els.title.textContent = 'הספרים שלי';
+  els.stage.innerHTML = `
+    <div class="pickbooks">
+      <p class="t-sub pickbooks__lead">באיזה ספר להמשיך?</p>
+      <div class="bookgrid">
+        ${started.map((b) => bookCard(b, { percent: b.percent ?? null })).join('')}
+        ${newBookCard()}
+      </div>
+    </div>`;
+}
+
 function showEmpty(message) {
   els.stage.innerHTML = `
     <div class="reader__empty">
@@ -642,7 +666,7 @@ function bindChrome() {
   if (swap) {
     swap.classList.add('toolbtn');
     swap.setAttribute('aria-label', 'החלף ספר');
-    swap.innerHTML = icon('library', 20);
+    swap.innerHTML = icon('books', 20);
     swap.addEventListener('click', () => { location.href = 'library.html'; });
   }
 
@@ -705,16 +729,26 @@ async function init() {
   });
 
   /* סדר העדיפויות: מה שביקשו בכתובת, אחר כך הספר הפעיל (סעיף ז1),
-     ורק אחר כך הספר האחרון או ברירת המחדל. */
+     ואז הספר האחרון שנקרא.
+     **אין ברירת מחדל.** קודם נבחר כאן ספר אוטומטית, וכך משתמש
+     שבחר בנישת הקריאה ולא בחר ספר נפתח לו ספר שלא ביקש. מי שאין
+     לו ספר נשלח לספרייה לבחור בעצמו. */
   const asked = new URLSearchParams(location.search).get('work');
   if (asked) setActiveBookId(asked);
 
   const wanted = asked
     || getActiveBookId()
-    || (reading.lastWorkId && !reading.lastWorkId.startsWith('epub:') ? reading.lastWorkId : null)
-    || DEFAULT_WORK;
+    || (reading.lastWorkId && !reading.lastWorkId.startsWith('epub:') ? reading.lastWorkId : null);
 
-  if (!getActiveBookId() && wanted) setActiveBookId(wanted);
+  /* בלי ספר מבוקש בכתובת — המשתמש בוחר בעצמו מתוך מה שהוא קורא */
+  if (!asked) {
+    const started = getStartedBooks().filter((b) => !b.finished);
+    if (started.length) { showLoading(false); showBookPicker(started); return; }
+  }
+
+  if (!wanted) { location.replace('library.html?pick=1'); return; }
+
+  if (!getActiveBookId()) setActiveBookId(wanted);
 
   showLoading(true);
   try {

@@ -142,17 +142,6 @@ export function judgeVessel(categories = []) {
   return { ok: true, reason: 'vessel', match: vessel.name, score: vessel.score };
 }
 
-/**
- * שלוש התוצאות המובילות, לתצוגה. מה שהמודל באמת ראה הוא גם
- * הסבר למשתמש וגם המידע היחיד שמאפשר לכייל את הרשימות.
- */
-export function topLabels(categories = [], n = 3) {
-  return (categories || [])
-    .filter(Boolean)
-    .slice(0, n)
-    .map((c) => `${norm(c.categoryName)} ${Math.round(c.score * 100)}%`);
-}
-
 /** הודעה למשתמש. הודעה אחת לכל כישלון — הסיבה הטכנית בשורת האבחון. */
 export function vesselMessage(result) {
   return result?.reason === 'vessel'
