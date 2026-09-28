@@ -3428,6 +3428,10 @@ p  { margin: 0; }
 .tonechip--medium { --chip-bg: var(--len-medium-bg); --chip-ink: var(--len-medium-ink); }
 .tonechip--long   { --chip-bg: var(--len-long-bg);   --chip-ink: var(--len-long-ink); }
 
+/* כל עוד לא נכנסו לספר אין מה לדפדף: פס העמודים למטה מוסתר
+   בבורר הספרים, במסך שתי הדרכים ובמסך השגיאה. */
+body.is-picking .reader__foot { display: none; }
+
 /* שכבת־על של הקורא — בורר ספרים, בחירת מקור, ומסך שגיאה.
    היא מכסה את הבמה במקום להחליף את תוכנה, כי [data-content]
    חייב לשרוד: הקורא מרנדר לתוכו. */

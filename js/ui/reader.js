@@ -47,7 +47,7 @@ const els = {
   content:     $('[data-content]'),
   bars:        $('[data-bars]'),
   title:       $('[data-title]'),
-  home:        $('[data-home]'),
+  back:        $('[data-back]'),
   importBtn:   $('[data-import]'),
   settingsBtn: $('[data-open-settings]'),
   file:        $('[data-file]'),
@@ -726,6 +726,7 @@ function overlay(html) {
      והלחיצה הראשונה על קישור בשכבה נבלעת. */
   hideOverlay();
   picking = true;
+  document.body.classList.add('is-picking');
 
   const el = document.createElement('div');
   el.className = 'readerover';
@@ -738,6 +739,7 @@ function overlay(html) {
 function hideOverlay() {
   els.stage.querySelector('[data-overlay]')?.remove();
   picking = false;
+  document.body.classList.remove('is-picking');
 }
 
 function showBookPicker(started) {
@@ -844,21 +846,19 @@ function showEmpty(message) {
  * ------------------------------------------------------------------ */
 
 function bindChrome() {
-  els.home.innerHTML = icon('home', 20);
+  /* שלושת הכפתורים הקודמים (בית · החלף ספר · הגדרות) הוחלפו
+     בשניים: הגדרות בימין עם שלושת הקווים, וחזרה בשמאל. מונה
+     העמודים באמצע. */
+  els.settingsBtn.innerHTML = icon('menu', 20);
   els.importBtn.innerHTML = icon('book', 22);
-  els.settingsBtn.innerHTML = icon('settings', 20);
+  els.back.innerHTML = icon('arrow', 20);
 
-  // חזרה ישירה לדף הבית, לא להיסטוריית הדפדפן
-  els.home.addEventListener('click', () => { location.href = 'index.html'; });
-
-  // החלפת ספר פותחת את בוחר הספרים (סעיף ז1)
-  const swap = document.querySelector('[data-swap-book]');
-  if (swap) {
-    swap.classList.add('toolbtn');
-    swap.setAttribute('aria-label', 'החלף ספר');
-    swap.innerHTML = icon('books', 20);
-    swap.addEventListener('click', () => { location.href = 'library.html'; });
-  }
+  /* חזרה למסך הקודם **באפליקציה**, לא דפדוף בספר. בלי היסטוריה
+     (כניסה ישירה לקישור) חוזרים לבית. */
+  els.back.addEventListener('click', () => {
+    if (history.length > 1) history.back();
+    else location.href = 'index.html';
+  });
 
   // כפתורי דפדוף קבועים — ב-RTL "הבא" מצביע שמאלה
   document.querySelectorAll('[data-turn]').forEach((btn) => {
