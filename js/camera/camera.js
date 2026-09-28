@@ -39,13 +39,20 @@ export const CUP_CLASSES = ['cup', 'wine glass', 'bottle'];
 const SHOT_SIDE = 320;
 
 /**
- * כמה מהצלע הקצרה של הפריים נחתך.
+ * פירמידת זומים לסיווג.
  *
- * התצוגה משתמשת ב-object-fit: cover, ולכן מה שהמשתמש רואה הוא
- * חיתוך צר של הפריים הגולמי. חיתוך של הריבוע המרכזי המלא לקח
- * שטח רחב בהרבה ממה שנראה במסגרת — והכוס יצאה קטנה בתוכו.
+ * שדה הראייה משתנה מאוד בין מצלמות — אחורית של טלפון מודרני
+ * רחבה, וכוס במרחק 30 ס"מ תופסת בה חלק קטן. כל חיתוך קבוע הוא
+ * הימור על מרחק ועל מכשיר מסוים, ולכן נבדקים כמה זומים והציון
+ * הגבוה מביניהם לכל מחלקה הוא שקובע.
+ *
+ * 0.35 = כוס קטנה בפריים רחב · 1 = הסצנה כולה.
+ * ארבעה סיווגים של ~130ms, פעם אחת למשימה.
  */
-const CROP = 0.62;
+const CROPS = [0.35, 0.55, 0.8, 1];
+
+/** מה שמוצג למשתמש כתמונה שצולמה */
+const PREVIEW_CROP = 0.62;
 
 /** כמה זמן בלי זיהוי נחשב "יצא מהפריים" */
 export const OUT_OF_FRAME_MS = 1500;
@@ -268,11 +275,8 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
       shot.height = SHOT_SIDE;
       const g = shot.getContext('2d');
 
-      /* שני חיתוכים: צמוד למסגרת, ורחב.
-         מדדתי על תמונות אמיתיות שהלוגיקה עובדת — מה שלא ידוע הוא
-         איך המשתמש ממסגר בפועל. חיתוך יחיד מהמר על מרחק אחד;
-         שניים מכסים גם כוס קרובה וגם כוס שנמצאת בתוך הסצנה.
-         העלות היא סיווג נוסף, כ-130ms, פעם אחת למשימה. */
+      /* ראה CROPS: הסיווג רץ בכמה זומים, כי שדה הראייה משתנה
+         בין מצלמות ואי אפשר להניח מרחק אחד. */
       const runCrop = (frac) => {
         const side = Math.min(vw, vh) * frac;
         g.clearRect(0, 0, SHOT_SIDE, SHOT_SIDE);
@@ -283,19 +287,18 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
         } catch { return []; }
       };
 
-      const tight = runCrop(CROP);
-      const wide = runCrop(1);
-
-      /* מאחדים: לכל מחלקה הציון הגבוה מבין שני החיתוכים */
+      /* מאחדים את כל הזומים: לכל מחלקה הציון הגבוה שהתקבל */
       const best = new Map();
-      for (const c of [...tight, ...wide]) {
-        const k = c.categoryName;
-        if (!best.has(k) || best.get(k).score < c.score) best.set(k, c);
+      for (const frac of CROPS) {
+        for (const c of runCrop(frac)) {
+          const k = c.categoryName;
+          if (!best.has(k) || best.get(k).score < c.score) best.set(k, c);
+        }
       }
       const categories = [...best.values()].sort((a, b) => b.score - a.score);
 
-      /* החיתוך הצמוד נשאר על הקנבס להצגה */
-      runCrop(CROP);
+      /* מה שמוצג למשתמש */
+      runCrop(PREVIEW_CROP);
 
       /* התמונה מוחזרת כדי להציג למשתמש מה נבדק. היא חיה בזיכרון
          בלבד — לא נכתבת לדיסק ולא עוזבת את המכשיר. */
@@ -317,7 +320,11 @@ export function createCamera({ host, model = 'pose', detectObjects = false,
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+          /* סיווג חותך פנימה, ולכן צריך פיקסלים. מעקב נקודות
+             לא צריך, ושם רזולוציה נמוכה שומרת על קצב. */
+          video: classify
+            ? { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 960 } }
+            : { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false,
         });
       } catch (err) {
