@@ -2245,11 +2245,22 @@ p  { margin: 0; }
   padding-bottom: calc(var(--nav-h) + 1px + env(safe-area-inset-bottom));
 }
 
-.screen--scroll .screen__body {
-  display: block;
-  overflow: hidden;
+/* הספרייה: החיפוש והסינון נעוצים, והספרים בלבד נגללים.
+   הגובה מגיע מ-.screen--fixed; בלי מסגרת גובה הרשימה פשוט
+   גדלה לפי התוכן ושום דבר לא נגלל. */
+.screen__body--library { gap: var(--sp-4); }
+
+.screen__body--library [data-library-search],
+.screen__body--library [data-library-tones] { flex: none; }
+
+.screen__body--library [data-library-list] {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   margin-inline: calc(-1 * var(--screen-pad));
   padding-inline: var(--screen-pad);
+  padding-bottom: var(--sp-4);
 }
 
 /* ---------- רשת 2×2, ממורכזת במסך ---------- */
