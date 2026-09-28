@@ -1157,14 +1157,18 @@ p  { margin: 0; }
   opacity: .55;
 }
 
-/* מי שאין לו דיוקן — צללית אפורה, כדי שהרשת תיראה אחידה */
+/* מי שאין לו דיוקן — צללית בלבד, **בלי רקע משלה**.
+   רקע אפור אחיד היה מוחק את צבע האורך של הכרטיס, ואז אי אפשר
+   היה להבדיל בין קצר לארוך. הצללית מצוירת מעל צבע הכרטיס. */
 .bookcard__noface {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  background: var(--noface-bg);
-  color: var(--noface-ink);
+  align-content: center;
+  padding-bottom: 18%;
+  color: currentColor;
+  opacity: .28;
 }
 
 .bookcard__face {

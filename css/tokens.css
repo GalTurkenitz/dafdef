@@ -18,8 +18,6 @@
   --accent: #C9862B;             /* ענבר — לסטריק ולחגיגות בלבד */
   --danger: #B3403A;
   --ok: #2E7D52;                 /* אישור — ירוק */
-  --noface-bg: #DAD5CF;          /* כרטיס ספר בלי דיוקן */
-  --noface-ink: #A69E95;
   --level: #2F6DB5;              /* כחול הרמה */
   --level-soft: rgba(47, 109, 181, 0.12);
   --badge: #E0762B;              /* עיגול העדכון על בקשות חברות */
@@ -108,8 +106,6 @@
   --text: #FFFFFF;
   --text-soft: #A29A95;
   --ok: #57B37E;                 /* ירוק בהיר יותר, קריא על שחור */
-  --noface-bg: #2A2624;
-  --noface-ink: #6B625A;
   --level: #6FA8E8;
   --level-soft: rgba(111, 168, 232, 0.20);
   --badge: #E8913F;
