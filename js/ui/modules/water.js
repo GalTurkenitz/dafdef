@@ -119,7 +119,7 @@ export async function mount(host, { onComplete } = {}) {
   }
 
   function shoot() {
-    const { categories, image, source, error } = cam.captureStill();
+    const { categories, image, error } = cam.captureStill();
     judged = judgeVessel(categories);
     shot = image;
 
@@ -137,8 +137,7 @@ export async function mount(host, { onComplete } = {}) {
       hintEl.innerHTML = vesselMessage(judged)
         + `<br><i class="t-small">${seen.length
             ? 'זיהיתי: ' + seen.join(' · ')
-            : (error ? 'שגיאת מסווג: ' + error : 'המודל לא החזיר כלום')
-          } · מצלמה ${source || '?'}</i>`;
+            : (error ? 'שגיאת מסווג: ' + error : 'המודל לא החזיר כלום')}</i>`;
       hintEl.className = 'water__hint is-warn';
     }
 

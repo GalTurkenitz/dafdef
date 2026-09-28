@@ -12,6 +12,7 @@
 
 import { readFileSync } from 'node:fs';
 import { judgeVessel, vesselMessage, topLabels, MIN_SCORE,
+         VESSEL_RATIO, REJECT_RATIO,
          VESSEL, NOT_VESSEL } from '../js/logic/vessel.js';
 
 let fail = 0;
@@ -55,10 +56,9 @@ console.log('\n— בקבוק בושם —');
 {
   const r = judgeVessel(cats(['perfume', 0.74], ['water bottle', 0.11]));
   is('בושם נפסל', r.ok, false);
-  is('  והסיבה ברורה', r.reason, 'not-vessel');
-  is('  ומה זוהה', r.match, 'perfume');
-  is('  וההודעה מסבירה',
-     vesselMessage(r).includes('לא נראה כמו כלי שתייה'), true);
+  /* הבקבוק הוא 15% מהבושם — פירור בזנב, ולכן "חלש" ולא "נפסל" */
+  is('  הסיבה: חלש מדי', r.reason, 'weak');
+  is('  וההודעה אחידה', vesselMessage(r), 'קרב את הכוס למצלמה ונסה שוב');
 }
 
 {
@@ -179,17 +179,32 @@ console.log('— מול אוצר המילים של המודל —');
 console.log('');
 console.log('— דירוג ולא סף —');
 {
-  const r = judgeVessel(cats(['desk', 0.21], ['beaker', 0.08], ['lamp', 0.05]));
-  is('כוס בציון נמוך אך ללא מתחרה', r.ok, true);
+  /* ⚠️ המקרה שגליל נייר הטואלט שבר. */
+  const r = judgeVessel(cats(['toilet tissue', 0.86], ['paper towel', 0.10],
+                             ['bucket', 0.05], ['cup', 0.03]));
+  is('נייר טואלט עם cup בזנב — נפסל', r.ok, false);
+  is('  כי הכוס חלשה מול מה שנראה', r.reason, 'weak');
+  is('  ומה הוביל', r.match, 'toilet tissue');
+}
+{
+  /* כוס חלשה מול מחלקה שאינה באף רשימה — עדיין נפסלת */
+  const r = judgeVessel(cats(['desk', 0.60], ['beaker', 0.08]));
+  is('כוס בזנב מאחורי חפץ לא מוכר', r.ok, false);
+}
+{
+  /* אבל כשהיא קרובה למוביל — עוברת */
+  const r = judgeVessel(cats(['desk', 0.20], ['beaker', 0.18]));
+  is('כוס קרובה למוביל — עוברת', r.ok, true);
   is('  ומה זוהה', r.match, 'beaker');
 }
 {
-  const r = judgeVessel(cats(['perfume', 0.19], ['beaker', 0.08]));
-  is('בושם מדורג מעל כוס — נפסל', r.ok, false);
+  const r = judgeVessel(cats(['perfume', 0.19], ['beaker', 0.16]));
+  is('בושם מוביל על כוס — נפסל', r.ok, false);
+  is('  הסיבה', r.reason, 'not-vessel');
 }
 {
-  const r = judgeVessel(cats(['beaker', 0.19], ['perfume', 0.08]));
-  is('כוס מדורגת מעל בושם — עוברת', r.ok, true);
+  const r = judgeVessel(cats(['beaker', 0.40], ['perfume', 0.10]));
+  is('כוס חזקה ובושם חלש — עוברת', r.ok, true);
 }
 {
   const r = judgeVessel(cats(['cup', 0.015]));
@@ -203,6 +218,31 @@ console.log('— תוויות לתצוגה —');
   is('שלוש הראשונות', t.length, 3);
   is('  מנורמלות ובאחוזים', t[0], 'coffee mug 42%');
   is('בלי קלט — ריק', topLabels(null).length, 0);
+}
+
+/* ------------------------------------------------------------------ *
+ * הספים עצמם
+ * ------------------------------------------------------------------ */
+
+console.log('');
+console.log('— גבולות הכלל —');
+{
+  const top = 0.50;
+  const inn = judgeVessel(cats(['desk', top], ['cup', VESSEL_RATIO * top + 0.01]));
+  const out = judgeVessel(cats(['desk', top], ['cup', VESSEL_RATIO * top - 0.01]));
+  is('בדיוק מעל יחס הכלי', inn.ok, true);
+  is('בדיוק מתחת', out.ok, false);
+}
+{
+  const v = 0.40;
+  const inn = judgeVessel(cats(['cup', v], ['perfume', REJECT_RATIO * v + 0.01]));
+  const out = judgeVessel(cats(['cup', v], ['perfume', REJECT_RATIO * v - 0.01]));
+  is('פסילה מעל היחס — גוברת', inn.ok, false);
+  is('פסילה מתחת — לא גוברת', out.ok, true);
+}
+{
+  is('נייר טואלט ברשימת הפסילה', NOT_VESSEL.includes('toilet tissue'), true);
+  is('מגבת נייר ברשימה', NOT_VESSEL.includes('paper towel'), true);
 }
 
 console.log(fail ? `\n${fail} בדיקות נכשלו` : '\nכל הבדיקות עברו');

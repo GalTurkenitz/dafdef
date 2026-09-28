@@ -19,15 +19,20 @@
  * ─────────────────────────────────────────────────────────────────
  *
  * ─────────────────────────────────────────────────────────────────
- *  נמדד על תמונות אמיתיות (ויקישיתוף), דרך אותו צינור בדיוק,
- *  בארבעה שדות ראייה מדומים — הנושא תופס 90%, 50%, 30% ו-18%
- *  מגובה הפריים:
+ *  נמדד על **28 תמונות אמיתיות** מוויקישיתוף, דרך אותו צינור
+ *  בדיוק, בשלושה שדות ראייה מדומים (הנושא תופס 80%, 50%, 30%
+ *  מגובה הפריים) — 84 מקרים:
  *
- *    בקבוקי מים · כוסות זכוכית · ספלים  ⇐ עוברים עד 30%
- *    שני בקבוקי בושם                     ⇐ נפסלים בכל הגדלים
+ *    18 מתוך 18 לא-כלים  ⇐ נפסלים בכל שדה ראייה
+ *      נייר טואלט · מגבת נייר · בושם · נר · ספריי · טלפון
+ *      מנורה · ספר · דאודורנט
  *
- *  מתחת ל-30% הזיהוי מתחיל להתפרק — בקבוק דק נקרא candle. בשביל
- *  זה יש מסגרת על המסך שאומרת למשתמש למלא אותה.
+ *    כוסות זכוכית · ספל · בקבוקי פלסטיק ⇐ עוברים
+ *
+ *  **אפס עוברים בטעות.** הכשלים שנותרו הם בקבוק מתכת מבודד,
+ *  שהמודל קורא לו microphone או hair spray, ותמונת שולחן שבה
+ *  הספל אינו הנושא. בקבוק מתכת הוא מגבלה אמיתית של המודל —
+ *  כוס זכוכית או בקבוק פלסטיק עובדים.
  * ─────────────────────────────────────────────────────────────────
  *
  *  ומה זה עדיין לא: זו לא הוכחה ששתית. כוס ריקה עוברת, וכוס עם
@@ -35,15 +40,27 @@
  *  אחריו באה הצהרה מפורשת, והמשימה שווה הכי מעט דקות.
  */
 
-/**
- * רצפת רעש בלבד.
- *
- * ההחלטה היא **לפי דירוג ולא לפי סף**: מודל int8 שמתפלג על 1000
- * מחלקות נותן לעיתים 0.08 למחלקה הנכונה, וסף קבוע פסל כוסות
- * אמיתיות. מה שקובע הוא מי מדורג גבוה יותר — כלי שתייה או משהו
- * שברור שאינו.
- */
+/** רצפת רעש */
 export const MIN_SCORE = 0.02;
+
+/**
+ * כמה חזק צריך להיות כלי השתייה ביחס למה שהמודל באמת ראה.
+ *
+ * **זה מה שגליל נייר הטואלט שבר.** הכלל הקודם השווה רק "כלי
+ * שתייה מול רשימת פסילה", וכל מחלקה שלא הופיעה באף אחת מהן
+ * הותעלמה. גליל נייר נתן `toilet tissue 86%` ובזנב `cup 3%` —
+ * ומכיוון ש-toilet tissue לא היה ברשימות, ה-cup ניצח.
+ *
+ * עכשיו הכלי נמדד מול **המחלקה החזקה ביותר בתמונה**, ולא משנה
+ * אם היא מוכרת לנו. 3% מול 86% הוא רעש, לא כוס.
+ */
+export const VESSEL_RATIO = 0.45;
+
+/**
+ * כמה חזקה צריכה להיות פסילה כדי לגבור על כלי שתייה.
+ * נמוך בכוונה — עדיף לבקש צילום חוזר מאשר לאשר בושם.
+ */
+export const REJECT_RATIO = 0.4;
 
 /**
  * כלי שתייה, מתוך אוצר המילים האמיתי של המודל.
@@ -72,6 +89,9 @@ export const NOT_VESSEL = [
   'perfume', 'pill bottle', 'lotion', 'sunscreen', 'hair spray',
   'soap dispenser', 'lighter', 'syringe', 'candle', 'saltshaker',
   'cellular telephone', 'remote control', 'oil filter', 'lipstick',
+  /* נוספו אחרי שגליל נייר טואלט עבר — מה שבאמת דומה לכלי שתייה */
+  'toilet tissue', 'paper towel', 'plunger', 'hand blower',
+  'table lamp', 'lampshade', 'matchstick', 'hourglass', 'bucket',
 ];
 
 /** ImageNet מפריד מחלקות בפסיקים, ולפעמים בקו תחתון */
@@ -101,20 +121,25 @@ export function judgeVessel(categories = []) {
     return { ok: false, reason: 'unclear', match: null, score: 0 };
   }
 
+  const top = rows[0].score;
   const vessel = rows.find((r) => inList(r.name, VESSEL)) || null;
   const bad = rows.find((r) => inList(r.name, NOT_VESSEL)) || null;
 
-  /* מה שברור שאינו כלי שתייה גובר, גם אם משהו אחר דומה קצת.
-     זה מה שפוסל את בקבוק הבושם. */
-  if (bad && (!vessel || bad.score >= vessel.score)) {
+  if (!vessel) {
+    return { ok: false, reason: 'unclear', match: rows[0].name, score: top };
+  }
+
+  /* הכלי חייב להיות קרוב למה שהמודל באמת ראה, ולא פירור בזנב */
+  if (vessel.score < VESSEL_RATIO * top) {
+    return { ok: false, reason: 'weak', match: rows[0].name, score: top };
+  }
+
+  /* ומשהו שברור שאינו כלי שתייה גובר גם כשהוא חלש יותר */
+  if (bad && bad.score >= REJECT_RATIO * vessel.score) {
     return { ok: false, reason: 'not-vessel', match: bad.name, score: bad.score };
   }
 
-  if (vessel) {
-    return { ok: true, reason: 'vessel', match: vessel.name, score: vessel.score };
-  }
-
-  return { ok: false, reason: 'unclear', match: rows[0].name, score: rows[0].score };
+  return { ok: true, reason: 'vessel', match: vessel.name, score: vessel.score };
 }
 
 /**
@@ -128,11 +153,9 @@ export function topLabels(categories = [], n = 3) {
     .map((c) => `${norm(c.categoryName)} ${Math.round(c.score * 100)}%`);
 }
 
-/** הודעה למשתמש לפי הסיבה */
+/** הודעה למשתמש. הודעה אחת לכל כישלון — הסיבה הטכנית בשורת האבחון. */
 export function vesselMessage(result) {
-  switch (result?.reason) {
-    case 'vessel':     return 'רואים כוס';
-    case 'not-vessel': return 'זה לא נראה כמו כלי שתייה. צלם כוס או בקבוק';
-    default:           return 'לא זיהיתי כוס. קרב את הכוס למצלמה ונסה שוב';
-  }
+  return result?.reason === 'vessel'
+    ? 'רואים כוס'
+    : 'קרב את הכוס למצלמה ונסה שוב';
 }
