@@ -2,23 +2,22 @@
  * bookcard.js — כרטיס ספר, משותף לספרייה ול"הספרים שלי" במסך הבית.
  *
  * הרקע הוא דיוקן המחבר כשיש כזה (86% מהקטלוג), ומעליו שכבת
- * הצבע של אורך הקריאה — ירוק קצר, צהוב בינוני, אדום ארוך. ספר
- * בלי דיוקן מקבל את הצבע בלבד, וזה מצב תקין ולא חור.
+ * הצבע של אורך הקריאה — ירוק קצר, אדום ארוך. מי שאין לו דיוקן
+ * מקבל צללית אפורה, כדי שהרשת תיראה אחידה ולא שבורה.
  *
  * הדיוקנאות מוויקיפדיה, כי ל-API של בן-יהודה אין תמונות בכלל.
  * הרישיונות ב-content/authors/credits.json.
  */
 
 import { BOOK_LENGTH } from '../config.js';
+import { icon } from './icons.js';
 
 /**
  * @param {number} estMinutes
- * @returns {'short'|'medium'|'long'}
+ * @returns {'short'|'long'}
  */
 export function lengthClass(estMinutes = 0) {
-  if (estMinutes <= BOOK_LENGTH.shortMaxMinutes) return 'short';
-  if (estMinutes <= BOOK_LENGTH.mediumMaxMinutes) return 'medium';
-  return 'long';
+  return estMinutes <= BOOK_LENGTH.shortMaxMinutes ? 'short' : 'long';
 }
 
 /** זמן קריאה בלשון אנושית */
@@ -46,7 +45,7 @@ export function bookCard(book, { percent = null } = {}) {
              data-book="${esc(book.id)}">
     ${book.authorImage
       ? `<img class="bookcard__photo" src="${esc(book.authorImage)}" alt="" loading="lazy">`
-      : ''}
+      : `<span class="bookcard__noface" aria-hidden="true">${icon('person', 44)}</span>`}
     <span class="bookcard__face">
       <span class="bookcard__title">${esc(book.title)}</span>
       <span class="bookcard__author">${esc(book.author)}</span>

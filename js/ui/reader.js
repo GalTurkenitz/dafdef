@@ -16,7 +16,7 @@ import { createPageVerifier, countWords } from '../logic/verify.js';
 import { getSettings, setSettings, getReadingState, setReadingState,
          getCachedWork, cacheWork, earnUnits, openDay,
          touchBook, getBook, getActiveBookId, setActiveBookId,
-         getStartedBooks } from '../logic/store.js';
+         getStartedBooks, removeBook } from '../logic/store.js';
 import { mountNavbar } from './nav.js';
 import { initTheme, setTheme, getTheme } from './theme.js';
 import { icon } from './icons.js';
@@ -721,8 +721,12 @@ function showLoading(on) {
  * מרנדר לתוכו. ייבוא EPUB מהבורר נרשם אז אבל לא הופיע על המסך.
  */
 function overlay(html) {
-  picking = true;
+  /* hideOverlay מאפס את picking, ולכן הוא חייב לרוץ **לפני**
+     ההרמה — אחרת הדגל יוצא כבוי, מחוות הדפדוף נשארות פעילות,
+     והלחיצה הראשונה על קישור בשכבה נבלעת. */
   hideOverlay();
+  picking = true;
+
   const el = document.createElement('div');
   el.className = 'readerover';
   el.dataset.overlay = '1';
@@ -741,7 +745,12 @@ function showBookPicker(started) {
     <div class="pickbooks">
       <p class="t-sub pickbooks__lead">באיזה ספר להמשיך?</p>
       <div class="bookgrid">
-        ${started.map((b) => bookCard(b, { percent: b.percent ?? null })).join('')}
+        ${started.map((b) => `
+          <div class="pickbooks__slot">
+            ${bookCard(b, { percent: b.percent ?? null })}
+            <button class="pickbooks__del" type="button" data-del="${b.id}"
+                    aria-label="הסרת ${b.title || 'הספר'}">${icon('x', 15)}</button>
+          </div>`).join('')}
         ${newBookCard()}
       </div>
     </div>`);
@@ -752,6 +761,44 @@ function showBookPicker(started) {
      שתי הדרכים להוסיף ספר. */
   host.querySelector('.bookcard--new')
     ?.addEventListener('click', (e) => { e.preventDefault(); showNewBookChoice(); });
+
+  host.querySelectorAll('[data-del]').forEach((b) => {
+    b.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const book = started.find((x) => x.id === b.dataset.del);
+      confirmRemoveBook(book);
+    });
+  });
+}
+
+/* הסרה מוחקת גם את המיקום השמור, ולכן שואלים */
+function confirmRemoveBook(book) {
+  const d = document.createElement('div');
+  d.className = 'confirm';
+  d.innerHTML = `
+    <div class="confirm__scrim" data-no></div>
+    <div class="confirm__panel" role="dialog" aria-modal="true" aria-label="הסרת ספר">
+      <p class="confirm__q">להסיר את "${book?.title || 'הספר'}" מהספרים שלי?<br>
+        <i class="t-small">ההתקדמות בו תימחק.</i></p>
+      <button class="btn btn--danger btn--block" type="button" data-yes>כן, הסר</button>
+      <button class="btn btn--ghost btn--block" type="button" data-no>ביטול</button>
+    </div>`;
+
+  document.body.appendChild(d);
+  requestAnimationFrame(() => d.classList.add('is-open'));
+
+  const close = () => { d.classList.remove('is-open'); setTimeout(() => d.remove(), 180); };
+  d.querySelectorAll('[data-no]').forEach((x) => x.addEventListener('click', close));
+
+  d.querySelector('[data-yes]').addEventListener('click', () => {
+    removeBook(book.id);
+    d.remove();
+    const left = getStartedBooks().filter((x) => !x.finished);
+    if (left.length) showBookPicker(left);
+    else showNewBookChoice();
+    toast('הספר הוסר');
+  });
 }
 
 /**
