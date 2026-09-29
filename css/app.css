@@ -2202,10 +2202,12 @@ p  { margin: 0; }
   border: 1px solid var(--hairline);
   background:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--c) 9%, transparent) 0%,
-      transparent 120px),
+      color-mix(in srgb, var(--c) 18%, transparent) 0%,
+      color-mix(in srgb, var(--c) 5%, transparent) 55%,
+      transparent 100%),
     var(--surface-1);
   padding: var(--sp-4) var(--sp-4) calc(var(--sp-3) + 2px);
+  transition: background var(--t-base) var(--ease);
 }
 
 /* הקו העליון — צבע מלא בקצה ודועך לצדדים, כדי שלא ייראה כמו
@@ -2217,8 +2219,7 @@ p  { margin: 0; }
   inset-inline: 0;
   block-size: 2px;
   background: linear-gradient(90deg,
-    transparent, var(--c) 22%, var(--c) 78%, transparent);
-  opacity: .8;
+    transparent, var(--c) 18%, var(--c) 82%, transparent);
 }
 
 .nexttask__card--reading   { --c: var(--niche-reading); }
@@ -2278,6 +2279,18 @@ p  { margin: 0; }
   margin-block-start: var(--sp-3);
 }
 .nexttask__actions .btn { min-height: 46px; }
+
+/* "בצע" נושא את צבע המשימה ולא את צבע המותג.
+
+   הכפתור הוא הכתם הגדול ביותר בכרטיס, וכל עוד הוא היה כתום
+   לנצח הכרטיס נקרא אותו דבר בכל משימה. עכשיו מדיטציה ירוקה,
+   מים כחולים וקריאה כתומה — אותו צבע בדיוק שהנישה מקבלת
+   בגלגל, ולכן העין קושרת בין השניים בלי שום תווית. */
+.nexttask__card .btn--primary {
+  background: var(--c);
+  color: var(--niche-contrast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
 
 /* מצבי הקצה — בחירת נישות, סוף סבב — נשארים שורה פשוטה */
 .nexttask__label {
