@@ -91,24 +91,30 @@ function renderGrid() {
     const st = states[id];
     const on = selected.has(id);
 
-    /* קודם כאן ישבו ארבע תמונות מלאי — משקולות, ספר עם ורדים,
-       ילד מול לוח — בארבעה סגנונות צילום שונים, עם טקסט לבן
-       שהונח עליהן. זה היה הדבר הבולט ביותר במסך.
+    /* התמונה נשארת, אבל לא כרקע גולמי שטקסט לבן מונח עליו.
 
-       עכשיו הכרטיס בנוי מאותם חומרים כמו שאר האפליקציה: גוון
-       צבע הנישה, האייקון שלה, והפס שמראה כמה מעשרת השלבים
-       בקבוצה הנוכחית כבר מאחוריך. */
+       הכרטיס בנוי כמו כרטיס המשימה שבמסך הבית: קו בצבע הנישה
+       בראש, גוון של אותו צבע יורד מלמעלה, ובתחתית צעיף שמכהה
+       את התמונה עד שהשם ו"שלב N" יושבים על שטח נקי. הפס למטה
+       מראה כמה מעשרת השלבים בקבוצה הנוכחית כבר מאחוריך.
+
+       זה גם מה שהספרייה עושה עם דיוקני המחברים, ולכן שני
+       המסכים נראים מאותה אפליקציה. */
     const inSection = levelInSection(st.level);
     const pct = Math.round((inSection / LEVELS_PER_SECTION) * 100);
 
     return `<a class="track-card track-card--${id}${on ? '' : ' is-off'}"
                href="?niche=${id}" data-open="${id}">
-      <span class="track-card__glyph">${icon(niche.icon, 24)}</span>
-      <span class="track-card__name">${niche.name}</span>
-      ${on
-        ? `<span class="track-card__level">שלב ${st.level}</span>
-           <span class="track-card__bar"><i style="inline-size:${pct}%"></i></span>`
-        : '<span class="track-card__off">לא בסבב שלך</span>'}
+      <img class="track-card__photo" src="content/img/niches/${id}.webp" alt="" loading="lazy">
+      <span class="track-card__scrim"></span>
+      <span class="track-card__glyph">${icon(niche.icon, 18)}</span>
+      <span class="track-card__body">
+        <span class="track-card__name">${niche.name}</span>
+        ${on
+          ? `<span class="track-card__level">שלב ${st.level}</span>
+             <span class="track-card__bar"><i style="inline-size:${pct}%"></i></span>`
+          : '<span class="track-card__off">לא בסבב שלך</span>'}
+      </span>
     </a>`;
   }).join('');
 

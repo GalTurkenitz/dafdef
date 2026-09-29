@@ -2478,52 +2478,104 @@ p  { margin: 0; }
   align-content: center;
 }
 
-/* אותו חומר כמו כרטיס הסטטיסטיקה ותחנת הגלגל: משטח, קו שיער,
-   ונגיעת צבע הנישה בראש — ולא תצלום מלאי עם טקסט לבן עליו. */
+/* הכרטיס בנוי כמו כרטיס המשימה שבמסך הבית: קו בצבע הנישה
+   בראש, גוון של אותו צבע, והתוכן בתחתית על שטח נקי. התמונה
+   היא הרקע — לא משטח צבע ולא טקסט לבן שמונח על תצלום. */
 .track-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 2px;
+  display: block;
   aspect-ratio: 1;
-  padding: var(--sp-3);
   border-radius: var(--r-card);
   border: 1px solid var(--hairline);
   overflow: hidden;
   text-decoration: none;
   color: var(--text);
-  background:
-    radial-gradient(120% 90% at 82% 0%,
-      color-mix(in srgb, var(--c, var(--primary)) 20%, transparent) 0%, transparent 70%),
-    var(--surface-2);
-  transition: transform var(--t-fast) var(--ease),
-              background-color var(--t-fast) var(--ease);
+  background: var(--surface-2);
+  transition: transform var(--t-fast) var(--ease);
 }
 .track-card:active { transform: scale(.97); }
 
-/* האייקון בפינה העליונה — גדול ועמום, סימן ולא תווית */
-.track-card__glyph {
+.track-card__photo {
   position: absolute;
-  inset-block-start: var(--sp-3);
-  /* אותה פינה שממנה יוצא גוון הצבע ושבה מתחיל הטקסט — ימין
-     ב-RTL. אייקון בפינה אחת וצבע בפינה הנגדית נראה כמו שתי
-     החלטות שלא דיברו זו עם זו. */
-  inset-inline-start: var(--sp-3);
-  color: var(--c, var(--primary));
-  opacity: .9;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  /* ארבעה תצלומים ממקורות שונים נכנסים בארבע רמות בהירות —
+     ספר על נייר לבן זרח ליד חדר כושר אפלולי, ושתי המשבצות
+     נראו כאילו הן משני מסכים. ההנמכה מיישרת ביניהן ומשאירה
+     את צבע הנישה הדבר הבהיר בכרטיס. */
+  filter: brightness(.82) saturate(.92);
 }
 
-.track-card__name  {
+/* הצעיף. אטום בתחתית ונפתח למעלה, בדיוק כמו בכרטיס הספר —
+   כך השם ו"שלב N" קריאים על כל תמונה בלי להחוויר אותה.
+   מעליו גוון דק של צבע הנישה, שקושר את הכרטיס לשאר המסכים. */
+.track-card__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--c, var(--primary)) 24%, transparent) 0%,
+      transparent 45%),
+    linear-gradient(to top,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 32%,
+      color-mix(in srgb, var(--bg) 45%, transparent) 60%,
+      transparent 92%);
+}
+
+/* הקו העליון בצבע הנישה — אותו סימן כמו בכרטיס המשימה */
+.track-card::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 2;
+  block-size: 2px;
+  background: linear-gradient(90deg,
+    transparent, var(--c, var(--primary)) 18%,
+    var(--c, var(--primary)) 82%, transparent);
+}
+
+/* האייקון בשבב כהה: מעל תמונה, ריבוע שקוף בצבע הנישה בלבד לא
+   מבטיח ניגוד — הרקע משתנה מתמונה לתמונה. */
+.track-card__glyph {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: var(--sp-3);
+  inset-inline-start: var(--sp-3);
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, .42);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--primary)) 40%, transparent);
+  color: var(--c, var(--primary));
+}
+
+.track-card__body {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  inset-block-end: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--sp-3);
+}
+
+.track-card__name {
   font-size: var(--fs-body);
   font-weight: var(--w-head);
   letter-spacing: var(--ls-h2);
+  color: var(--text);
 }
 .track-card__level {
   font-size: var(--fs-small);
   font-weight: var(--w-body);
-  color: var(--text-soft);
+  color: var(--text-2);
 }
 
 /* כמה מעשרת השלבים בקבוצה הנוכחית כבר מאחוריך */
@@ -2532,7 +2584,7 @@ p  { margin: 0; }
   block-size: 4px;
   margin-block-start: 8px;
   border-radius: var(--r-chip);
-  background: color-mix(in srgb, var(--c, var(--primary)) 18%, transparent);
+  background: rgba(255, 255, 255, .18);
   overflow: hidden;
 }
 .track-card__bar i {
@@ -2542,14 +2594,14 @@ p  { margin: 0; }
   background: var(--c, var(--primary));
 }
 
-.track-card__off { font-size: var(--fs-small); color: var(--text-dim); }
+.track-card__off { font-size: var(--fs-small); color: var(--text-soft); }
 
-/* נישה שאינה בסבב — שטוחה, בלי גוון צבע, אבל קריאה */
-.track-card.is-off {
-  background: var(--surface);
-}
-.track-card.is-off .track-card__glyph { opacity: .3; color: var(--text-dim); }
-.track-card.is-off .track-card__name  { color: var(--text-2); }
+/* נישה שאינה בסבב — התמונה נשארת אבל מחווירה ויוצאת מהצבע,
+   כדי שההבדל בין "בסבב" ל"לא בסבב" ייקרא במבט אחד. */
+.track-card.is-off .track-card__photo { filter: grayscale(1); opacity: .5; }
+.track-card.is-off::before { opacity: .35; }
+.track-card.is-off .track-card__glyph { color: var(--text-soft); box-shadow: none; }
+.track-card.is-off .track-card__name { color: var(--text-2); }
 
 /* צבע הנישה */
 .track-card--reading  { --c: var(--niche-reading); }
