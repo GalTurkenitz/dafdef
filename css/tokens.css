@@ -1,149 +1,215 @@
-/* ============================================================
-   tokens.css — מערכת העיצוב
-   הקובץ היחיד שבו מוגדרים צבעים, מידות, טיפוגרפיה וזמני אנימציה.
-   שום קובץ אחר לא מגדיר צבע או מידה בערך קשיח.
-
-   פלטה: חום כצבע המותג, לבן/שחור כרקע וטקסט.
-   שני מצבי תצוגה בלבד — בהיר וכהה.
-   ============================================================ */
+/**
+ * tokens.css — מערכת העיצוב.
+ *
+ * ─────────────────────────────────────────────────────────────────
+ *  Material Design 3, נגזר מצבע זרע אחד: #6F4E37
+ *
+ *  הצבעים כאן **לא נבחרו ביד**. הם נוצרו מהזרע דרך ספריית הצבעים
+ *  של גוגל (@material/material-color-utilities), שמחשבת לכל גוון
+ *  סקאלה של 100 מדרגות במרחב HCT ובוחרת מדרגות שמובטח שיהיה
+ *  ביניהן ניגודיות. זה ההבדל בין פלטה למערכת.
+ *
+ *  צבעי המותג — הרצף, הרמה, האישור, התג — עברו **הרמוניזציה**
+ *  לכיוון הזרע: הגוון נמשך מעט לעבר החום, והכל נראה כמשפחה אחת.
+ *
+ *  **הנישות לא.** הרמוניזציה של צבע קטגורי הורסת את תפקידו:
+ *  נמדד שקריאה, צעדים והרצף — כולם חמים מלכתחילה — יצאו כמעט
+ *  באותו צבע. הן שומרות על הגוון המקורי, ורק הבהירות נלקחת
+ *  מהסקאלה.
+ *
+ *  לשינוי הזרע: node scripts/gen-tokens.mjs
+ * ─────────────────────────────────────────────────────────────────
+ *  משטחים
+ *
+ *  ב-M3 גובה אינו צל אלא **מדרגה בסקאלת הניטרל**. ערבוב ידני
+ *  החזיר ערכים כמעט זהים; אלה המדרגות שהמפרט עצמו מגדיר.
+ * ─────────────────────────────────────────────────────────────────
+ */
 
 :root {
-  /* ---------- מצב בהיר (ברירת מחדל) ---------- */
-  --bg: #FFFFFF;
-  --surface: #FFFFFF;
-  --text: #000000;
-  --text-soft: #6B6360;
-  --primary: #4B2E1E;            /* חום אגוז כהה — צבע המותג */
-  --primary-contrast: #FFFFFF;
-  --accent: #C9862B;             /* ענבר — לסטריק ולחגיגות בלבד */
-  --danger: #B3403A;
-  --ok: #2E7D52;                 /* אישור — ירוק */
-  --level: #2F6DB5;              /* כחול הרמה */
-  --level-soft: rgba(47, 109, 181, 0.12);
-  --badge: #E0762B;              /* עיגול העדכון על בקשות חברות */
-  --border: #E5DED8;
-  --lock: #17130F;               /* רקע מסך נעילה */
+  /* ---------- M3: תפקידי צבע ---------- */
+  --m3-primary: #944a01;
+  --m3-on-primary: #ffffff;
+  --m3-primary-container: #ffdcc6;
+  --m3-on-primary-container: #301400;
+  --m3-secondary: #755845;
+  --m3-secondary-container: #ffdcc6;
+  --m3-on-secondary-container: #2b1708;
+  --m3-tertiary: #5f6135;
+  --m3-tertiary-container: #e5e6ae;
+  --m3-error: #ba1a1a;
+  --m3-error-container: #ffdad6;
+  --m3-on-error-container: #410002;
+  --m3-outline: #84746a;
+  --m3-outline-variant: #d7c3b7;
 
-  /* גוונים נגזרים */
-  --accent-soft: rgba(201, 134, 43, 0.14);
-  --primary-soft: rgba(75, 46, 30, 0.10);
-  --primary-softer: rgba(75, 46, 30, 0.05);
-  --track: rgba(75, 46, 30, 0.14);    /* מסלול ריק בטבעת ההתקדמות */
+  /* ---------- משטחים ---------- */
+  --bg: #fff8f5;
+  --surface: #fef1eb;
+  --surface-1: #fef1eb;
+  --surface-2: #f8ebe5;
+  --surface-3: #f2e6e0;
+  --surface-4: #ece0da;
+  --surface-5: #ffffff;
 
-  /* ---------- צבע נישה (סעיף א4) ----------
-     לכל נישה גוון משלה, מכוילים לחיות עם החום של המותג:
-     רוויה בינונית, ערך טונאלי דומה, וכולם עוברים 3:1 מול הרקע
-     כדי שאייקון בתוך עיגול מלא יישאר קריא. */
-  --niche-reading:   #B4552F;   /* טרקוטה */
-  --niche-fitness:   #A83B4C;   /* גרנט */
-  --niche-learning:  #2F6F6B;   /* טורקיז עמוק */
-  --niche-writing:   #5B5296;   /* אינדיגו רך */
-  --niche-breathing: #56703F;   /* מרווה */
-  --niche-water:     #2E7BA6;   /* תכלת עמוק */
-  --niche-steps:     #A3711F;   /* ענבר */
-  --niche-sleep:     #474470;   /* סגול־לילה */
-  --niche-contrast:  #FFFFFF;   /* הדיו בתוך עיגול מלא */
+  --text: #201a17;
+  --text-soft: #52443b;
+  --border: #d7c3b7;
 
-  /* ---------- צבע ספר לפי אורך הקריאה ---------- */
-  --len-short-bg: #D9E7D2;   --len-short-ink: #2C4526;
-  --len-medium-bg: #F1E3C3;  --len-medium-ink: #5A4520;
-  --len-long-bg: #EFD4CC;    --len-long-ink: #6A2E25;
+  /* ---------- מותג ---------- */
+  --primary: #944a01;
+  --primary-contrast: #ffffff;
+  --primary-soft: #ffdcc6;
+  --primary-softer: #ffede4;
 
-  /* ---------- טיפוגרפיה ---------- */
-  --font-ui: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-read: "Frank Ruhl Libre", Georgia, "Times New Roman", serif;
+  /* ---------- סמנטיים, מוהרמנים לזרע ---------- */
+  --accent: #8d4f00;
+  --accent-soft: #ffe3cd;
+  --danger: #ba1a1a;
+  --danger-soft: #ffdad6;
+  --ok: #32652c;
+  --ok-soft: #bdf7af;
+  --level: #465eb0;
+  --level-soft: #e7eaff;
+  --badge: #aa5200;
 
-  --fs-h1: 28px;
+  --lock: #281202;
+  --track: #ffdcc6;
+
+  /* ---------- נישות ---------- */
+  --niche-reading:   #9c431f;
+  --niche-fitness:   #a43849;
+  --niche-learning:  #276864;
+  --niche-writing:   #5e559a;
+  --niche-breathing: #4c6636;
+  --niche-water:     #04658f;
+  --niche-steps:     #825500;
+  --niche-sleep:     #5d5987;
+  --niche-contrast: #ffffff;
+
+  /* ---------- אורך ספר ---------- */
+  --len-short-bg: #a9fac5;   --len-short-ink: #004d2c;
+  --len-long-bg: #ffe1e2;    --len-long-ink: #7e1b2f;
+
+  /* ---------- שכבת מצב (M3 state layer) ---------- */
+  --state-hover: 0.08;
+  --state-press: 0.12;
+
+  /* ---------- צורה (M3 shape scale) ---------- */
+  --r-chip: 8px;
+  --r-btn: 20px;
+  --r-card: 16px;
+  --r-xl: 28px;
+
+  /* ---------- טיפוגרפיה (M3 type scale) ---------- */
+  --font-ui: 'Heebo', system-ui, sans-serif;
+  --font-read: 'Frank Ruhl Libre', Georgia, serif;
+
+  --fs-h1: 32px;
   --fs-h2: 22px;
-  --fs-body: 17px;
-  --fs-sub: 15px;
-  --fs-small: 13px;
-  --fs-number: 44px;
+  --fs-sub: 16px;
+  --fs-body: 15px;
+  --fs-small: 12px;
+  --fs-number: 57px;
 
-  --lh-body: 1.6;
-  --lh-read: 1.8;
+  --lh-body: 1.45;
+  --lh-read: 1.72;
 
-  /* ---------- Spacing — כפולות 4 ---------- */
+  /* ---------- מרווח ---------- */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
   --sp-4: 16px;
   --sp-6: 24px;
   --sp-8: 32px;
+
+  /* ---------- מידות ---------- */
+  --phone-max: 480px;
   --screen-pad: 20px;
-
-  /* ---------- Radius ---------- */
-  --r-card: 16px;
-  --r-btn: 14px;
-  --r-chip: 999px;
-
-  /* ---------- צל ---------- */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, .07);
-  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .14);
-
-  /* ---------- מידות רכיבים ---------- */
-  --btn-h: 52px;
   --tap-min: 44px;
+  --btn-h: 48px;
   --nav-h: 58px;
-  --nav-rise: 0px;               /* הבית כבר לא מתרומם — נשמר לשימוש עתידי */
-  /* המקום שצריך לפנות מעל הניווט: הסרגל, ההתרוממות של כפתור הבית,
-     ונשימה כדי שכפתורי המסך לא יידבקו אליו */
+  --nav-rise: 0px;
   --nav-space: calc(var(--nav-h) + var(--nav-rise) + var(--sp-3));
-  --phone-max: 430px;
 
-  /* ---------- אנימציה ---------- */
-  --t-fast: 200ms;
+  /* ---------- גובה (M3 elevation) ---------- */
+  --shadow-card: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
+  --shadow-sheet: 0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+
+  /* ---------- תנועה (M3 motion) ---------- */
+  --t-fast: 150ms;
   --t-base: 250ms;
-  --ease: cubic-bezier(.22, .61, .36, 1);
+  --ease: cubic-bezier(.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(.2, 0, 0, 1);
 }
 
-/* ============================================================
-   מצב כהה — רקע שחור, טקסט לבן
-   ============================================================ */
-:root.theme-dark {
-  --bg: #000000;
-  --surface: #141210;            /* מוגבה מעט מהרקע כדי שכרטיסים ייראו */
-  --text: #FFFFFF;
-  --text-soft: #A29A95;
-  --ok: #57B37E;                 /* ירוק בהיר יותר, קריא על שחור */
-  --level: #6FA8E8;
-  --level-soft: rgba(111, 168, 232, 0.20);
-  --badge: #E8913F;
-  --primary: #8C5A3C;            /* אגוז בהיר יותר — קריא על שחור */
-  /* לבן ולא כמעט-שחור: על האגוז הבהיר (#8C5A3C) טקסט כהה נותן
-     3.2:1 בלבד, מתחת לסף הקריאוּת. לבן נותן ~6:1. */
-  --primary-contrast: #FFFFFF;
-  --border: #2B2521;
-  --lock: #000000;
+/* ================================================================
+   מצב כהה
+   ================================================================ */
 
-  --accent-soft: rgba(201, 134, 43, 0.18);
-  --primary-soft: rgba(140, 90, 60, 0.20);
-  --primary-softer: rgba(140, 90, 60, 0.10);
-  --track: rgba(140, 90, 60, 0.26);
+.theme-dark {
+  --m3-primary: #ffb784;
+  --m3-on-primary: #4f2500;
+  --m3-primary-container: #713700;
+  --m3-on-primary-container: #ffdcc6;
+  --m3-secondary: #e4bfa8;
+  --m3-secondary-container: #5b412f;
+  --m3-on-secondary-container: #ffdcc6;
+  --m3-tertiary: #c8ca94;
+  --m3-tertiary-container: #47491f;
+  --m3-error: #ffb4ab;
+  --m3-error-container: #93000a;
+  --m3-on-error-container: #ffb4ab;
+  --m3-outline: #9f8d83;
+  --m3-outline-variant: #52443b;
 
-  /* צבעי הנישות מתבהרים על שחור, והדיו שבתוכם מתהפך */
-  --niche-reading:   #E09A6B;
-  --niche-fitness:   #E38392;
-  --niche-learning:  #6FC3BC;
-  --niche-writing:   #A69EE4;
-  --niche-breathing: #A3C489;
-  --niche-water:     #74B9E0;
-  --niche-steps:     #E0B463;
-  --niche-sleep:     #9A97D4;
-  --niche-contrast:  #17130F;
+  --bg: #18120f;
+  --surface: #201a17;
+  --surface-1: #201a17;
+  --surface-2: #241e1b;
+  --surface-3: #2f2925;
+  --surface-4: #3a332f;
+  --surface-5: #3f3834;
 
-  --len-short-bg: #2A3A26;   --len-short-ink: #D6E8CF;
-  --len-medium-bg: #3D3220;  --len-medium-ink: #F0E1C0;
-  --len-long-bg: #3B241F;    --len-long-ink: #EFD2CA;
+  --text: #ece0da;
+  --text-soft: #d7c3b7;
+  --border: #52443b;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, .6);
-  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .7);
+  --primary: #ffb784;
+  --primary-contrast: #4f2500;
+  --primary-soft: #713700;
+  --primary-softer: #452a16;
+
+  --accent: #ffb875;
+  --accent-soft: #5b3100;
+  --danger: #ffb4ab;
+  --danger-soft: #93000a;
+  --ok: #9cd590;
+  --ok-soft: #114511;
+  --level: #b6c4ff;
+  --level-soft: #183585;
+  --badge: #fd8e3d;
+
+  --lock: #1c0900;
+  --track: #523520;
+
+  --niche-reading:   #ffb59a;
+  --niche-fitness:   #ffb2b8;
+  --niche-learning:  #93d2cd;
+  --niche-writing:   #c8bfff;
+  --niche-breathing: #b2d096;
+  --niche-water:     #89cefd;
+  --niche-steps:     #f8bc63;
+  --niche-sleep:     #c6c1f5;
+  --niche-contrast: #4f2500;
+
+  --len-short-bg: #00391f;   --len-short-ink: #83d29f;
+  --len-long-bg: #65051f;    --len-long-ink: #ffaab1;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,.55);
+  --shadow-sheet: 0 8px 24px rgba(0,0,0,.65);
 }
 
-/* מכבדים העדפת "פחות תנועה" */
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --t-fast: 1ms;
-    --t-base: 1ms;
-  }
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

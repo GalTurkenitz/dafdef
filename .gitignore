@@ -1,5 +1,5 @@
-node_modules/
-.netlify/
-.DS_Store
-Thumbs.db
 *.log
+.DS_Store
+.netlify/
+Thumbs.db
+node_modules/

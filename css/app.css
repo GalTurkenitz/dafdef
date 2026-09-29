@@ -92,6 +92,8 @@ p  { margin: 0; }
 
 /* ---------- כפתורים ---------- */
 .btn {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -108,26 +110,60 @@ p  { margin: 0; }
               opacity var(--t-fast) var(--ease);
 }
 
-.btn:active { transform: scale(.98); }
+/* ---------- כפתורים, לפי M3 ----------
+
+   מה שמשתנה ביחס לקודם:
+
+   **שכבת מצב.** ב-M3 ריחוף ולחיצה אינם שינוי צבע אלא שכבה
+   שקופה של צבע הטקסט מעל הכפתור, באחוז קבוע. זה מה שגורם
+   לכפתור להרגיש חי, וזה מה שהיה חסר.
+
+   **ארבע וריאציות במקום ארבעה צבעים אקראיים:**
+   filled (פעולה ראשית) · tonal (משנית, מכל צבע) ·
+   outlined (קו מתאר) · text (בלי משטח).
+   ---------------------------------------------------------------- */
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+  pointer-events: none;
+}
+.btn:hover::after { opacity: var(--state-hover); }
+.btn:active::after { opacity: var(--state-press); }
+.btn:active { transform: scale(.985); }
 
 .btn--block { width: 100%; }
 
+/* ראשי — משטח מלא בצבע המותג */
 .btn--primary {
   background: var(--primary);
   color: var(--primary-contrast);
 }
 
+/* משני — מכל בגוון המותג, בלי קו מתאר */
 .btn--secondary {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--border);
+  background: var(--primary-soft);
+  color: var(--m3-on-primary-container);
 }
 
+/* טקסט — בלי משטח, לפעולות שלישוניות */
 .btn--ghost {
   background: transparent;
-  color: var(--text-soft);
+  color: var(--primary);
   min-height: var(--tap-min);
-  padding-inline: var(--sp-3);
+  padding-inline: var(--sp-4);
+}
+
+/* קו מתאר — לפעולה שקולה לראשית אבל פחות דוחפת */
+.btn--outlined {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--m3-outline);
 }
 
 .btn--danger {
@@ -135,6 +171,10 @@ p  { margin: 0; }
   color: var(--danger);
   border-color: var(--danger);
 }
+
+.btn--ok { background: transparent; color: var(--ok); border-color: var(--ok); }
+
+.btn--tiny { min-height: 32px; padding-inline: var(--sp-3); font-size: var(--fs-small); }
 
 .btn[disabled], .btn[aria-disabled="true"] {
   opacity: .45;
@@ -160,9 +200,11 @@ p  { margin: 0; }
 [dir="rtl"] .icon-flip { transform: scaleX(-1); }
 
 /* ---------- כרטיס ---------- */
+/* כרטיס M3 — "filled card": מכל בגובה, לא מלבן עם קו.
+   קווי 1px על כל דבר הם מה שגורם לממשק להיראות כמו טופס. */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border: 1px solid transparent;
   border-radius: var(--r-card);
   box-shadow: var(--shadow-card);
   padding: var(--sp-4);
@@ -1154,7 +1196,7 @@ p  { margin: 0; }
   block-size: 100%;
   object-fit: cover;
   object-position: center 22%;
-  opacity: .55;
+  opacity: .92;
 }
 
 /* מי שאין לו דיוקן — צללית בלבד, **בלי רקע משלה**.
@@ -1180,14 +1222,12 @@ p  { margin: 0; }
   padding: var(--sp-3);
 }
 
+/* הצעיף נייטרלי — שכבת צבע מעל פנים הפכה אותן לירוקות ואדומות */
 .bookcard.has-face .bookcard__face {
   justify-content: flex-end;
   background: linear-gradient(to top,
-    var(--card-veil) 0%, var(--card-veil) 38%, transparent 78%);
+    var(--bg) 0%, color-mix(in srgb, var(--bg) 80%, transparent) 44%, transparent 84%);
 }
-.bookcard--short.has-face  { --card-veil: color-mix(in srgb, var(--len-short-bg) 92%, transparent); }
-.bookcard--medium.has-face { --card-veil: color-mix(in srgb, var(--len-medium-bg) 92%, transparent); }
-.bookcard--long.has-face   { --card-veil: color-mix(in srgb, var(--len-long-bg) 92%, transparent); }
 
 .bookcard__title {
   font-family: var(--font-read);
@@ -1219,9 +1259,20 @@ p  { margin: 0; }
 }
 
 /* צבע לפי אורך */
-.bookcard--short  { background: var(--len-short-bg);  color: var(--len-short-ink); }
-.bookcard--medium { background: var(--len-medium-bg); color: var(--len-medium-ink); }
-.bookcard--long   { background: var(--len-long-bg);   color: var(--len-long-ink); }
+/* הכרטיס יושב על משטח נייטרלי כמו כל כרטיס אחר באפליקציה.
+   הצפת הכרטיס כולו בצבע האורך הפכה את הרשת לבלוקים צעקניים ואת
+   הדיוקנאות לרוחות ירוקות ואדומות. האורך מסומן בתווית הזמן
+   בלבד — מספיק כדי להבדיל, בלי להשתלט על המסך. */
+.bookcard--short,
+.bookcard--long { background: var(--surface-3); color: var(--text); }
+
+/* כרטיס בלי דיוקן מקבל גוון אורך עדין — אין שם תמונה שמתחרה,
+   ובלעדיו קצר וארוך נראים זהים לגמרי. */
+.bookcard--short:not(.has-face) { background: var(--len-short-bg); }
+.bookcard--long:not(.has-face)  { background: var(--len-long-bg); }
+
+.bookcard--short .bookcard__time { color: var(--len-short-ink); font-weight: 600; }
+.bookcard--long  .bookcard__time { color: var(--len-long-ink);  font-weight: 600; }
 
 /* כרטיס "ספר חדש" */
 .bookcard--new {
@@ -3294,7 +3345,6 @@ p  { margin: 0; }
 }
 .reqrow__name { flex: 1; cursor: pointer; }
 
-.btn--ok { color: var(--ok); border-color: var(--ok); background: transparent; }
 
 /* ---------- שעון הספירה לאחור ---------- */
 
@@ -3358,7 +3408,6 @@ p  { margin: 0; }
   font-weight: 700;
 }
 
-.btn--tiny { padding: 4px var(--sp-2); font-size: var(--fs-small); }
 
 /* שורה שאפשר ללחוץ עליה כדי לראות פרופיל */
 .leaguerow.is-tap { cursor: pointer; }
@@ -3410,21 +3459,28 @@ p  { margin: 0; }
 
 /* שבבים קומפקטיים כמו שאר הקטגוריות באפליקציה — לא כפתורים
    מתוחים לרוחב. הצבע הוא של אורך הספר, זהה לכרטיסים. */
+/* שבב סינון M3: לא נבחר = קו מתאר בלבד · נבחר = מכל מלא.
+   שני בלוקים צבעוניים תמיד־דלוקים נראו כמו אזהרה, לא כמו מסנן. */
 .tonechip {
-  padding: 6px var(--sp-4);
-  border: 1.5px solid transparent;
+  padding: 7px var(--sp-4);
+  border: 1px solid var(--m3-outline);
   border-radius: var(--r-chip);
-  background: color-mix(in srgb, var(--chip-bg) 45%, var(--surface));
-  color: var(--chip-ink);
+  background: transparent;
+  color: var(--text);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--t-fast) var(--ease);
+  transition: background-color var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
 }
-.tonechip:hover { background: color-mix(in srgb, var(--chip-bg) 70%, var(--surface)); }
+.tonechip:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+
 .tonechip[aria-pressed="true"] {
   background: var(--chip-bg);
-  border-color: var(--chip-ink);
+  border-color: transparent;
+  color: var(--chip-ink);
+  font-weight: 600;
 }
 
 .tonechip--short  { --chip-bg: var(--len-short-bg);  --chip-ink: var(--len-short-ink); }
