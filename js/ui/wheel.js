@@ -52,7 +52,7 @@ const el = (name, attrs = {}, children = '') => {
 
 function metrics(width, height) {
   // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע.
-  const tile = Math.max(52, Math.min(78, Math.round(Math.min(width, height) * 0.21)));
+  const tile = Math.max(52, Math.min(96, Math.round(Math.min(width, height) * 0.25)));
   const nodeR = tile / 2;
 
   /* הרדיוס נדחף עד הקצה: אופקית עוצר הריבוע עצמו, אנכית עוצר

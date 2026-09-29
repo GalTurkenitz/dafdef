@@ -2166,7 +2166,7 @@ p  { margin: 0; }
    ולכן הדרך היחידה להרחיק את התמונות מהמספר היא לצמצם אותו.
    הוא עדיין הדבר הגדול ביותר במסך. */
 .wheel__num {
-  font-size: 54px;
+  font-size: 48px;
   font-weight: 700;
   line-height: .95;
   letter-spacing: -0.035em;
