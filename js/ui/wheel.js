@@ -52,17 +52,17 @@ const el = (name, attrs = {}, children = '') => {
 
 function metrics(width, height) {
   // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע.
-  const tile = Math.max(52, Math.min(96, Math.round(Math.min(width, height) * 0.25)));
+  const tile = Math.max(52, Math.min(72, Math.round(Math.min(width, height) * 0.20)));
   const nodeR = tile / 2;
 
   /* הרדיוס נדחף עד הקצה: אופקית עוצר הריבוע עצמו, אנכית עוצר
      השם שמתחת לריבוע התחתון. בלוח לא-ריבועי הרוחב הוא שקובע,
      ולכן הטבעת יוצאת רחוקה יותר ממספר הדקות שבמרכז.
 
-     EDGE הוא האוויר שנשאר בין התחנות הצדדיות לשולי המסך. ב-2px
-     הן נגעו בקצה ונראו חתוכות; 6px מרחיק אותן מהשוליים ובדרך
-     גם מהמספר שבמרכז. */
-  const EDGE = 6;
+     EDGE הוא האוויר שנשאר בין התחנות הצדדיות לשולי המסך. כל
+     פיקסל שנוסף כאן יורד מהרדיוס ומקרב את התחנות למספר, ולכן
+     הוא מוחזק על המינימום. */
+  const EDGE = 2;
   const labelDy = nodeR + 14;
   const labelPad = labelDy + 7 - nodeR;
   const ring = Math.max(60, Math.min(
