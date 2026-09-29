@@ -265,7 +265,9 @@ function renderUsername() {
 
 function renderHome() {
   const requests = league.getRequestCount();
-  els.title.textContent = 'ליגה';
+  /* כותרת העמוד כבר אומרת "ליגה" — אותה מילה פעמיים על אותו
+     מסך היא סימן ברור לממשק שנבנה ממסכים ולא עוצב. */
+  els.title.textContent = '';
 
   els.body.innerHTML = `
     <div class="onepage">
@@ -274,18 +276,23 @@ function renderHome() {
         <p class="t-sub">תחרות שבועית מול מי שאתה בוחר.</p>
       </div>
       <div class="onepage__body">
-        <button class="bigbtn" type="button" data-go="leagues">
-          <span class="bigbtn__icon">${icon('trophy', 26)}</span>
-          <span class="bigbtn__text">ליגות
-            <i class="t-small">${league.getLeagues().length} ליגות</i></span>
-        </button>
+        <!-- שתי הכניסות בקבוצה אחת עם קו מפריד ביניהן, ולא שני
+             לוחות צפים. כשיש שני פריטים בלבד, שתי תיבות נפרדות
+             באמצע מסך ריק נראות כמו מסך שלא הספיקו לסיים. -->
+        <div class="rowgroup">
+          <button class="bigbtn" type="button" data-go="leagues">
+            <span class="bigbtn__icon">${icon('trophy', 26)}</span>
+            <span class="bigbtn__text">ליגות
+              <i class="t-small">${league.getLeagues().length} ליגות</i></span>
+          </button>
 
-        <button class="bigbtn" type="button" data-go="friends">
-          <span class="bigbtn__icon">${icon('target', 26)}</span>
-          <span class="bigbtn__text">חברים
-            <i class="t-small">${league.getFriends().length} חברים</i></span>
-          ${requests ? `<span class="badge">${requests}</span>` : ''}
-        </button>
+          <button class="bigbtn" type="button" data-go="friends">
+            <span class="bigbtn__icon">${icon('target', 26)}</span>
+            <span class="bigbtn__text">חברים
+              <i class="t-small">${league.getFriends().length} חברים</i></span>
+            ${requests ? `<span class="badge">${requests}</span>` : ''}
+          </button>
+        </div>
       </div>
     </div>`;
 
@@ -387,7 +394,8 @@ function renderLeague() {
 
       <div class="league__table">
         ${slice.map((r) => `
-          <div class="leaguerow is-tap${r.me ? ' is-me' : ''}"
+          <div class="leaguerow is-tap${r.me ? ' is-me' : ''}${
+               r.rank <= 3 ? ` is-top is-top${r.rank}` : ''}"
                data-player="${esc(r.username)}" role="button" tabindex="0">
             <span class="leaguerow__rank">${r.rank}</span>
             <span class="leaguerow__name">${esc(r.username)}${

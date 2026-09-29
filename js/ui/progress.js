@@ -29,7 +29,7 @@ import { renderNavbar, mountMenu } from './nav.js';
 import { icon } from './icons.js';
 import { NICHES } from '../config.js';
 import { unitValue } from '../logic/formula.js';
-import { LEVELS_PER_SECTION, PROGRESS_NICHES, sectionOf,
+import { LEVELS_PER_SECTION, PROGRESS_NICHES, sectionOf, levelInSection,
          levelLabel, levelValue, unitsForLevel } from '../logic/progress.js';
 import { getSettings, getProfile, getSelectedNiches, allProgress,
          getProgress, openDay } from '../logic/store.js';
@@ -91,15 +91,23 @@ function renderGrid() {
     const st = states[id];
     const on = selected.has(id);
 
-    /* הרקע הוא תמונת הנישה עם שכבת צבע מעליה, כדי שהטקסט יישאר
-       קריא בלי להסתיר את התמונה. הנתיב מהשורש בכוונה: url()
-       בתוך משתנה CSS נפתר ביחס לקובץ ה-CSS ולא ל-HTML. */
+    /* קודם כאן ישבו ארבע תמונות מלאי — משקולות, ספר עם ורדים,
+       ילד מול לוח — בארבעה סגנונות צילום שונים, עם טקסט לבן
+       שהונח עליהן. זה היה הדבר הבולט ביותר במסך.
+
+       עכשיו הכרטיס בנוי מאותם חומרים כמו שאר האפליקציה: גוון
+       צבע הנישה, האייקון שלה, והפס שמראה כמה מעשרת השלבים
+       בקבוצה הנוכחית כבר מאחוריך. */
+    const inSection = levelInSection(st.level);
+    const pct = Math.round((inSection / LEVELS_PER_SECTION) * 100);
+
     return `<a class="track-card track-card--${id}${on ? '' : ' is-off'}"
-               href="?niche=${id}" data-open="${id}"
-               style="--photo:url('/content/img/niches/${id}.webp')">
+               href="?niche=${id}" data-open="${id}">
+      <span class="track-card__glyph">${icon(niche.icon, 24)}</span>
       <span class="track-card__name">${niche.name}</span>
       ${on
-        ? `<span class="track-card__level">שלב ${st.level}</span>`
+        ? `<span class="track-card__level">שלב ${st.level}</span>
+           <span class="track-card__bar"><i style="inline-size:${pct}%"></i></span>`
         : '<span class="track-card__off">לא בסבב שלך</span>'}
     </a>`;
   }).join('');

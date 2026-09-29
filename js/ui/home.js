@@ -208,16 +208,23 @@ function renderNext() {
   const niche = NICHES[nicheId];
   const minutes = roundMinutes(taskValue(nicheId, getProfile() || {}));
 
-  // שם הנישה, ומיד מתחתיו שני הכפתורים
+  /* כרטיס המשימה. אותן מילים בדיוק כמו קודם — "המשימה הבאה",
+     שם הנישה, התיאור, "בצע" ו"דלג" — אבל בהיררכיה במקום שורה
+     אחת: "המשימה הבאה" הפך לכותרת-על קטנה, שם הנישה לכותרת
+     ראשית, והאייקון בצבע הנישה קושר את הכרטיס לתחנה בגלגל. */
   els.next.className = 'nexttask';
   els.next.innerHTML = `
-    <p class="nexttask__label">
-      המשימה הבאה: <b>${niche.name}</b>
-      <span class="nexttask__detail">${niche.taskLabel} · ${minutes} דק׳</span>
-    </p>
-    <div class="nexttask__actions">
-      <a class="btn btn--primary" href="${niche.href}">בצע</a>
-      <button class="btn btn--secondary" type="button" data-skip>דלג</button>
+    <div class="nexttask__card nexttask__card--${niche.id}">
+      <p class="nexttask__eyebrow">המשימה הבאה</p>
+      <div class="nexttask__head">
+        <span class="nexttask__glyph">${icon(niche.icon, 22)}</span>
+        <span class="nexttask__title">${niche.name}</span>
+      </div>
+      <p class="nexttask__detail">${niche.taskLabel} · ${minutes} דק׳</p>
+      <div class="nexttask__actions">
+        <a class="btn btn--primary" href="${niche.href}">בצע</a>
+        <button class="btn btn--secondary" type="button" data-skip>דלג</button>
+      </div>
     </div>`;
 
   els.next.querySelector('[data-skip]').addEventListener('click', () => onSkip(nicheId));

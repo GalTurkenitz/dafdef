@@ -25,7 +25,18 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** הנישות שיש להן תמונה; השאר נופלות לאייקון */
 const IMAGE_BASE = 'content/img/niches/';
-const IMAGE_NICHES = new Set(['reading', 'fitness', 'learning', 'writing', 'breathing', 'water']);
+/*
+ * תחנות שמציגות תצלום במקום אייקון.
+ *
+ * ריק בכוונה. התצלומים שהיו כאן היו תמונות מלאי גנריות — ספר עם
+ * ורדים, ילד מול לוח, יד אוחזת עט — ושישה סגנונות צילום שונים
+ * בשישה ריבועים צמודים הם הדבר הראשון שמסגיר ממשק שנזרק יחד.
+ * האייקונים כבר קיימים לכל שמונה הנישות, הם מצוירים באותו קו
+ * ומקבלים את צבע הנישה, ולכן הטבעת נראית כמו מערכת אחת.
+ *
+ * המנגנון נשאר — אם תהיה סדרת איורים משלנו, מוסיפים כאן מזהה.
+ */
+const IMAGE_NICHES = new Set();
 
 let wheelSeq = 0;
 const RAD = Math.PI / 180;
@@ -71,7 +82,7 @@ function metrics(width, height) {
     tile,
     nodeR,
     radius: Math.round(tile * 0.28),
-    iconSize: Math.round(tile * 0.44),
+    iconSize: Math.round(tile * 0.46),
     labelDy,
     ring,
     segW: 2,
@@ -253,23 +264,27 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
       const x0 = at.x - half;
       const y0 = at.y - half;
 
-      // טבעת זוהרת למשימה הבאה בתור (סעיף א4.4)
+      /* זוהר למשימה הבאה בתור (סעיף א4.4).
+         קודם זו הייתה מסגרת שנייה, ריבועית, במרחק מהריבוע —
+         היא נקראה כמו סימון בחירה של כלי עריכה ולא כמו הדגשה.
+         עכשיו זו אותה צורה בדיוק, ממולאת ומטושטשת מתחת לתחנה:
+         אור שנופל עליה, לא מסגרת נוספת סביבה. */
       if (niche.current) {
         stop.appendChild(el('rect', {
           class: 'wheel__halo',
-          x: (x0 - m.glow).toFixed(2), y: (y0 - m.glow).toFixed(2),
-          width: m.tile + m.glow * 2, height: m.tile + m.glow * 2,
-          rx: m.radius + m.glow,
-          fill: 'none', stroke: color, 'stroke-width': 2,
+          x: x0.toFixed(2), y: y0.toFixed(2),
+          width: m.tile, height: m.tile, rx: m.radius,
+          fill: color, stroke: 'none',
         }));
       }
 
-      // רקע מתחת לתמונה — נראה רק אם היא איטית או חסרה
+      /* הלוחית. גוון דקיק של צבע הנישה על הרקע הכהה — מספיק
+         כדי שהריבוע יהיה עצם ולא חור, בלי להתחרות באייקון. */
       stop.appendChild(el('rect', {
         class: 'wheel__plate',
         x: x0.toFixed(2), y: y0.toFixed(2),
         width: m.tile, height: m.tile, rx: m.radius,
-        fill: 'var(--surface)',
+        fill: color, 'fill-opacity': niche.current ? 0.2 : 0.12,
       }));
 
       /* התמונה, חתוכה לריבוע מעוגל. אם אין תמונה לנישה או שהיא
@@ -283,7 +298,7 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
                    + `${(at.y - m.iconSize / 2).toFixed(2)}) scale(${sc.toFixed(4)})`,
           fill: 'none',
           stroke: color,
-          'stroke-width': 1.75 / sc,
+          'stroke-width': 1.9 / sc,
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
         }, iconBody(niche.icon)));
@@ -316,7 +331,10 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
         x: x0.toFixed(2), y: y0.toFixed(2),
         width: m.tile, height: m.tile, rx: m.radius,
         fill: 'none', stroke: color,
-        'stroke-width': niche.current ? 2.5 : 2,
+        /* התחנה הפעילה מקבלת קו מלא; השאר קו דק ועמום, אחרת שש
+           מסגרות רוויות מושכות את העין בכוח שווה ואין מוקד. */
+        'stroke-width': niche.current ? 2 : 1.25,
+        'stroke-opacity': niche.current ? 1 : 0.45,
       }));
 
       // אחרי הביצוע — V בפינת הריבוע

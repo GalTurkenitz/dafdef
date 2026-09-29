@@ -112,8 +112,13 @@ const css = `/**
   --surface-5: ${L.sf.s5};
 
   --text: ${hex(L.s.onSurface)};
+  --text-2: ${tone(SEED, 30)};
   --text-soft: ${hex(L.s.onSurfaceVariant)};
-  --border: ${hex(L.s.outlineVariant)};
+  --text-dim: ${tone(SEED, 55)};
+
+  --border: rgba(0, 0, 0, .10);
+  --border-soft: rgba(0, 0, 0, .06);
+  --hairline: rgba(0, 0, 0, .07);
 
   /* ---------- מותג ---------- */
   --primary: ${hex(L.s.primary)};
@@ -148,21 +153,37 @@ ${L.niche}
   --state-press: 0.12;
 
   /* ---------- צורה (M3 shape scale) ---------- */
-  --r-chip: 8px;
-  --r-btn: 20px;
-  --r-card: 16px;
-  --r-xl: 28px;
+  /* רדיוסים הדוקים. 16-20px על כל דבר הוא ברירת המחדל של
+     ספריות רכיבים, ולכן הוא נקרא כברירת מחדל. */
+  --r-sm: 7px;
+  --r-chip: 999px;
+  --r-btn: 10px;
+  --r-card: 14px;
+  --r-xl: 20px;
 
   /* ---------- טיפוגרפיה (M3 type scale) ---------- */
   --font-ui: 'Heebo', system-ui, sans-serif;
   --font-read: 'Frank Ruhl Libre', Georgia, serif;
 
-  --fs-h1: 32px;
-  --fs-h2: 22px;
-  --fs-sub: 16px;
-  --fs-body: 15px;
+  --fs-h1: 30px;
+  --fs-h2: 20px;
+  --fs-sub: 15px;
+  --fs-body: 14px;
   --fs-small: 12px;
-  --fs-number: 57px;
+  --fs-micro: 11px;
+  --fs-number: 56px;
+
+  /* מספרים וכותרות גדולים צריכים מרווח אותיות שלילי, אחרת הם
+     נראים רפויים. זה אחד ההבדלים הכי מורגשים בין ממשק מעוצב
+     לממשק שנכתב. */
+  --ls-number: -.03em;
+  --ls-h1: -.02em;
+  --ls-h2: -.01em;
+
+  /* סולם משקלים: 500 גוף · 600 תוויות · 700 כותרות */
+  --w-body: 500;
+  --w-label: 600;
+  --w-head: 700;
 
   --lh-body: 1.45;
   --lh-read: 1.72;
@@ -185,8 +206,9 @@ ${L.niche}
   --nav-space: calc(var(--nav-h) + var(--nav-rise) + var(--sp-3));
 
   /* ---------- גובה (M3 elevation) ---------- */
-  --shadow-card: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
-  --shadow-sheet: 0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+  --shadow-card: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-sheet: 0 12px 32px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06);
+  --shadow-raised: 0 2px 6px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);
 
   /* ---------- תנועה (M3 motion) ---------- */
   --t-fast: 150ms;
@@ -223,9 +245,19 @@ ${L.niche}
   --surface-4: ${D.sf.s4};
   --surface-5: ${D.sf.s5};
 
-  --text: ${hex(D.s.onSurface)};
-  --text-soft: ${hex(D.s.onSurfaceVariant)};
-  --border: ${hex(D.s.outlineVariant)};
+  /* ארבע מדרגות טקסט, לא שתיים. וטקסט ראשי אינו לבן טהור —
+     לבן על שחור "מזמזם" ונראה זול. */
+  --text: #F4F1EF;
+  --text-2: #CFC7C1;
+  --text-soft: #9C938C;
+  --text-dim: #6B635D;
+
+  /* בממשק כהה צל כמעט בלתי נראה. העומק מגיע מקו שיער לבן
+     שקוף ומשכבות משטח — זו הסיבה שמסגרת אפורה מלאה על כל
+     כרטיס נראית כמו טופס שנוצר אוטומטית. */
+  --border: rgba(255, 255, 255, .09);
+  --border-soft: rgba(255, 255, 255, .055);
+  --hairline: rgba(255, 255, 255, .07);
 
   --primary: ${hex(D.s.primary)};
   --primary-contrast: ${hex(D.s.onPrimary)};
@@ -251,8 +283,10 @@ ${D.niche}
   --len-short-bg: ${tone('#2E7D52', 20)};   --len-short-ink: ${tone('#2E7D52', 78)};
   --len-long-bg: ${tone('#A83B4C', 20)};    --len-long-ink: ${tone('#A83B4C', 78)};
 
-  --shadow-card: 0 1px 3px rgba(0,0,0,.55);
-  --shadow-sheet: 0 8px 24px rgba(0,0,0,.65);
+  /* צל + טבעת: הטבעת היא מה שבאמת נראה על רקע כהה */
+  --shadow-card: 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05);
+  --shadow-sheet: 0 12px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.07);
+  --shadow-raised: 0 2px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
 }
 
 @media (prefers-reduced-motion: reduce) {

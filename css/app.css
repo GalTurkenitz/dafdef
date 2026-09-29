@@ -103,7 +103,8 @@ p  { margin: 0; }
   border: 1px solid transparent;
   border-radius: var(--r-btn);
   font-size: var(--fs-body);
-  font-weight: 500;
+  font-weight: var(--w-label);
+  letter-spacing: .01em;
   text-decoration: none;
   transition: transform var(--t-fast) var(--ease),
               background-color var(--t-fast) var(--ease),
@@ -143,12 +144,14 @@ p  { margin: 0; }
 .btn--primary {
   background: var(--primary);
   color: var(--primary-contrast);
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
 
 /* משני — מכל בגוון המותג, בלי קו מתאר */
 .btn--secondary {
-  background: var(--primary-soft);
-  color: var(--m3-on-primary-container);
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 /* טקסט — בלי משטח, לפעולות שלישוניות */
@@ -1196,7 +1199,6 @@ p  { margin: 0; }
   block-size: 100%;
   object-fit: cover;
   object-position: center 22%;
-  opacity: .92;
 }
 
 /* מי שאין לו דיוקן — צללית בלבד, **בלי רקע משלה**.
@@ -1222,11 +1224,17 @@ p  { margin: 0; }
   padding: var(--sp-3);
 }
 
-/* הצעיף נייטרלי — שכבת צבע מעל פנים הפכה אותן לירוקות ואדומות */
+/* הצעיף נייטרלי — שכבת צבע מעל פנים הפכה אותן לירוקות ואדומות.
+   הוא אטום בתחתית ונפתח למעלה: קודם התמונה עצמה הוחלשה
+   ל-opacity .92 כדי לרכך את הניגוד, וזה החוויר את כל הדיוקנאות
+   יחד. עדיף תמונה מלאה עם צעיף חזק מתחתיה. */
 .bookcard.has-face .bookcard__face {
   justify-content: flex-end;
   background: linear-gradient(to top,
-    var(--bg) 0%, color-mix(in srgb, var(--bg) 80%, transparent) 44%, transparent 84%);
+    var(--bg) 0%,
+    color-mix(in srgb, var(--bg) 92%, transparent) 30%,
+    color-mix(in srgb, var(--bg) 55%, transparent) 58%,
+    transparent 88%);
 }
 
 .bookcard__title {
@@ -1268,8 +1276,23 @@ p  { margin: 0; }
 
 /* כרטיס בלי דיוקן מקבל גוון אורך עדין — אין שם תמונה שמתחרה,
    ובלעדיו קצר וארוך נראים זהים לגמרי. */
-.bookcard--short:not(.has-face) { background: var(--len-short-bg); }
-.bookcard--long:not(.has-face)  { background: var(--len-long-bg); }
+/* ספר בלי דיוקן — משטח כהה עם גוון האורך, לא לוח צבע מלא.
+   #65051f על פני שליש מהרשת נקרא כמו הודעת שגיאה בין תצלומים,
+   והמשתמש ביקש "אפור קלאסי, אבל עם צבע שנדע להבדיל". */
+.bookcard--short:not(.has-face) {
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--len-short-bg) 55%, transparent) 0%,
+      transparent 72%),
+    var(--surface-2);
+}
+.bookcard--long:not(.has-face) {
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--len-long-bg) 55%, transparent) 0%,
+      transparent 72%),
+    var(--surface-2);
+}
 
 .bookcard--short .bookcard__time { color: var(--len-short-ink); font-weight: 600; }
 .bookcard--long  .bookcard__time { color: var(--len-long-ink);  font-weight: 600; }
@@ -2005,12 +2028,17 @@ p  { margin: 0; }
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: 4px var(--sp-3);
+  block-size: 30px;
+  padding-inline: 10px;
   border-radius: var(--r-chip);
-  background: var(--surface);
+  background: var(--surface-2);
   /* המסגרת כתומה תמיד — היא מסמנת "כאן יושב הרצף". הלהבה
-     והמספר נצבעים רק כשהסבב הושלם היום. */
-  border: 1px solid var(--accent);
+     והמספר נצבעים רק כשהסבב הושלם היום.
+
+     היא מעורבבת ולא רוויה: שני שבבים צמודים עם מסגרת בצבע מלא
+     נקראים כשתי אזהרות ומושכים את העין חזק יותר מהמשימה עצמה.
+     כשהסבב נסגר המסגרת עולה לצבע מלא — וזה נראה כמו שינוי. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--text-soft);
   transition: background-color var(--t-base) var(--ease),
               border-color var(--t-base) var(--ease),
@@ -2029,7 +2057,8 @@ p  { margin: 0; }
 
 .streak__num {
   font-size: var(--fs-sub);
-  font-weight: 700;
+  font-weight: var(--w-label);
+  letter-spacing: var(--ls-number);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: currentColor;
@@ -2039,6 +2068,7 @@ p  { margin: 0; }
 
 .streak.is-lit {
   background: var(--accent-soft);
+  border-color: var(--accent);
   color: var(--accent);
 }
 .streak.is-lit .streak__icon,
@@ -2091,7 +2121,6 @@ p  { margin: 0; }
 
 /* התמונה בצבע מלא תמיד */
 
-.wheel__halo { rx: inherit; }
 
 .wheel__name {
   font-family: var(--font-ui);
@@ -2108,16 +2137,21 @@ p  { margin: 0; }
 }
 .wheel__stop.is-current .wheel__name { font-weight: 500; }
 
-/* הטבעת הזוהרת של המשימה הבאה — נושמת, ומכבדת "פחות תנועה" */
-.wheel__halo { opacity: .45; transform-origin: center; animation: wheel-halo 2.6s var(--ease) infinite; }
+/* הזוהר של המשימה הבאה — נושם, ומכבד "פחות תנועה" */
+.wheel__halo {
+  filter: blur(9px);
+  opacity: .5;
+  transform-origin: center;
+  animation: wheel-halo 3s var(--ease) infinite;
+}
 
 @keyframes wheel-halo {
-  0%, 100% { opacity: .45; stroke-width: 2; }
-  50%      { opacity: .15; stroke-width: 5; }
+  0%, 100% { opacity: .5; }
+  50%      { opacity: .22; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wheel__halo { animation: none; opacity: .45; }
+  .wheel__halo { animation: none; opacity: .4; }
 }
 
 /* ---------- המרכז: יתרת הדקות ---------- */
@@ -2150,42 +2184,102 @@ p  { margin: 0; }
 /* ---------- המשימה הבאה ---------- */
 /* השורה הזו היא ההוראה המרכזית במסך — מה עושים עכשיו.
    היא הייתה 15px אפורה ונבלעה; עכשיו היא בולטת. */
+/* הכרטיס. על רקע כהה צל אינו נראה, ולכן ההגבהה נעשית בשכבת
+   לבן שקופה מעל המשטח ובקו שיער אחד — לא במסגרת אפורה מלאה,
+   שהיא הסימן המובהק ביותר לממשק שנבנה מתבנית. פס צבע הנישה
+   בראש הכרטיס אומר איזו משימה זו בלי מילה נוספת. */
+.nexttask__card {
+  --c: var(--primary);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--hairline);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--c) 9%, transparent) 0%,
+      transparent 120px),
+    var(--surface-1);
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-3) + 2px);
+}
+
+/* הקו העליון — צבע מלא בקצה ודועך לצדדים, כדי שלא ייראה כמו
+   גבול של תיבה */
+.nexttask__card::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 2px;
+  background: linear-gradient(90deg,
+    transparent, var(--c) 22%, var(--c) 78%, transparent);
+  opacity: .8;
+}
+
+.nexttask__card--reading   { --c: var(--niche-reading); }
+.nexttask__card--fitness   { --c: var(--niche-fitness); }
+.nexttask__card--learning  { --c: var(--niche-learning); }
+.nexttask__card--writing   { --c: var(--niche-writing); }
+.nexttask__card--breathing { --c: var(--niche-breathing); }
+.nexttask__card--water     { --c: var(--niche-water); }
+.nexttask__card--steps     { --c: var(--niche-steps); }
+.nexttask__card--sleep     { --c: var(--niche-sleep); }
+
+.nexttask__eyebrow {
+  font-size: 11px;
+  font-weight: var(--w-label);
+  letter-spacing: .07em;
+  color: var(--text-dim);
+}
+
+.nexttask__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block-start: 6px;
+}
+
+/* ריבוע האייקון חוזר על הלוחית שבגלגל — אותו גוון, אותו רדיוס */
+.nexttask__glyph {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);
+}
+
+.nexttask__title {
+  font-size: var(--fs-h2);
+  font-weight: var(--w-head);
+  letter-spacing: var(--ls-h2);
+  line-height: 1.1;
+}
+
+.nexttask__detail {
+  margin-block-start: 2px;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+/* "בצע" רחב פי שניים מ"דלג": הפעולה הראשית נראית ראשית */
+.nexttask__actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-3);
+}
+.nexttask__actions .btn { min-height: 46px; }
+
+/* מצבי הקצה — בחירת נישות, סוף סבב — נשארים שורה פשוטה */
 .nexttask__label {
   text-align: center;
   font-size: var(--fs-sub);
   color: var(--text-soft);
   line-height: 1.35;
 }
-.nexttask__label b {
-  color: var(--primary);
-  font-weight: 700;
-  font-size: var(--fs-body);
-}
-.nexttask__detail {
-  display: block;
-  font-size: var(--fs-small);
-  color: var(--text-soft);
-}
-
-.nexttask__name {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: var(--sp-2);
-  margin: var(--sp-1) 0 var(--sp-4);
-  font-size: var(--fs-h2);
-  font-weight: 700;
-  text-align: center;
-}
-.nexttask__name span {
-  font-size: var(--fs-sub);
-  font-weight: 500;
-  color: var(--primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.nexttask__actions { display: grid; grid-template-columns: 2fr 1fr; gap: var(--sp-2); }
-.nexttask__actions .btn { min-height: 46px; }
 
 /* ============================================================
    סרגל תחתון (סעיפים ב2, ב3)
@@ -2365,7 +2459,8 @@ p  { margin: 0; }
   align-content: center;
 }
 
-/* הרקע הוא תמונת הנישה; שכבת צבע מעליה שומרת על קריאות הטקסט */
+/* אותו חומר כמו כרטיס הסטטיסטיקה ותחנת הגלגל: משטח, קו שיער,
+   ונגיעת צבע הנישה בראש — ולא תצלום מלאי עם טקסט לבן עליו. */
 .track-card {
   position: relative;
   display: flex;
@@ -2376,31 +2471,68 @@ p  { margin: 0; }
   aspect-ratio: 1;
   padding: var(--sp-3);
   border-radius: var(--r-card);
-  border: 1.5px solid var(--c, var(--primary));
+  border: 1px solid var(--hairline);
   overflow: hidden;
   text-decoration: none;
-  color: #fff;
-  background-image: var(--photo);
-  background-size: cover;
-  background-position: center;
-  transition: transform var(--t-fast) var(--ease);
+  color: var(--text);
+  background:
+    radial-gradient(120% 90% at 82% 0%,
+      color-mix(in srgb, var(--c, var(--primary)) 20%, transparent) 0%, transparent 70%),
+    var(--surface-2);
+  transition: transform var(--t-fast) var(--ease),
+              background-color var(--t-fast) var(--ease);
 }
-.track-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top,
-              rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, .35) 45%, rgba(0, 0, 0, .12) 100%);
-}
-.track-card > * { position: relative; z-index: 1; }
 .track-card:active { transform: scale(.97); }
-.track-card.is-off { opacity: .5; }
 
-.track-card__name  { font-size: var(--fs-body); font-weight: 700; }
-.track-card__level { font-size: var(--fs-sub); font-weight: 500; opacity: .92; }
-.track-card__off   { font-size: var(--fs-small); opacity: .8; }
+/* האייקון בפינה העליונה — גדול ועמום, סימן ולא תווית */
+.track-card__glyph {
+  position: absolute;
+  inset-block-start: var(--sp-3);
+  /* אותה פינה שממנה יוצא גוון הצבע ושבה מתחיל הטקסט — ימין
+     ב-RTL. אייקון בפינה אחת וצבע בפינה הנגדית נראה כמו שתי
+     החלטות שלא דיברו זו עם זו. */
+  inset-inline-start: var(--sp-3);
+  color: var(--c, var(--primary));
+  opacity: .9;
+}
 
-/* המסגרת נושאת את צבע הנישה, כך שהזהות נשמרת מעל כל תמונה */
+.track-card__name  {
+  font-size: var(--fs-body);
+  font-weight: var(--w-head);
+  letter-spacing: var(--ls-h2);
+}
+.track-card__level {
+  font-size: var(--fs-small);
+  font-weight: var(--w-body);
+  color: var(--text-soft);
+}
+
+/* כמה מעשרת השלבים בקבוצה הנוכחית כבר מאחוריך */
+.track-card__bar {
+  inline-size: 100%;
+  block-size: 4px;
+  margin-block-start: 8px;
+  border-radius: var(--r-chip);
+  background: color-mix(in srgb, var(--c, var(--primary)) 18%, transparent);
+  overflow: hidden;
+}
+.track-card__bar i {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--c, var(--primary));
+}
+
+.track-card__off { font-size: var(--fs-small); color: var(--text-dim); }
+
+/* נישה שאינה בסבב — שטוחה, בלי גוון צבע, אבל קריאה */
+.track-card.is-off {
+  background: var(--surface);
+}
+.track-card.is-off .track-card__glyph { opacity: .3; color: var(--text-dim); }
+.track-card.is-off .track-card__name  { color: var(--text-2); }
+
+/* צבע הנישה */
 .track-card--reading  { --c: var(--niche-reading); }
 .track-card--fitness  { --c: var(--niche-fitness); }
 .track-card--learning { --c: var(--niche-learning); }
@@ -3035,47 +3167,58 @@ p  { margin: 0; }
    מה עוד לא נגעת בו.
    ============================================================ */
 
+/* השורות בגובה התוכן ולא במתיחה לגובה המסך.
+   grid-auto-rows: 1fr חילק את כל גובה המסך בין ארבע השורות,
+   וכל כרטיס קיבל ~190px לארבע שורות טקסט — רצועה ריקה בגודל
+   חצי כרטיס בין המשנה לנקודות. זה היה המסך המכוער באפליקציה,
+   וזו הייתה הסיבה. */
 .statgrid {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-auto-rows: 1fr;
   gap: var(--sp-2);
-  align-content: stretch;
-  padding-block: var(--sp-2);
+  padding-block: var(--sp-2) var(--sp-4);
 }
 
+/* מסגרת צבעונית סביב כל כרטיס היא הסימן המובהק ביותר לממשק
+   שנוצר אוטומטית. הצבע חי במספר ובאייקון; הכרטיס עצמו הוא
+   משטח עם קו שיער, כמו כל משטח אחר באפליקציה. */
 .statcard {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 1px;
+  justify-content: flex-start;
+  gap: 2px;
   min-height: 0;
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3);
   border-radius: var(--r-card);
-  border: 1.5px solid var(--c, var(--border));
-  background: color-mix(in srgb, var(--c, var(--surface)) 8%, var(--surface));
+  border: 1px solid var(--hairline);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--c, transparent) 9%, transparent) 0%, transparent 62%),
+    var(--surface-2);
   overflow: hidden;
 }
 
-.statcard__head { display: flex; align-items: center; gap: var(--sp-1); }
+.statcard__head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .statcard__icon { display: grid; place-items: center; color: var(--c, var(--text-soft)); }
-.statcard__name { font-size: var(--fs-small); color: var(--text-soft); }
+.statcard__name { font-size: var(--fs-small); font-weight: var(--w-label); color: var(--text-2);
+                   letter-spacing: .01em; }
 
 .statcard__value {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.05;
-  color: var(--c, var(--text));
+  font-size: 30px;
+  font-weight: var(--w-head);
+  line-height: 1;
+  letter-spacing: var(--ls-number);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.statcard__unit { font-size: var(--fs-small); color: var(--text-soft); }
-.statcard__sub  { font-size: 11px; color: var(--text-soft); }
+.statcard__unit { font-size: var(--fs-small); font-weight: var(--w-label); color: var(--c, var(--text-soft)); }
+.statcard__sub  { font-size: var(--fs-micro); color: var(--text-dim); margin-top: 2px; }
 
 /* שורת אבני הדרך — מלא = הושג */
-.statcard__marks { display: flex; gap: 3px; margin-top: var(--sp-1); }
+/* הנקודות יושבות מתחת לנתון, לא בתחתית הכרטיס: margin-top:auto
+   דחף אותן לקצה וניתק אותן ממה שהן מודדות. */
+.statcard__marks { display: flex; gap: 4px; margin-top: 10px; }
 .statcard__mark {
   inline-size: 7px;
   block-size: 7px;
@@ -3085,13 +3228,20 @@ p  { margin: 0; }
 }
 .statcard__mark.is-on { background: var(--c, var(--primary)); opacity: 1; }
 
-/* נישה שלא נבחרה — נוכחת אבל כבויה */
+/* נישה שלא נבחרה — כבויה אבל קריאה.
+   opacity על כל הכרטיס הוריד גם את השם וגם את היחידה מתחת לסף
+   הקריאה, וארבעה כרטיסים כאלה נראו כמו תקלת טעינה. כאן המשטח
+   שטוח והמספר עמום, אבל הצבע נשאר ברמז כדי שאפשר יהיה להבדיל
+   ביניהם. */
 .statcard.is-off {
-  --c: var(--border);
   background: var(--surface);
-  opacity: .5;
+  border-color: var(--hairline);
 }
 .statcard.is-off .statcard__value { color: var(--text-soft); }
+.statcard.is-off .statcard__icon,
+.statcard.is-off .statcard__unit { opacity: .55; }
+.statcard.is-off .statcard__mark { opacity: .3; }
+.statcard.is-off .statcard__mark.is-on { opacity: .6; }
 
 .statcard--reading   { --c: var(--niche-reading); }
 .statcard--fitness   { --c: var(--niche-fitness); }
@@ -3122,8 +3272,8 @@ p  { margin: 0; }
 /* הרמה בכחול ולא בחום: היא מסמנת התקדמות לאורך כל הדרך, והרצף
    מסמן את היום — שני חיוויים סמוכים שצריכים להיקרא כשני דברים. */
 .streak--level {
-  border-color: var(--level);
-  background: var(--level-soft);
+  border-color: color-mix(in srgb, var(--level) 45%, transparent);
+  background: color-mix(in srgb, var(--level) 14%, var(--surface-2));
   color: var(--level);
   cursor: pointer;
 }
@@ -3148,6 +3298,11 @@ p  { margin: 0; }
    שהשאלון כבר לוקח (screen__body--onb). */
 .screen__body--league { padding-top: var(--sp-4); }
 
+/* התוכן נעוץ למעלה. מרכוז אנכי מתאים לשאלון עם שאלה אחת,
+   אבל ברשימת כניסות הוא יוצר מסך ריק עם שני פריטים באמצע. */
+.screen__body--league .onepage__body { justify-content: flex-start; }
+.screen__body--league .onepage__head { margin-bottom: var(--sp-2); }
+
 .league { display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; }
 
 .league__head {
@@ -3158,99 +3313,200 @@ p  { margin: 0; }
 }
 .league__name { margin: 0; font-size: var(--fs-h2); }
 
+/* קוד ההזמנה — שבב מוצק. המסגרת המקווקוות שהייתה כאן נראתה
+   כמו שדה שלא מולא, וקווקוו חוזר בשלושה מקומות שונים במסך אחד
+   הוא מהסימנים הבולטים לממשק שהורכב מתבניות. */
 .league__code {
-  padding: var(--sp-2) var(--sp-3);
+  padding: 9px var(--sp-3);
   border-radius: var(--r-btn);
-  border: 1px dashed var(--primary);
-  background: var(--primary-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  background: var(--primary-softer);
   color: var(--primary);
-  font-weight: 700;
-  letter-spacing: .12em;
+  font-weight: var(--w-label);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .16em;
   cursor: pointer;
 }
 
-.league__table { flex: 1; min-height: 0; overflow: hidden;
-                 display: flex; flex-direction: column; gap: var(--sp-1); }
+/* ---------- טבלת הליגה ---------- */
+
+/* שש שורות, כל אחת לוח חום רווי משל עצמו — כך זה נראה קודם, וזה
+   קרא כמו רשימת התראות ולא כמו טבלת דירוג. עכשיו זו טבלה אחת:
+   משטח אחד, קווי שיער בין השורות, וההדגשה שמורה לשורה שלי
+   ולשלושת הראשונים. */
+.league__table {
+  flex: none;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--surface-2);
+  overflow: hidden;
+}
 
 .leaguerow {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-btn);
-  background: var(--primary-softer);
+  padding: 11px var(--sp-3);
+  background: transparent;
 }
+.leaguerow + .leaguerow { border-block-start: 1px solid var(--hairline); }
+
 .leaguerow__rank {
-  inline-size: 24px;
-  color: var(--text-soft);
+  inline-size: 22px;
+  flex: none;
+  text-align: center;
+  font-size: var(--fs-small);
+  font-weight: var(--w-label);
+  color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-number);
 }
-.leaguerow__name { flex: 1; }
-.leaguerow__value { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* שלושת הראשונים — המספר עצמו נושא את ההבדל, בלי מדליות.
+   לפי הדירוג האמיתי ולא לפי מיקום ב-DOM: בעמוד השני של הטבלה
+   nth-child(1) הוא מקום 6, לא מקום 1. */
+.leaguerow.is-top .leaguerow__rank { font-weight: var(--w-head); }
+.leaguerow.is-top1 .leaguerow__rank { color: var(--accent); }
+.leaguerow.is-top2 .leaguerow__rank { color: var(--text-2); }
+.leaguerow.is-top3 .leaguerow__rank { color: var(--text-soft); }
+
+.leaguerow__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sub);
+}
+.leaguerow__value {
+  font-weight: var(--w-label);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-number);
+}
 .leaguerow__x {
   display: grid; place-items: center;
-  inline-size: 24px; block-size: 24px;
+  inline-size: 26px; block-size: 26px;
+  flex: none;
   border: 0; border-radius: var(--r-chip);
-  background: transparent; color: var(--text-soft); cursor: pointer;
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
 }
+.leaguerow__x:hover { color: var(--danger); background: var(--surface-3); }
 
-/* השורה שלי — מודגשת */
+/* השורה שלי — פס צבע בקצה ורקע דק, במקום מסגרת כתומה שסוגרת
+   את השורה ומנתקת אותה מהטבלה */
 .leaguerow.is-me {
-  background: var(--primary-soft);
-  border: 1px solid var(--primary);
+  background: var(--primary-softer);
+}
+.leaguerow.is-me::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 3px;
+  background: var(--primary);
 }
 .leaguerow.is-me .leaguerow__name,
-.leaguerow.is-me .leaguerow__value { color: var(--primary); font-weight: 700; }
+.leaguerow.is-me .leaguerow__value,
+.leaguerow.is-me .leaguerow__rank { color: var(--primary); font-weight: var(--w-label); }
 
-/* צירוף חבר ישירות מתוך הטבלה, בלי קוד. מקווקו כמו קוד ההזמנה
-   למעלה — זה מסמן "פעולה" ולא "שורה בטבלה". */
+/* צירוף חבר — שורה אחרונה בטבלה, לא כפתור מקווקו נפרד */
 .leagueadd {
   display: flex;
   align-items: center;
   justify-content: center;
+  inline-size: 100%;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-btn);
-  border: 1px dashed var(--border);
+  padding: 11px var(--sp-3);
+  border: 0;
+  border-block-start: 1px solid var(--hairline);
   background: transparent;
   color: var(--primary);
   font: inherit;
-  font-weight: 600;
+  font-size: var(--fs-sub);
+  font-weight: var(--w-label);
   cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease);
 }
-.leagueadd:hover { border-color: var(--primary); background: var(--primary-softer); }
+.leagueadd:hover { background: var(--surface-3); }
 
 .leagueadd__form { display: flex; flex-direction: column; gap: var(--sp-1); }
 .leagueadd__form[hidden] { display: none; }
 
 /* ---------- פתיח: שני כפתורים גדולים ---------- */
 
+/* שורת ניווט, לא כפתור צף. מבנה: אייקון · טקסט · חץ —
+   התבנית שכל אפליקציה משתמשת בה לרשימת כניסות, ולכן היא
+   נקראת כמו אפליקציה. */
+/* קבוצת שורות — כרטיס אחד, שורות בפנים, קו שיער ביניהן */
+.rowgroup {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.rowgroup .bigbtn {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.rowgroup .bigbtn + .bigbtn { border-block-start: 1px solid var(--hairline); }
+.rowgroup .bigbtn:hover { background: var(--surface-3); }
+
 .bigbtn {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--sp-4);
+  inline-size: 100%;
+  /* בלי gap: המרווח יושב על האייקון בלבד, אחרת תג ההתראה נדחף
+     16px מהטקסט ונראה מנותק ממנו. */
+  gap: var(--sp-2);
   padding: var(--sp-4);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--hairline);
   border-radius: var(--r-card);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text);
   font: inherit;
   text-align: start;
   cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease);
 }
-.bigbtn:hover { border-color: var(--primary); }
+.bigbtn:hover { background: var(--surface-3); }
+
+/* החץ בקצה השורה. inset-inline-start ב-RTL הוא הצד הימני —
+   הוא נחת על האייקון. הקצה הוא inline-end. */
+.bigbtn::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: var(--sp-4);
+  top: 50%;
+  inline-size: 7px;
+  block-size: 7px;
+  margin-top: -4px;
+  border-inline-end: 2px solid var(--text-dim);
+  border-block-start: 2px solid var(--text-dim);
+  transform: rotate(-45deg);
+}
 
 .bigbtn__icon {
   display: grid; place-items: center;
-  inline-size: 48px; block-size: 48px;
+  inline-size: 44px; block-size: 44px;
   flex: none;
-  border-radius: var(--r-chip);
-  background: var(--primary-soft);
+  margin-inline-end: var(--sp-2);
+  border-radius: var(--r-btn);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
   color: var(--primary);
 }
-.bigbtn__text { display: flex; flex-direction: column; font-size: var(--fs-h2); }
-.bigbtn__text i { font-style: normal; color: var(--text-soft); }
+.bigbtn__text {
+  display: flex; flex-direction: column; gap: 1px;
+  font-size: var(--fs-sub); font-weight: var(--w-label);
+  letter-spacing: var(--ls-h2);
+}
+.bigbtn__text i {
+  font-style: normal; font-size: var(--fs-small);
+  font-weight: var(--w-body); color: var(--text-dim);
+}
 
 /* עיגול עדכון — בקשות חברות שממתינות */
 .badge {
@@ -3264,7 +3520,7 @@ p  { margin: 0; }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.bigbtn .badge { position: absolute; inset-inline-end: var(--sp-4); }
+.bigbtn .badge { position: static; }
 .reqbtn { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .reqbtn .badge { min-inline-size: 18px; block-size: 18px; font-size: 11px; }
 
@@ -3282,38 +3538,48 @@ p  { margin: 0; }
 
 /* ---------- רשימה נגללת ---------- */
 
+/* קבוצה אחת, לא לוחות נפרדים. הגובה לפי התוכן עד לתקרה, כדי
+   ששתי ליגות לא ימתחו את הרשימה על כל המסך. */
 .leaguelist {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-  padding-block: var(--sp-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--surface-2);
 }
+.leaguelist:has(.empty) { border: 0; background: transparent; }
 
 .leaguecard {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  inline-size: 100%;
   flex: none;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  background: var(--surface);
+  padding: 10px var(--sp-3);
+  border: 0;
+  background: transparent;
   color: var(--text);
   font: inherit;
   text-align: start;
   cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease);
 }
-.leaguecard:hover { border-color: var(--primary); }
+.leaguecard + .leaguecard { border-block-start: 1px solid var(--hairline); }
+/* מסגרת כתומה ב-hover סימנה את הכרטיס כאילו נבחר בטעות */
+.leaguecard:hover { background: var(--surface-3); }
 
+/* ריבוע רך בגוון המותג — לא עיגול מלא ורווי שחוזר זהה בכל שורה */
 .leaguecard__img {
   display: grid; place-items: center;
-  inline-size: 40px; block-size: 40px;
+  inline-size: 38px; block-size: 38px;
   flex: none;
-  border-radius: var(--r-chip);
-  background: var(--primary-soft);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent);
   color: var(--primary);
   overflow: hidden;
 }
@@ -3325,12 +3591,13 @@ p  { margin: 0; }
 
 .leaguecard__rank {
   flex: none;
-  display: flex; flex-direction: column; align-items: center;
-  font-size: 22px; font-weight: 700; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  font-size: 19px; font-weight: var(--w-head); line-height: 1;
+  letter-spacing: var(--ls-number);
   color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
-.leaguecard__rank i { font-style: normal; font-size: 11px; font-weight: 400; color: var(--text-soft); }
+.leaguecard__rank i { font-style: normal; font-size: 10px; font-weight: var(--w-body); color: var(--text-dim); }
 
 /* ---------- בקשת חברות ---------- */
 
@@ -3352,22 +3619,43 @@ p  { margin: 0; }
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 2px;
+  gap: 5px;
   flex: none;
   padding: var(--sp-2) 0;
   color: var(--text);
 }
-.clock__unit { display: flex; flex-direction: column; align-items: center; min-inline-size: 34px; }
+.clock__unit { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+/* כל יחידה בתוך חלון משלה — כמו תצוגת ספרות בשעון, ולא ארבעה
+   מספרים שמרחפים על הרקע */
 .clock__unit b {
-  font-size: 24px;
-  font-weight: 700;
+  display: grid;
+  place-items: center;
+  min-inline-size: 44px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+  font-size: 22px;
+  font-weight: var(--w-head);
   line-height: 1;
+  letter-spacing: var(--ls-number);
   font-variant-numeric: tabular-nums;
   /* רוחב ספרה קבוע — אחרת השניות מקפיצות את כל השורה */
   font-feature-settings: 'tnum' 1;
 }
-.clock__unit i { font-style: normal; font-size: 10px; color: var(--text-soft); margin-top: 2px; }
-.clock__sep { font-size: 20px; line-height: 1.1; color: var(--text-soft); }
+.clock__unit i {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+}
+.clock__sep {
+  align-self: flex-start;
+  margin-block-start: 11px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-dim);
+}
 
 /* ---------- פרופיל: חיוויים וכרטיסים ---------- */
 
@@ -3411,11 +3699,14 @@ p  { margin: 0; }
 
 /* שורה שאפשר ללחוץ עליה כדי לראות פרופיל */
 .leaguerow.is-tap { cursor: pointer; }
-.leaguerow.is-tap:hover { background: var(--primary-soft); }
+.leaguerow.is-tap:hover { background: var(--surface-3); }
+.leaguerow.is-me.is-tap:hover { background: var(--primary-soft); }
 
 /* ---------- שורת התחתית: הגדרות בימין, חזרה לידה ---------- */
 
-.league__foot { display: flex; align-items: center; gap: var(--sp-2); }
+/* margin auto: הרשימה כבר לא מותחת את עצמה על כל הגובה, ובלי
+   זה שורת התחתית עלתה ונדבקה מתחת לכרטיס האחרון. */
+.league__foot { display: flex; align-items: center; gap: var(--sp-2); margin-block-start: auto; }
 .league__foot .btn { flex: 1; }
 
 .iconbtn {
@@ -3461,12 +3752,14 @@ p  { margin: 0; }
    מתוחים לרוחב. הצבע הוא של אורך הספר, זהה לכרטיסים. */
 /* שבב סינון M3: לא נבחר = קו מתאר בלבד · נבחר = מכל מלא.
    שני בלוקים צבעוניים תמיד־דלוקים נראו כמו אזהרה, לא כמו מסנן. */
+/* גם כשהשבב אינו נבחר הוא נושא את צבע האורך שלו — לא קו מתאר
+   לבן. שני שבבים לבנים זהים לא אמרו כלום על מה שהם מסננים. */
 .tonechip {
   padding: 7px var(--sp-4);
-  border: 1px solid var(--m3-outline);
+  border: 1px solid color-mix(in srgb, var(--chip-ink) 45%, transparent);
   border-radius: var(--r-chip);
   background: transparent;
-  color: var(--text);
+  color: var(--chip-ink);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -3474,7 +3767,7 @@ p  { margin: 0; }
               border-color var(--t-fast) var(--ease),
               color var(--t-fast) var(--ease);
 }
-.tonechip:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.tonechip:hover { background: color-mix(in srgb, var(--chip-ink) 12%, transparent); }
 
 .tonechip[aria-pressed="true"] {
   background: var(--chip-bg);
