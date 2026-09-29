@@ -1,11 +1,26 @@
 /**
- * stats.js — עמוד הסטטיסטיקה (V4, סעיף 1).
+ * stats.js — עמוד הסטטיסטיקה.
  *
  * כמה עשית בכל נישה **מאז שהתחלת** — לא היום ולא השבוע.
  *
- * כל שמונה הנישות מוצגות תמיד, ארבע בכל צד, כדי שהמסך יהיה
- * מפה קבועה שאפשר ללמוד בעל פה. נישה שלא נבחרה נשארת במקומה אבל
- * מעומעמת ובלי צבע — כך רואים גם מה יש ומה עדיין לא נגעת בו.
+ * ─────────────────────────────────────────────────────────────────
+ *  מרשת כרטיסים לגוף
+ *
+ *  קודם זו הייתה רשת 2×2 של שמונה כרטיסים. המשתמש אמר שזה המסך
+ *  המכוער באפליקציה, והציע במקומו גוף אדם תלת-מימדי שמסומנים עליו
+ *  האזורים שהאפליקציה נוגעת בהם. לוחצים על אזור — נפתחת
+ *  הסטטיסטיקה שלו.
+ *
+ *  הכרטיסים לא נמחקו: הם מה שנפתח בלחיצה, והם גם מסך הנפילה
+ *  למכשיר בלי WebGL. אותו בונה מייצר את שניהם, כדי שלא ייווצרו
+ *  שתי אמיתות לאותו נתון.
+ * ─────────────────────────────────────────────────────────────────
+ *  מה עוד לא כאן
+ *
+ *  אחוזי שיפור לכל אזור. הם תלויים בנקודת פתיחה שתיקבע בשאלון
+ *  ("מי שישן 8 שעות מתחיל גבוה יותר ממי שישן 6"), והשאלון עוד לא
+ *  נכתב. עד אז האזור מציג את המספרים שנצברו בפועל.
+ * ─────────────────────────────────────────────────────────────────
  */
 
 import { initTheme } from './theme.js';
@@ -15,6 +30,8 @@ import { NICHES, NICHE_IDS } from '../config.js';
 import { milestonesAround, nextMilestone } from '../logic/level.js';
 import { getSettings, getSelectedNiches, getLifetime,
          getMilestonesHit, openDay } from '../logic/store.js';
+import { REGIONS } from './anatomy.js';
+import { createBody, hasWebGL } from './body3d.js';
 
 const $ = (s) => document.querySelector(s);
 const els = { body: $('[data-body]') };
@@ -51,43 +68,122 @@ const CARDS = {
                sub: () => 'מעל היעד', mkey: 'sleep' },
 };
 
+/**
+ * כשלאזור יש מדד משלו בתוך הנישה — שכיבות מול סקוואטים — הוא
+ * גובר על המונה הראשי. אחרת החזה והרגליים היו מראים את אותו
+ * מספר, ואי אפשר היה להבין למה לחצנו על שניהם.
+ */
+const METRICS = {
+  pushups: { value: (l) => l.fitness.pushups, unit: 'שכיבות', mkey: 'fitness.pushups' },
+  squats:  { value: (l) => l.fitness.squats,  unit: 'סקוואטים', mkey: 'fitness.squats' },
+};
+
 const fmt = (n) => Number(n || 0).toLocaleString('he');
 
-function render() {
+/* ------------------------------------------------------------------ *
+ * כרטיס אחד — משמש גם בגיליון וגם ברשת הנפילה
+ * ------------------------------------------------------------------ */
+
+function cardData(nicheId, metricKey) {
   const life = getLifetime();
   const hit = getMilestonesHit();
+  const card = CARDS[nicheId];
+  const metric = metricKey ? METRICS[metricKey] : null;
+
+  const value = metric ? metric.value(life) : card.main(life);
+  const mkey = metric ? metric.mkey : card.mkey;
+  const done = new Set(hit[mkey] || []);
+
+  return {
+    niche: NICHES[nicheId],
+    value,
+    unit: metric ? metric.unit : card.unit,
+    sub: metric ? '' : card.sub(life),
+    next: nextMilestone(mkey, value),
+    marks: milestonesAround(mkey, value)
+      .map((m) => `<i class="statcard__mark${done.has(m.value) || m.done ? ' is-on' : ''}"></i>`)
+      .join(''),
+  };
+}
+
+function cardHtml(nicheId, { on, metricKey } = {}) {
+  const d = cardData(nicheId, metricKey);
+  return `<div class="statcard statcard--${nicheId}${on ? '' : ' is-off'}">
+    <span class="statcard__head">
+      <span class="statcard__icon">${icon(d.niche.icon, 16)}</span>
+      <span class="statcard__name">${d.niche.name}</span>
+    </span>
+    <span class="statcard__value">${fmt(d.value)}</span>
+    <span class="statcard__unit">${d.unit}</span>
+    ${d.sub ? `<span class="statcard__sub">${d.sub}</span>` : ''}
+    <span class="statcard__marks" ${d.next ? `title="הבא: ${fmt(d.next)}"` : ''}>${d.marks}</span>
+  </div>`;
+}
+
+/* ------------------------------------------------------------------ *
+ * מסך הנפילה — בלי WebGL אין גוף
+ * ------------------------------------------------------------------ */
+
+function renderGrid() {
+  const selected = new Set(getSelectedNiches());
+  els.body.innerHTML = `<div class="statgrid">${
+    NICHE_IDS.map((id) => cardHtml(id, { on: selected.has(id) })).join('')
+  }</div>`;
+}
+
+/* ------------------------------------------------------------------ *
+ * הגוף
+ * ------------------------------------------------------------------ */
+
+let scene = null;
+
+function renderBody() {
   const selected = new Set(getSelectedNiches());
 
-  els.body.innerHTML = `<div class="statgrid">${
-    NICHE_IDS.map((id) => {
-      const niche = NICHES[id];
-      const card = CARDS[id];
-      const on = selected.has(id);
-      const value = card.main(life);
-      const sub = card.sub(life);
+  els.body.innerHTML = `
+    <div class="statbody">
+      <div class="statbody__stage" data-stage></div>
+      <p class="statbody__hint" data-hint>סובב את הגוף · לחץ על אזור</p>
+      <div class="statbody__sheet" data-sheet hidden></div>
+    </div>`;
 
-      /* שורת אבני הדרך: מה שהושג מסומן מלא, מה שלפנינו ריק.
-         היא נשענת על מה שנרשם בפועל ולא על השוואה חדשה, כדי
-         שהתצוגה תתאים להודעות שכבר הוצגו. */
-      const done = new Set(hit[card.mkey] || []);
-      const marks = milestonesAround(card.mkey, value)
-        .map((m) => `<i class="statcard__mark${done.has(m.value) || m.done ? ' is-on' : ''}"></i>`)
-        .join('');
+  const stage = els.body.querySelector('[data-stage]');
+  const sheet = els.body.querySelector('[data-sheet]');
+  const hint = els.body.querySelector('[data-hint]');
 
-      const next = nextMilestone(card.mkey, value);
+  scene = createBody({
+    mount: stage,
+    active: selected,
+    onPick: (regionId) => {
+      if (!regionId) {
+        sheet.hidden = true;
+        sheet.innerHTML = '';
+        hint.hidden = false;
+        return;
+      }
+      const region = REGIONS[regionId];
+      hint.hidden = true;
+      sheet.hidden = false;
+      sheet.innerHTML = `
+        <button class="statbody__close" type="button" data-close
+                aria-label="סגירה">${icon('x', 18)}</button>
+        <p class="statbody__area">${region.label}</p>
+        ${cardHtml(region.niche, { on: selected.has(region.niche), metricKey: region.metric })}
+        <p class="statbody__what">${region.what}</p>`;
 
-      return `<div class="statcard statcard--${id}${on ? '' : ' is-off'}">
-        <span class="statcard__head">
-          <span class="statcard__icon">${icon(niche.icon, 16)}</span>
-          <span class="statcard__name">${niche.name}</span>
-        </span>
-        <span class="statcard__value">${fmt(value)}</span>
-        <span class="statcard__unit">${card.unit}</span>
-        ${sub ? `<span class="statcard__sub">${sub}</span>` : ''}
-        <span class="statcard__marks" ${next ? `title="הבא: ${fmt(next)}"` : ''}>${marks}</span>
-      </div>`;
-    }).join('')
-  }</div>`;
+      sheet.querySelector('[data-close]').addEventListener('click', () => {
+        scene.select(null);
+        sheet.hidden = true;
+        sheet.innerHTML = '';
+        hint.hidden = false;
+      });
+    },
+  });
+}
+
+function render() {
+  if (scene) { scene.destroy(); scene = null; }
+  if (hasWebGL()) renderBody(); else renderGrid();
 }
 
 function init() {

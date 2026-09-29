@@ -2430,6 +2430,111 @@ p  { margin: 0; }
 .menu__item svg { color: var(--primary); }
 
 /* ============================================================
+   מסך הסטטיסטיקה — גוף תלת-מימדי
+
+   הבמה תופסת את כל המסך. הגיליון עולה מלמטה כשלוחצים על אזור,
+   ולא מחליף את הגוף: צריך להמשיך לראות מה נבחר.
+   ============================================================ */
+
+.statbody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  /* יציאה מריפוד המסך — הגוף מסתובב, וכל פיקסל נחשב */
+  margin-inline: calc(-1 * var(--screen-pad));
+}
+
+.statbody__stage {
+  position: absolute;
+  inset: 0;
+}
+
+.body3d__canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  /* הבד תופס את המחוות: גרירה מסובבת ואינה גוללת את העמוד */
+  touch-action: none;
+}
+
+.statbody__hint {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.statbody__hint[hidden] { display: none; }
+
+/* הגיליון */
+.statbody__sheet {
+  position: absolute;
+  inset-inline: var(--screen-pad);
+  inset-block-end: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  animation: sheet-in var(--t-base) var(--ease);
+}
+.statbody__sheet[hidden] { display: none; }
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statbody__sheet { animation: none; }
+}
+
+.statbody__close {
+  position: absolute;
+  inset-block-start: var(--sp-3);
+  inset-inline-end: var(--sp-3);
+  display: grid;
+  place-items: center;
+  inline-size: 30px;
+  block-size: 30px;
+  border: 0;
+  border-radius: var(--r-chip);
+  background: var(--surface-3);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.statbody__area {
+  font-size: 11px;
+  font-weight: var(--w-label);
+  letter-spacing: .07em;
+  color: var(--text-dim);
+  margin-block-end: var(--sp-2);
+}
+
+/* הכרטיס בתוך הגיליון אינו תיבה נוספת בתוך תיבה */
+.statbody__sheet .statcard {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+}
+
+/* המשפט על מה הפעילות מפעילה. "מפעילה" ולא "משפרת" — ההבדל
+   מתועד ב-anatomy.js וגם שומר אותנו מחוץ להגדרה של טענה
+   בריאותית בחנות. */
+.statbody__what {
+  margin-block-start: var(--sp-3);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid var(--hairline);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* ============================================================
    עמוד ההתקדמות (V3, סעיף ד)
    ============================================================ */
 
