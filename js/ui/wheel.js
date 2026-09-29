@@ -50,29 +50,93 @@ const el = (name, attrs = {}, children = '') => {
  * מידות — נגזרות מגודל הגלגל כדי שיתכווץ יפה במסכים קטנים
  * ------------------------------------------------------------------ */
 
-function metrics(width, height) {
+/**
+ * מידות הגלגל.
+ *
+ * ─────────────────────────────────────────────────────────────────
+ *  למה הרדיוס תלוי במספר הנישות
+ *
+ *  הגרסה הקודמת חישבה `ring = width/2 - nodeR - EDGE`, כלומר
+ *  הניחה שיש תחנה בשעה 3 ובשעה 9 — הנקודות שבהן ריבוע עולה
+ *  לרוחב המלא. עם ארבע נישות זה נכון, ולכן הרדיוס נעצר על 157
+ *  ב-390px והתחנות הצדדיות נגעו בשוליים בעוד שני האלכסונים
+ *  נשארו ריקים.
+ *
+ *  אבל התחנות לא תמיד יושבות שם. ריבוע בזווית θ תופס
+ *  `ring·|cos θ| + nodeR` לרוחב, ולכן ככל שהתחנות רחוקות יותר
+ *  מהציר האופקי הרדיוס יכול לגדול. כאן נבדקות כל ההיסטים
+ *  האפשריים ונבחר זה שמאפשר את הרדיוס הגדול ביותר:
+ *
+ *    4 נישות → היסט 45°,   רדיוס 193 במקום 157
+ *    6 נישות → היסט 0°,    רדיוס 181 במקום 157
+ *    8 נישות → היסט 22.5°, רדיוס 170 במקום 157
+ *
+ *  זה מרחיק את התמונות ממספר הדקות שבמרכז בלי לגעת בגודל
+ *  התמונות עצמן — הדבר היחיד שלא היה אפשרי בפריסה הקודמת.
+ * ─────────────────────────────────────────────────────────────────
+ *
+ * @param {number} n מספר הנישות בסבב
+ */
+function metrics(width, height, n = 4) {
   // התחנה היא ריבוע מעוגל שמכיל תמונה. nodeR = חצי צלע.
   const tile = Math.max(52, Math.min(72, Math.round(Math.min(width, height) * 0.20)));
   const nodeR = tile / 2;
 
-  /* הרדיוס נדחף עד הקצה: אופקית עוצר הריבוע עצמו, אנכית עוצר
-     השם שמתחת לריבוע התחתון. בלוח לא-ריבועי הרוחב הוא שקובע,
-     ולכן הטבעת יוצאת רחוקה יותר ממספר הדקות שבמרכז.
-
-     EDGE הוא האוויר שנשאר בין התחנות הצדדיות לשולי המסך. כל
-     פיקסל שנוסף כאן יורד מהרדיוס ומקרב את התחנות למספר, ולכן
-     הוא מוחזק על המינימום. */
+  /* EDGE הוא האוויר בין התחנה לשולי המסך. כל פיקסל כאן יורד
+     מהרדיוס, ולכן הוא מוחזק על המינימום. */
   const EDGE = 2;
   const labelDy = nodeR + 14;
   const labelPad = labelDy + 7 - nodeR;
-  const ring = Math.max(60, Math.min(
-    width / 2 - nodeR - EDGE,
-    height / 2 - nodeR - labelPad - EDGE,
-  ));
+
+  const count = Math.max(1, n);
+  const step = 360 / count;
+  const spanX = width / 2 - nodeR - EDGE;
+  const spanY = height / 2 - nodeR - labelPad - EDGE;
+
+  /* הקשת מקיפה 360° גם היכן שאין תחנה, ולכן היא חייבת להיכנס
+     ללוח בלי קשר לזוויות. בלי התקרה הזו הרדיוס היה מטפס עד 222
+     והמעגל היה נחתך בשוליים.
+
+     ראש החץ יושב על הקו ובולט ממנו לרוחב חצי-גובהו, ולכן הוא
+     נכנס לחישוב: בלעדיו שני ראשי החץ בשעה 3 ובשעה 9 נחתכו
+     בשולי המסך. */
+  const arrow = Math.max(3.4, tile * 0.062);
+  const byArc = Math.min(width, height) / 2 - EDGE - arrow - 1;
+
+  /** הרדיוס הגדול ביותר שאפשר בהיסט נתון */
+  const ringFor = (offset) => {
+    let maxCos = 0;
+    let maxSin = 0;
+    for (let i = 0; i < count; i += 1) {
+      const rad = (offset + i * step * DIRECTION - 90) * RAD;
+      maxCos = Math.max(maxCos, Math.abs(Math.cos(rad)));
+      maxSin = Math.max(maxSin, Math.abs(Math.sin(rad)));
+    }
+    const EPS = 1e-6;
+    return Math.min(
+      maxCos > EPS ? spanX / maxCos : Infinity,
+      maxSin > EPS ? spanY / maxSin : Infinity,
+      byArc,
+    );
+  };
+
+  /* רק שני היסטים נשקלים: 0 וחצי צעד.
+
+     אלה שני ההיסטים היחידים שבהם הפריסה סימטרית סביב הציר
+     האנכי. סריקה חופשית מצאה שגם 36° נותן את אותו רדיוס כמו
+     45° בארבע נישות — אבל היא מטה את כל הגלגל הצידה, וגלגל
+     נטוי נראה כמו באג ולא כמו החלטה. */
+  const half = (step / 2) * DIRECTION;
+  const straight = ringFor(0);
+  const turned = ringFor(half);
+  const offsetDeg = turned > straight ? half : 0;
+
+  const ring = Math.max(60, Math.max(straight, turned));
 
   return {
     cx: width / 2,
     cy: height / 2,
+    offsetDeg,
     tile,
     nodeR,
     radius: Math.round(tile * 0.28),
@@ -81,7 +145,7 @@ function metrics(width, height) {
     ring,
     segW: 2,
     glow: 5,
-    arrow: Math.max(3.4, tile * 0.062),
+    arrow,
   };
 }
 
@@ -96,7 +160,7 @@ function metrics(width, height) {
  * @returns {HTMLElement} אלמנט עם update({ niches, minutes })
  */
 export function createWheel({ width = 300, height = 300, niches = [], minutes = 0 } = {}) {
-  const m = metrics(width, height);
+  let m = metrics(width, height, niches.length);
   const uid = ++wheelSeq;
 
   const wrap = document.createElement('div');
@@ -140,7 +204,7 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
   });
 
   /** הזווית שבה יושבת הנישה ה-i */
-  const angleOf = (i, n) => START_DEG + i * (360 / n) * DIRECTION;
+  const angleOf = (i, n) => START_DEG + m.offsetDeg + i * (360 / n) * DIRECTION;
 
   /**
    * קשת בין שתי זוויות, תמיד בכיוון ההתקדמות של הסבב.
@@ -178,6 +242,10 @@ export function createWheel({ width = 300, height = 300, niches = [], minutes = 
   wrap.update = ({ niches: list = niches, minutes: min = minutes } = {}) => {
     niches = list;
     minutes = min;
+
+    /* הרדיוס תלוי במספר הנישות, ולכן הוא מחושב מחדש בכל עדכון
+       ולא פעם אחת ביצירה. */
+    m = metrics(width, height, niches.length);
 
     defs.replaceChildren();
     gTrack.replaceChildren();
