@@ -2162,8 +2162,11 @@ p  { margin: 0; }
   pointer-events: none;
 }
 
+/* המספר קטן יותר מ-64px: התחנות גדלו והטבעת מוגבלת ברוחב המסך,
+   ולכן הדרך היחידה להרחיק את התמונות מהמספר היא לצמצם אותו.
+   הוא עדיין הדבר הגדול ביותר במסך. */
 .wheel__num {
-  font-size: 64px;
+  font-size: 54px;
   font-weight: 700;
   line-height: .95;
   letter-spacing: -0.035em;
