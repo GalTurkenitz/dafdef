@@ -2121,6 +2121,7 @@ p  { margin: 0; }
 
 /* התמונה בצבע מלא תמיד */
 
+.wheel__halo { rx: inherit; }
 
 .wheel__name {
   font-family: var(--font-ui);
@@ -2137,21 +2138,16 @@ p  { margin: 0; }
 }
 .wheel__stop.is-current .wheel__name { font-weight: 500; }
 
-/* הזוהר של המשימה הבאה — נושם, ומכבד "פחות תנועה" */
-.wheel__halo {
-  filter: blur(9px);
-  opacity: .5;
-  transform-origin: center;
-  animation: wheel-halo 3s var(--ease) infinite;
-}
+/* הטבעת הזוהרת של המשימה הבאה — נושמת, ומכבדת "פחות תנועה" */
+.wheel__halo { opacity: .45; transform-origin: center; animation: wheel-halo 2.6s var(--ease) infinite; }
 
 @keyframes wheel-halo {
-  0%, 100% { opacity: .5; }
-  50%      { opacity: .22; }
+  0%, 100% { opacity: .45; stroke-width: 2; }
+  50%      { opacity: .15; stroke-width: 5; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wheel__halo { animation: none; opacity: .4; }
+  .wheel__halo { animation: none; opacity: .45; }
 }
 
 /* ---------- המרכז: יתרת הדקות ---------- */
