@@ -16,7 +16,7 @@
  */
 
 import { REGIONS, REGION_IDS, regionOfPart } from '../js/ui/anatomy.js';
-import { PARTS, BODY_HEIGHT, BODY_CENTER_Y } from '../js/ui/body-parts.js';
+import { PARTS, BRAIN_FIT, BODY_HEIGHT, BODY_CENTER_Y } from '../js/ui/body-parts.js';
 import { NICHES, NICHE_IDS } from '../js/config.js';
 
 let fail = 0;
@@ -81,22 +81,49 @@ console.log('\n— גיאומטריה —');
 const organs = PARTS.filter((p) => p.organ);
 ok('יש איברים פנימיים', organs.length >= 9, String(organs.length));
 
-/* כל חלק חייב להיכנס לגובה הדמות, אחרת משהו יבלוט אל מחוץ למסגרת
-   שהמצלמה חישבה */
-const outside = PARTS.filter((p) => {
-  if (!p.at) return false;
-  const y = p.at[1];
-  return y < -0.1 || y > BODY_HEIGHT + 0.1;
-}).map((p) => p.name);
-ok('כל החלקים בתוך גובה הדמות', outside.length === 0, outside.join(', '));
-
-ok('מרכז הסיבוב בתוך הגוף',
-   BODY_CENTER_Y > 0 && BODY_CENTER_Y < BODY_HEIGHT, String(BODY_CENTER_Y));
-
 /* איבר פנימי שאין לו אזור הוא איבר שאי אפשר ללחוץ עליו —
    כלומר עבודה שהלכה לאיבוד */
 const orphanOrgans = organs.filter((p) => !regionOfPart(p.name)).map((p) => p.name);
 ok('לכל איבר פנימי יש אזור', orphanOrgans.length === 0, orphanOrgans.join(', '));
+
+/* כל חלק חייב להיות מוגדר בדרך אחת בלבד: חיתוך ממודל, פרימיטיב,
+   או כתם על המוח. חלק בלי אף אחת מהן פשוט לא ייווצר. */
+const undefinedParts = PARTS
+  .filter((p) => !(p.from === 'body' && p.test)
+               && !(p.from === 'brain' && p.patch)
+               && !p.type)
+  .map((p) => p.name);
+ok('לכל חלק יש הגדרה', undefinedParts.length === 0, undefinedParts.join(', '));
+
+/* הכל ביחידות "גובה הגוף = 1" — מספר מחוץ לטווח הזה הוא כמעט
+   תמיד שריד מהגרסה שעבדה ביחידות עולם */
+const outside = PARTS.filter((p) => p.at)
+  .filter((p) => p.at[1] < 0 || p.at[1] > 1 || Math.abs(p.at[0]) > 0.5)
+  .map((p) => p.name);
+ok('האיברים ביחידות מנורמלות', outside.length === 0, outside.join(', '));
+
+/* המוח חייב להיכנס לגולגולת. הראש נמדד מרשת הגוף:
+   רוחב 0.106, גובה 0.145, עומק 0.125. */
+const brainBox = { w: 0.829, h: 1.000, d: 1.076 };
+const fit = {
+  w: brainBox.w * BRAIN_FIT.scale,
+  h: brainBox.h * BRAIN_FIT.scale,
+  d: brainBox.d * BRAIN_FIT.scale,
+};
+ok('המוח צר מהראש', fit.w < 0.106, fit.w.toFixed(3) + ' מול 0.106');
+ok('המוח רדוד מהראש', fit.d < 0.125, fit.d.toFixed(3) + ' מול 0.125');
+ok('המוח בתוך גובה הראש',
+   BRAIN_FIT.at[1] - fit.h / 2 > 0.855 && BRAIN_FIT.at[1] + fit.h / 2 < 1.001,
+   (BRAIN_FIT.at[1] - fit.h / 2).toFixed(3) + '–' + (BRAIN_FIT.at[1] + fit.h / 2).toFixed(3));
+
+/* כתם על המוח חייב להיות בתוך הקופסה של המוח, אחרת הוא לא
+   יחתוך אף משולש והאזור פשוט לא יופיע */
+const badPatch = PARTS.filter((p) => p.patch)
+  .filter((p) => {
+    const [x, y, z] = p.patch.at;
+    return Math.abs(x) > brainBox.w / 2 || y < 0 || y > 1 || Math.abs(z) > brainBox.d / 2;
+  }).map((p) => p.name);
+ok('כתמי המוח בתוך המוח', badPatch.length === 0, badPatch.join(', '));
 
 console.log('');
 console.log(fail ? `${fail} בדיקות נכשלו` : 'כל הבדיקות עברו');
