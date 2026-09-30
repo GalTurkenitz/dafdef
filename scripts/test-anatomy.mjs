@@ -18,6 +18,11 @@
 import { REGIONS, REGION_IDS, regionOfPart } from '../js/ui/anatomy.js';
 import { PARTS, BRAIN_FIT, BODY_HEIGHT, BODY_CENTER_Y } from '../js/ui/body-parts.js';
 import { NICHES, NICHE_IDS } from '../js/config.js';
+import { existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 let fail = 0;
 const ok = (name, cond, extra = '') => {
@@ -86,14 +91,23 @@ ok('יש איברים פנימיים', organs.length >= 9, String(organs.length)
 const orphanOrgans = organs.filter((p) => !regionOfPart(p.name)).map((p) => p.name);
 ok('לכל איבר פנימי יש אזור', orphanOrgans.length === 0, orphanOrgans.join(', '));
 
-/* כל חלק חייב להיות מוגדר בדרך אחת בלבד: חיתוך ממודל, פרימיטיב,
-   או כתם על המוח. חלק בלי אף אחת מהן פשוט לא ייווצר. */
+/* כל חלק חייב להיות מוגדר בדרך אחת: מודל GLB משלו, או כתם
+   שנחתך מרשת המוח. חלק בלי אף אחת מהן פשוט לא ייווצר. */
 const undefinedParts = PARTS
-  .filter((p) => !(p.from === 'body' && p.test)
-               && !(p.from === 'brain' && p.patch)
-               && !p.type)
+  .filter((p) => !p.model && !(p.from === 'brain' && p.patch))
   .map((p) => p.name);
 ok('לכל חלק יש הגדרה', undefinedParts.length === 0, undefinedParts.join(', '));
+
+/* אין יותר פרימיטיבים. זו הייתה הבקשה המפורשת: כל איבר באותה
+   רמה כמו המוח, לא כדור ולא ביצה. */
+const primitives = PARTS.filter((p) => p.type || p.r).map((p) => p.name);
+ok('אין איברים מפרימיטיבים', primitives.length === 0, primitives.join(', '));
+
+/* קובץ המודל חייב להיות קיים בפועל */
+const missingModels = PARTS.filter((p) => p.model)
+  .filter((p) => !existsSync(join(ROOT, 'content', 'models', p.model)))
+  .map((p) => p.model);
+ok('כל קובצי המודלים קיימים', missingModels.length === 0, missingModels.join(', '));
 
 /* הכל ביחידות "גובה הגוף = 1" — מספר מחוץ לטווח הזה הוא כמעט
    תמיד שריד מהגרסה שעבדה ביחידות עולם */

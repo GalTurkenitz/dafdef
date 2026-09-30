@@ -89,7 +89,7 @@ export const REGIONS = {
     what: 'תרגול נשימה קשוב מפעיל את האינסולה ואת הקליפה החגורה '
         + 'הקדמית — האזורים שקוראים את מצב הגוף מבפנים — ומחליש את '
         + 'תגובת האמיגדלה ללחץ.',
-    parts: ['lungL', 'lungR'],
+    parts: ['lungs'],
     source: 'Gotink et al. 2016, MBSR 8 שבועות · PMC4341506, '
           + 'זרימת דם ב-ACC ובאינסולה',
   },
@@ -110,31 +110,34 @@ export const REGIONS = {
     label: 'כליות',
     what: 'הכליות מסננות את הנוזלים ומווסתות את מאזן המים והמלחים. '
         + 'שתייה מספקת היא מה שמאפשר להן לעבוד בלי להתאמץ.',
-    parts: ['kidneyL', 'kidneyR'],
+    parts: ['kidneys'],
     source: 'פיזיולוגיה בסיסית — סינון גלומרולרי ומאזן נוזלים',
   },
 
-  /* ---------- שרירים ---------- */
+  /* ---------- שרירים ----------
+     שתי קבוצות נפרדות ולא אחת: שכיבות וסקוואטים אינם אותם
+     שרירים, ולכל קבוצה מונה משלה. */
 
   chest: {
     niche: 'fitness',
     metric: 'pushups',
-    label: 'חזה וזרועות',
-    what: 'שכיבות סמיכה עובדות על החזה הגדול, על הדלתא הקדמית ועל '
-        + 'התלת-ראשי — שלושת השרירים שדוחפים.',
-    parts: ['pecL', 'pecR', 'shoulderL', 'shoulderR',
-            'armLU', 'armRU', 'elbowL', 'elbowR', 'armLF', 'armRF'],
+    label: 'חזה, כתף קדמית ותלת-ראשי',
+    what: 'שכיבות סמיכה עובדות על החזה הגדול — שלושת ראשיו — על '
+        + 'החלק הבריחי של הדלתא, ועל שלושת ראשי התלת-ראשי. אלה '
+        + 'השרירים שדוחפים.',
+    parts: ['musclePec', 'muscleArm'],
     source: 'Harvard Health, resistance training guidance · '
-          + 'pectoralis major, anterior deltoid, triceps',
+          + 'pectoralis major, anterior deltoid, triceps brachii',
   },
 
   legs: {
     niche: 'fitness',
     metric: 'squats',
-    label: 'רגליים',
-    what: 'סקוואטים עובדים על הארבע-ראשי, על הישבן הגדול ועל '
-        + 'ההמסטרינג, ומעמיסים גם על שרירי הליבה שמייצבים.',
-    parts: ['thighL', 'thighR', 'kneeL', 'kneeR', 'shinL', 'shinR'],
+    label: 'ארבע-ראשי והמסטרינג',
+    what: 'סקוואטים עובדים על הארבע-ראשי — ישר הירך ושלושת '
+        + 'הרחבים — ועל ההמסטרינג: דו-ראשי הירך, חצי-גידי '
+        + 'וחצי-קרומי.',
+    parts: ['muscleLegs'],
     source: 'BioRxiv 2023 / PMC10593473, squat vs hip thrust hypertrophy',
   },
 };
