@@ -84,12 +84,19 @@ ok('אין טענה שאזור "השתפר" אצל המשתמש', claims.length 
 console.log('\n— גיאומטריה —');
 
 const organs = PARTS.filter((p) => p.organ);
+const decor = PARTS.filter((p) => p.decor);
 ok('יש איברים פנימיים', organs.length >= 9, String(organs.length));
 
 /* איבר פנימי שאין לו אזור הוא איבר שאי אפשר ללחוץ עליו —
    כלומר עבודה שהלכה לאיבוד */
 const orphanOrgans = organs.filter((p) => !regionOfPart(p.name)).map((p) => p.name);
 ok('לכל איבר פנימי יש אזור', orphanOrgans.length === 0, orphanOrgans.join(', '));
+
+/* שכבת הרקע היא ההפך: היא **חייבת** להיות בלי אזור, אחרת היא
+   תהפוך ללחיצה ותסמן נישה שלא ביקשנו לסמן. */
+const markedDecor = decor.filter((p) => regionOfPart(p.name)).map((p) => p.name);
+ok('שכבת הרקע אינה מסומנת', markedDecor.length === 0, markedDecor.join(', '));
+ok('יש שכבת רקע', decor.length >= 4, String(decor.length));
 
 /* כל חלק חייב להיות מוגדר בדרך אחת: מודל GLB משלו, או כתם
    שנחתך מרשת המוח. חלק בלי אף אחת מהן פשוט לא ייווצר. */

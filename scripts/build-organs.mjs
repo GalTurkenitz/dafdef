@@ -122,7 +122,10 @@ const GROUPS = [
        פרושות ב-35°. שרירי הגזע מתיישרים לבד; את שרירי הזרוע צריך
        לסובב סביב הכתף, וזה אפשרי רק אם הם רשת בפני עצמה. */
     meshes: both(
+      /* הדלתא הקדמית והאמצעית. החלק השדרתי (האחורי) נשאר בחוץ:
+         הוא מושך ואינו דוחף, ואינו עובד בשכיבות סמיכה. */
       'Clavicular_part_of_deltoid_muscle',
+      'Acromial_part_of_deltoid_muscle',
       'Long_head_of_triceps_brachii',
       'Lateral_head_of_triceps_brachii',
       'Medial_head_of_triceps_brachii',
@@ -140,6 +143,59 @@ const GROUPS = [
       'Long_head_of_biceps_femoris', 'Short_head_of_biceps_femoris',
       'Semitendinosus_muscle', 'Semimembranosus_muscle',
     ),
+  },
+
+  /* ---------- שכבת הרקע ----------
+     איברים ושרירים שאין להם נישה. הם קיימים כדי שהגוף ייראה כמו
+     גוף ולא כמו חמישה חלקים צפים, והם מוכנים לרגע שבו נישה חדשה
+     תיקח אחד מהם. לא לחיצים ולא מסומנים. */
+
+  {
+    file: 'MuscularSystem100.fbx',
+    out: 'decor-core.glb',
+    tris: 16000,
+    /* הקוביות בבטן היו הבקשה המפורשת. איתן האלכסוני החיצוני,
+       הרחב גבי, החלק היורד של הטרפז, המסור הקדמי והישבן הגדול —
+       כל מה שמצייר גזע. */
+    meshes: both(
+      'Rectus_abdominis_muscle',
+      'External_abdominal_oblique_muscle',
+      'Latissimus_dorsi_muscle',
+      'Descending_part_of_trapezius_muscle',
+      'Serratus_anterior_muscle',
+      'Gluteus_maximus_muscle',
+    ),
+  },
+  {
+    file: 'MuscularSystem100.fbx',
+    out: 'decor-arm.glb',
+    tris: 6000,
+    /* על הזרוע, ולכן מקבל את אותו סיבוב כמו שרירי הדחיפה */
+    meshes: both(
+      'Long_head_of_biceps_brachii', 'Short_head_of_biceps_brachii',
+      'Brachialis_muscle',
+    ),
+  },
+  {
+    file: 'MuscularSystem100.fbx',
+    out: 'decor-leg.glb',
+    tris: 8000,
+    /* שוק — מתחת לברך, ולכן מקבל את אותה הרחקה כמו שרירי הירך */
+    meshes: both(
+      'Medial_head_of_gastrocnemius', 'Lateral_head_of_gastrocnemius',
+      'Soleus_muscle',
+    ),
+  },
+  {
+    file: 'VisceralSystem100.fbx',
+    out: 'decor-organ.glb',
+    tris: 10000,
+    /* איברי הבטן והצוואר. המעי הגס נשאר בחוץ — הוא 60 אלף
+       משולשים בארבעה חלקים וממלא את כל הבטן. */
+    meshes: [
+      'Liver', 'Stomach', 'Pancreas', 'Gallbladder',
+      'Urinary_bladder', 'Trachea', 'Thyroid_gland',
+    ],
   },
 ];
 
